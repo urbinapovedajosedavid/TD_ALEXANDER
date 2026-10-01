@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GestiónApp - Módulo de Reportes</title>
+
+    <!-- Hojas de estilo del sistema -->
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="reportes.css" />
+</head>
+
+<body>
+
+    <div class="dashboard-layout">
+
+        <!-- SIDEBAR: Navegación Lateral -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="logo-circulo">
+                    <img src="https://i.postimg.cc/XqZdZjvF/logo-TD.jpg" alt="Logo Tienda Alexander" />
+                </div>
+                <div>
+                    <h2>GestiónApp</h2>
+                    <p>Control principal</p>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav" aria-label="Navegación del panel">
+                <button class="nav-item" type="button" onclick="location.href='inicio.html'">Inicio</button>
+                <button class="nav-item" type="button" onclick="location.href='ventas.html'">Ventas</button>
+                <button class="nav-item" type="button" onclick="location.href='almacen.html'">Inventario</button>
+                <button class="nav-item nav-item-activa" type="button"
+                    onclick="location.href='reportes.html'">Reportes</button>
+                <button class="nav-item" type="button" onclick="location.href='provedores.html'">Proveedores</button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="nav-item nav-item-secundario" type="button" id="btnCopiaSeguridad">Copia de
+                    seguridad</button>
+                <small>© 2026 Sistema</small>
+            </div>
+        </aside>
+
+        <!-- ÁREA PRINCIPAL DE TRABAJO -->
+        <div class="pagina-admin">
+
+            <!-- HEADER: Encabezado y perfil -->
+            <header class="barra-superior">
+                <div class="marca">
+                    <div class="logo-circulo">
+                        <img src="https://i.postimg.cc/XqZdZjvF/logo-TD.jpg" alt="Logo Tienda" />
+                    </div>
+                    <div>
+                        <h2>Gestión de Tienda Alexander</h2>
+                        <p>Módulo de Análitica y Reportes</p>
+                    </div>
+                </div>
+
+                <div class="acciones-superior">
+                    <div class="ajustes-wrapper">
+                        <button id="botonAjustes" class="boton boton-secundario boton-ajuste" type="button"
+                            aria-expanded="false" aria-controls="menuAjustes">
+                            ⚙ Ajustes
+                        </button>
+                        <div id="menuAjustes" class="menu-ajustes oculto" role="menu">
+                            <button id="cerrarSesionAjustes" class="menu-ajuste-item" type="button"
+                                role="menuitem">Cerrar sesión</button>
+                            <button id="cambiarCuentaAjustes" class="menu-ajuste-item" type="button"
+                                role="menuitem">Cambiar cuenta</button>
+                            <button id="eliminarCuentaAjustes" class="menu-ajuste-item" type="button"
+                                role="menuitem">Eliminar cuenta</button>
+                            <button id="cambiarContrasenaAjustes" class="menu-ajuste-item" type="button"
+                                role="menuitem">Cambiar contraseña</button>
+                            <button id="verPerfilesAjustes" class="menu-ajuste-item" type="button" role="menuitem">Ver
+                                perfiles</button>
+                        </div>
+                    </div>
+                    <span id="usuarioAdminValor" class="etiqueta-perfil">Usuario: Admin</span>
+                </div>
+            </header>
+
+            <!-- VISTA DE REPORTES -->
+            <main class="tab-content">
+                <section id="tabReportes" class="tab-pane tab-activa">
+                    <div class="tarjeta-reportes">
+                        <h1 class="titulo-reportes" id="tituloVistaReporte">Reporte de Ventas del Día Actual</h1>
+
+                        <!-- Tarjetas de Resumen Rápido (KPIs) del día actual -->
+                        <div class="grid-kpis">
+                            <article class="panel-card kpi-card">
+                                <h3>Total Vendido del Día</h3>
+                                <p id="kpiVentasHoy" class="monto-kpi">$0.00</p>
+                            </article>
+                            <article class="panel-card kpi-card">
+                                <h3>Transacciones de Hoy</h3>
+                                <p id="kpiCantidadVentasHoy" class="monto-kpi">0</p>
+                            </article>
+                            <article class="panel-card kpi-card">
+                                <h3>Productos Vendidos Hoy</h3>
+                                <p id="kpiProductosVendidosHoy" class="monto-kpi">0</p>
+                            </article>
+                        </div>
+
+                        <!-- Botones de Selección de Reporte -->
+                        <div class="acciones-inventario-pills" style="margin-bottom: 20px;">
+                            <button type="button" id="btnReporteHoy" class="btn-pill btn-pill-menta">
+                                Ventas del Día
+                            </button>
+                            <button type="button" id="btnReporteSemanal" class="btn-pill btn-pill-oscuro">
+                                Ver Reporte Semanal
+                            </button>
+                            <button type="button" id="btnReporteMensual" class="btn-pill btn-pill-oscuro">
+                                Ver Reporte Mensual
+                            </button>
+                        </div>
+
+                        <!-- Tabla de Resultados de Ventas -->
+                        <div class="tabla-panel">
+                            <table class="inventory-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Hora / Fecha</th>
+                                        <th scope="col">ID Venta</th>
+                                        <th scope="col">Método de Pago</th>
+                                        <th scope="col">Total</th>
+                                        <th scope="col">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaVentasReporte">
+                                    <!-- Registro de ventas dinámicas según el período seleccionado -->
+                                </tbody>
+                            </table>
+                            <div id="mensajeSinReportes" class="estado-vacio" style="display: none;">
+                                No se encontraron registros de ventas para este período.
+                            </div>
+                        </div>
+
+                        <!-- Acciones de Exportación -->
+                        <div class="acciones-inventario-pills" style="margin-top: 20px;">
+                            <button type="button" id="btnExportarPDF" class="btn-pill btn-pill-menta">
+                                Exportar a PDF
+                            </button>
+                            <button type="button" id="btnExportarExcel" class="btn-pill btn-pill-oscuro">
+                                Exportar a Excel
+                            </button>
+                        </div>
+
+                    </div>
+                </section>
+            </main>
+
+        </div>
+    </div>
+
+    <script src="../Backend/validacionesUsuario.js"></script>
+    <script src="../Backend/app.js"></script>
+    <script src="../Backend/reportes.js"></script>
+</body>
+
+</html>

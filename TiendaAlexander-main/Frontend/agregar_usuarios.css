@@ -1,0 +1,66 @@
+:root {
+    color-scheme: light;
+    --verde: #5ee7b7;
+    --azul: #102a43;
+    --borde: #dcefeb;
+    --fondo: #fbfffe;
+    --texto: #16324f;
+    --error: #d9485f;
+    --exito: #2b8a3e;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--texto);
+    background: var(--fondo);
+    padding: 16px;
+}
+
+.formulario {
+    display: grid;
+    gap: 10px;
+}
+
+label {
+    font-weight: 600;
+    color: var(--azul);
+}
+
+input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    font-size: 15px;
+    background: white;
+    color: var(--texto);
+}
+
+button {
+    border: none;
+    padding: 12px 16px;
+    border-radius: 999px;
+    background: var(--verde);
+    color: var(--azul);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.mensaje {
+    min-height: 20px;
+    font-size: 14px;
+    margin: 0;
+}
+
+.mensaje.error {
+    color: var(--error);
+}
+
+.mensaje.exito {
+    color: var(--exito);
+}

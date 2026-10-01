@@ -1,0 +1,193 @@
+
+.tarjeta-ventas {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    margin: 20px;
+}
+
+.titulo-ventas {
+    font-size: 1.5rem;
+    color: #1e293b;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+/* Layout de dos columnas (Búsqueda y Carrito) */
+.layout-ventas {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 24px;
+}
+
+@media (max-width: 1024px) {
+    .layout-ventas {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Paneles individuales */
+.panel-seleccion-productos,
+.panel-carrito-venta {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px;
+}
+
+.panel-seleccion-productos h3,
+.panel-carrito-venta h3 {
+    font-size: 1.1rem;
+    color: #334155;
+    margin-bottom: 12px;
+}
+
+/* Buscador tipo píldora */
+.search-bar-pill {
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 50px;
+    padding: 8px 16px;
+    margin-bottom: 16px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.search-bar-pill .icono-buscar {
+    margin-right: 8px;
+    color: #64748b;
+}
+
+.search-bar-pill input {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 0.9rem;
+    color: #1e293b;
+    background: transparent;
+}
+
+/* Estilos de Tablas */
+.tabla-panel,
+.tabla-panel-carrito {
+    background: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.ventas-busqueda-table,
+.carrito-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.ventas-busqueda-table th,
+.carrito-table th {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 10px 12px;
+    font-weight: 600;
+    border-bottom: 1px solid #cbd5e1;
+}
+
+.ventas-busqueda-table td,
+.carrito-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+/* Resumen de Cobro y Totales */
+.resumen-cobro {
+    margin-top: 16px;
+    background: #ffffff;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.linea-resumen {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    color: #475569;
+}
+
+.total-destacado {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #0f172a;
+    border-top: 2px solid #e2e8f0;
+    padding-top: 8px;
+    margin-top: 8px;
+}
+
+/* Formularios y Botones de Acción */
+.form-cobro-acciones {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-cobro-acciones label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.select-estilizado {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    font-size: 0.9rem;
+    color: #1e293b;
+    outline: none;
+}
+
+.btn-bloque {
+    width: 100%;
+    padding: 10px 16px;
+    border-radius: 6px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-align: center;
+}
+
+.btn-pill-menta {
+    background: #10b981;
+    color: #ffffff;
+}
+
+.btn-pill-menta:hover {
+    background: #059669;
+}
+
+.btn-pill-secundario {
+    background: #3b82f6;
+    color: #ffffff;
+}
+
+.btn-pill-secundario:hover {
+    background: #2563eb;
+}
+
+.btn-pill-oscuro {
+    background: #64748b;
+    color: #ffffff;
+}
+
+.btn-pill-oscuro:hover {
+    background: #475569;
+}

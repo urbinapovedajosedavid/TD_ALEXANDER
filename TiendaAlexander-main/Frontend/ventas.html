@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GestiónApp - Módulo de Ventas</title>
+
+    <!-- Hojas de estilo del sistema -->
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="ventas.css" />
+</head>
+
+<body>
+
+    <div class="dashboard-layout">
+
+        <!-- SIDEBAR: Navegación Lateral -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="logo-circulo">
+                    <img src="https://i.postimg.cc/XqZdZjvF/logo-TD.jpg" alt="Logo Tienda Alexander" />
+                </div>
+                <div>
+                    <h2>GestiónApp</h2>
+                    <p>Control principal</p>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav" aria-label="Navegación del panel">
+                <button class="nav-item" type="button" id="btnNavInicio" data-tab="tabInicio">Inicio</button>
+                <button class="nav-item nav-item-activa" type="button" id="btnNavVentas" data-tab="tabVentas">Ventas</button>
+                <button class="nav-item" type="button" id="btnNavInventario" data-tab="tabInventario">Inventario</button>
+                <button class="nav-item" type="button" id="btnNavReportes" data-tab="tabReportes">Reportes</button>
+                <button class="nav-item" type="button" id="btnNavProveedores" data-tab="tabProveedores">Proveedores</button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="nav-item nav-item-secundario" type="button" id="btnCopiaSeguridad">Copia de seguridad</button>
+                <small>© 2026 Sistema</small>
+            </div>
+        </aside>
+
+        <!-- ÁREA PRINCIPAL DE TRABAJO -->
+        <div class="pagina-admin">
+
+            <!-- HEADER: Encabezado y perfil -->
+            <header class="barra-superior">
+                <div class="marca">
+                    <div class="logo-circulo">
+                        <img src="https://i.postimg.cc/XqZdZjvF/logo-TD.jpg" alt="Logo Tienda" />
+                    </div>
+                    <div>
+                        <h2>Gestión de Tienda Alexander</h2>
+                        <p>Módulo de Registro y Procesamiento de Ventas</p>
+                    </div>
+                </div>
+
+                <div class="acciones-superior">
+                    <div class="ajustes-wrapper">
+                        <button id="botonAjustes" class="boton boton-secundario boton-ajuste" type="button"
+                            aria-expanded="false" aria-controls="menuAjustes">
+                            ⚙ Ajustes
+                        </button>
+                        <div id="menuAjustes" class="menu-ajustes oculto" role="menu">
+                            <button id="cerrarSesionAjustes" class="menu-ajuste-item" type="button" role="menuitem">Cerrar sesión</button>
+                            <button id="cambiarCuentaAjustes" class="menu-ajuste-item" type="button" role="menuitem">Cambiar cuenta</button>
+                            <button id="eliminarCuentaAjustes" class="menu-ajuste-item" type="button" role="menuitem">Eliminar cuenta</button>
+                            <button id="cambiarContrasenaAjustes" class="menu-ajuste-item" type="button" role="menuitem">Cambiar contraseña</button>
+                            <button id="verPerfilesAjustes" class="menu-ajuste-item" type="button" role="menuitem">Ver perfiles</button>
+                        </div>
+                    </div>
+                    <span id="usuarioAdminValor" class="etiqueta-perfil">Usuario: Admin</span>
+                </div>
+            </header>
+
+            <!-- VISTA DE VENTAS -->
+            <main class="tab-content">
+                <section id="tabVentas" class="tab-pane tab-activa">
+                    <div class="tarjeta-ventas">
+                        <h1 class="titulo-ventas">Terminal de Ventas</h1>
+
+                        <div class="layout-ventas">
+                            
+                            <!-- COLUMNA IZQUIERDA: Búsqueda y Selección de Productos -->
+                            <div class="panel-seleccion-productos">
+                                <h3>Buscar Producto</h3>
+                                
+                                <div class="search-bar-pill">
+                                    <span class="icono-buscar" aria-hidden="true">🔍</span>
+                                    <input type="text" id="inputBuscarVentaProducto"
+                                        placeholder="Escanear código de barras o buscar por nombre/ID..."
+                                        aria-label="Buscar producto para venta" />
+                                </div>
+
+                                <div class="tabla-panel">
+                                    <table class="ventas-busqueda-table">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Código</th>
+                                                <th scope="col">Producto</th>
+                                                <th scope="col">Precio</th>
+                                                <th scope="col">Stock</th>
+                                                <th scope="col">Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tablaBusquedaProductosVenta">
+                                            <!-- Productos cargados dinámicamente desde JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- COLUMNA DERECHA: Carrito de Compras / Ticket -->
+                            <div class="panel-carrito-venta">
+                                <h3>Detalle de la Venta</h3>
+
+                                <div class="tabla-panel-carrito">
+                                    <table class="carrito-table">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Item</th>
+                                                <th scope="col">Cant.</th>
+                                                <th scope="col">Precio</th>
+                                                <th scope="col">Subtotal</th>
+                                                <th scope="col"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tablaCarritoVentas">
+                                            <!-- Ítems agregados al carrito -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Resumen de Totales -->
+                                <div class="resumen-cobro">
+                                    <div class="linea-resumen">
+                                        <span>Subtotal:</span>
+                                        <span id="subtotalVentaValor">$0.00</span>
+                                    </div>
+                                    <div class="linea-resumen">
+                                        <span>Impuesto (IVA):</span>
+                                        <span id="impuestoVentaValor">$0.00</span>
+                                    </div>
+                                    <div class="linea-resumen total-destacado">
+                                        <span>Total a Pagar:</span>
+                                        <span id="totalVentaValor">$0.00</span>
+                                    </div>
+
+                                    <!-- Métodos de Pago y Acciones -->
+                                    <div class="form-cobro-acciones">
+                                        <label for="selectMetodoPago">Método de pago:</label>
+                                        <select id="selectMetodoPago" class="select-estilizado">
+                                            <option value="efectivo">Efectivo</option>
+                                            <option value="tarjeta">Tarjeta de Crédito / Débito</option>
+                                            <option value="transferencia">Transferencia Bancaria</option>
+                                        </select>
+
+                                        <button type="button" id="btnCompletarVenta" class="btn-pill btn-pill-menta btn-bloque">
+                                            Procesar y Cobrar
+                                        </button>
+
+                                        <!-- Botón de impresión (Sin función en JS por ahora) -->
+                                        <button type="button" id="btnImprimirFactura" class="btn-pill btn-pill-secundario btn-bloque">
+                                            🖨️ Imprimir Factura
+                                        </button>
+
+                                        <button type="button" id="btnCancelarVenta" class="btn-pill btn-pill-oscuro btn-bloque">
+                                            Cancelar Venta
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+        </div>
+    </div>
+
+    <!-- Scripts en archivos separados -->
+<script src="../Backend/validacionesUsuario.js"></script>
+<script src="../Backend/app.js"></script>
+<script src="../Backend/ventas.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión Alexander - Acceso y Registro</title>
+    <link rel="stylesheet" href="login.css" />
+</head>
+
+<body>
+    <main class="login-contenedor">
+        <section class="login-panel">
+            <div class="login-brand">
+                <div class="logo-login">
+                    <img src="https://i.postimg.cc/XqZdZjvF/logo-TD.jpg" alt="Gestión Alexander" />
+                </div>
+                <div>
+                    <h1>GestiónApp</h1>
+                    <p>Inicia sesión o crea una nueva cuenta</p>
+                </div>
+            </div>
+
+            <div class="login-card">
+                <h2>Acceder al sistema</h2>
+
+                <form id="formLogin" class="login-form">
+                    <label for="usuarioLogin">Usuario</label>
+                    <input id="usuarioLogin" type="text" placeholder="admin" required />
+
+                    <label for="claveLogin">Contraseña</label>
+                    <input id="claveLogin" type="password" placeholder="Pass" required />
+
+                    <button type="submit" class="btn btn-principal" >Iniciar sesión</button>
+                    
+
+                    <button type="button" id="btnIrRegistro" class="btn btn-crear-cuenta">Crear cuenta</button>
+
+
+                    <p id="mensajeLogin" class="mensaje"></p>
+                    <section id="tabInicio" class="tab-pane">
+                    <div class="tarjeta-inventario">
+                </form>
+            </div>
+
+
+            </div>
+        </section>
+    </main>
+
+<!-- Deben coincidir exactamente con los nombres reales de tus archivos JS -->
+<script src="../Backend/validacionesUsuario.js"></script>
+<script src="../Backend/login.js"></script>
+</body>
+
+</html>

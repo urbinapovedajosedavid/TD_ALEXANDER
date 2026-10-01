@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agregar usuario</title>
+    <link rel="stylesheet" href="EstiloUsuarios.css" />
+</head>
+
+<body>
+    <form id="formUsuarioModal" class="formulario">
+        <label for="usuarioModal">Nombre de usuario</label>
+        <input id="usuarioModal" name="usuarioModal" type="text" placeholder="Ingrese nombre" required />
+
+        <label for="claveModal">Contraseña</label>
+        <input id="claveModal" name="claveModal" type="password" placeholder="Ingrese contraseña" required />
+
+        <button type="submit">Guardar usuario</button>
+        <p id="mensajeModal" class="mensaje" aria-live="polite"></p>
+    </form>
+
+    <script src="../Backend/usuarios.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Inventario - Tienda Alexander</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="almacen.css" />
+</head>
+
+<body>
+
+    <div class="dashboard-layout">
+
+        <!-- SIDEBAR: Navegación Lateral -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="logo-circulo">
+                    <img src="https://i.postimg.cc/XqZdZjvF/logo-TD.jpg" alt="Logo Tienda Alexander" />
+                </div>
+                <div>
+                    <h2>GestiónApp</h2>
+                    <p>Control principal</p>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav" aria-label="Navegación del panel">
+                <button class="nav-item" type="button" onclick="location.href='inicio.html'">Inicio</button>
+                <button class="nav-item" type="button" onclick="location.href='ventas.html'">Ventas</button>
+                <button class="nav-item nav-item-activa" type="button" onclick="location.href='almacen.html'">Inventario</button>
+                <button class="nav-item" type="button" onclick="location.href='reportes.html'">Reportes</button>
+                <button class="nav-item" type="button" onclick="location.href='provedores.html'">Proveedores</button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="nav-item nav-item-secundario" type="button" id="btnCopiaSeguridad">Copia de seguridad</button>
+                <small>© 2026 Sistema</small>
+            </div>
+        </aside>
+
+        <!-- ÁREA PRINCIPAL DE TRABAJO -->
+        <div class="pagina-admin">
+
+            <!-- HEADER: Encabezado y perfil -->
+            <header class="barra-superior">
+                <div class="marca">
+                    <div class="logo-circulo">
+                        <img src="https://i.postimg.cc/XqZdZjvF/logo-TD.jpg" alt="Logo Tienda" />
+                    </div>
+                    <div>
+                        <h2>Gestión de Tienda Alexander</h2>
+                        <p>Módulo de Analítica y Reportes</p>
+                    </div>
+                </div>
+
+                <div class="acciones-superior">
+                    <div class="ajustes-wrapper">
+                        <button id="botonAjustes" class="boton boton-secundario boton-ajuste" type="button" aria-expanded="false" aria-controls="menuAjustes">
+                            ⚙ Ajustes
+                        </button>
+                        <div id="menuAjustes" class="menu-ajustes oculto" role="menu">
+                            <button id="cerrarSesionAjustes" class="menu-ajuste-item" type="button" role="menuitem">Cerrar sesión</button>
+                            <button id="cambiarCuentaAjustes" class="menu-ajuste-item" type="button" role="menuitem">Cambiar cuenta</button>
+                            <button id="eliminarCuentaAjustes" class="menu-ajuste-item" type="button" role="menuitem">Eliminar cuenta</button>
+                            <button id="cambiarContrasenaAjustes" class="menu-ajuste-item" type="button" role="menuitem">Cambiar contraseña</button>
+                            <button id="verPerfilesAjustes" class="menu-ajuste-item" type="button" role="menuitem">Ver perfiles</button>
+                        </div>
+                    </div>
+                    <span id="usuarioAdminValor" class="etiqueta-perfil">Usuario: Admin</span>
+                </div>
+            </header>
+
+            <div class="tab-content">
+                <section id="tabInventario" class="tab-pane tab-activa">
+                    <div class="tarjeta-inventario">
+                        <h1 class="titulo-inventario">Gestión de Inventario</h1>
+
+                        <!-- Buscador tipo píldora -->
+                        <div class="search-bar-pill">
+                            <span class="icono-buscar">🔍</span>
+                            <input type="text" id="inputBuscarProducto" placeholder="Buscar productos por ID, nombre, categoría, o ubicación..." />
+                        </div>
+
+                        <!-- Tabla estilizada -->
+                        <div class="tabla-panel">
+                            <table class="tabla-inventario">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre del Producto</th>
+                                        <th>Código</th>
+                                        <th>Precio</th>
+                                        <th>Stock</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaProductos"></tbody>
+                            </table>
+
+                            <div id="mensajeSinProductos" class="estado-vacio" style="display: none;">
+                                No hay productos disponibles en el inventario.
+                            </div>
+                        </div>
+
+                        <!-- Botones de acción inferiores -->
+                        <div class="acciones-inventario-pills">
+                            <button type="button" id="botonAgregarProducto" class="btn-pill btn-pill-menta">Añadir Nuevo Producto</button>
+                            <button type="button" id="botonGenerarReporte" class="btn-pill btn-pill-menta">Generar Reporte de Stock</button>
+                            <button type="button" id="btnResumenCategoria" class="btn-pill btn-pill-oscuro">Ver Resumen por Categoría</button>
+                            <button type="button" id="btnGestionarTipos" class="btn-pill btn-pill-oscuro">Gestionar Tipos de Producto</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Formulario Producto -->
+    <div id="modalProducto" class="modal modal-oculto">
+        <div class="modal-contenido">
+            <button class="modal-cerrar" onclick="cerrarModal()">&times;</button>
+            <h2 id="tituloModal">Añadir Nuevo Producto</h2>
+            
+            <form id="formProducto" class="form-producto">
+                <input type="hidden" id="productoId">
+
+                <div class="form-row">
+                    <label for="prodNombre">Nombre del Producto *</label>
+                    <input type="text" id="prodNombre" required>
+                </div>
+
+                <div class="form-row">
+                    <label for="prodCodigo">Código de Barras</label>
+                    <input type="text" id="prodCodigo">
+                </div>
+
+<div class="form-row">
+    <label for="selectCategoria">Categoría *</label>
+    <select id="selectCategoria" style="padding: 10px; border-radius: 8px; border: 1px solid var(--borde);">
+        <option value="">Cargando categorías...</option>
+    </select>
+</div>
+
+<!-- Campo extra que aparece solo si selecciona "Otro" -->
+<div class="form-row" id="contenedorOtraCategoria" style="display: none; margin-top: 6px;">
+    <label for="inputOtraCategoria">Nombre de la nueva categoría *</label>
+    <input type="text" id="inputOtraCategoria" placeholder="Ej. Electrónicos, Muebles..." />
+</div>
+
+                <div class="form-row">
+                    <label for="prodPrecio">Precio *</label>
+                    <input type="number" step="0.01" min="0" id="prodPrecio" required>
+                </div>
+
+                <div class="form-row">
+                    <label for="prodStock">Stock Inicial *</label>
+                    <input type="number" min="0" id="prodStock" required>
+                </div>
+
+                <div class="modal-acciones">
+                    <button type="button" class="btn-pill btn-pill-oscuro" onclick="cerrarModal()">Cancelar</button>
+                    <button type="submit" class="btn-pill btn-pill-menta">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../Backend/validacionesUsuario.js"></script>
+    <script src="../Backend/almacen.js"></script>
+</body>
+
+</html>
