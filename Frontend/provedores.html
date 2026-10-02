@@ -4,216 +4,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GestiónApp - Módulo de Proveedores</title>
-
-    <!-- Hojas de estilo del sistema -->
-    <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="provedores.css" />
-
+    <title>Proveedores - Tienda Alexander</title>
+    <link rel="stylesheet" href="css/base.css">
 </head>
 
 <body>
 
     <div class="dashboard-layout">
 
-        <!-- SIDEBAR: Navegación Lateral -->
-        <aside class="sidebar">
-            <div class="sidebar-brand">
-                <div class="logo-circulo">
-                    <img src="https://i.postimg.cc/XqZdZjvF/logo-TD.jpg" alt="Logo Tienda Alexander" />
-                </div>
-                <div>
-                    <h2>GestiónApp</h2>
-                    <p>Control principal</p>
-                </div>
-            </div>
+        <aside class="sidebar" id="sidebar"></aside>
 
-            <nav class="sidebar-nav" aria-label="Navegación del panel">
-                <button class="nav-item" type="button" onclick="location.href='inicio.html'">Inicio</button>
-                <button class="nav-item" type="button" onclick="location.href='ventas.html'">Ventas</button>
-                <button class="nav-item" type="button" onclick="location.href='almacen.html'">Inventario</button>
-                <button class="nav-item" type="button" onclick="location.href='reportes.html'">Reportes</button>
-                <button class="nav-item nav-item-activa" type="button"
-                    onclick="location.href='provedores.html'">Proveedores</button>
-            </nav>
-
-            <div class="sidebar-footer">
-                <button class="nav-item nav-item-secundario" type="button" id="btnCopiaSeguridad">Copia de
-                    seguridad</button>
-                <small>© 2026 Sistema</small>
-            </div>
-        </aside>
-
-        <!-- ÁREA PRINCIPAL DE TRABAJO -->
         <div class="pagina-admin">
 
-            <!-- HEADER: Encabezado y perfil -->
-            <header class="barra-superior">
-                <div class="marca">
-                    <div class="logo-circulo">
-                        <img src="https://i.postimg.cc/XqZdZjvF/logo-TD.jpg" alt="Logo Tienda" />
-                    </div>
-                    <div>
-                        <h2>Gestión de Tienda Alexander</h2>
-                        <p>Módulo de Administración de Proveedores</p>
-                    </div>
-                </div>
+            <header class="barra-superior" id="barraSuperior"></header>
 
-                <div class="acciones-superior">
-                    <div class="ajustes-wrapper">
-                        <button id="botonAjustes" class="boton boton-secundario boton-ajuste" type="button"
-                            aria-expanded="false" aria-controls="menuAjustes">
-                            ⚙ Ajustes
-                        </button>
-                        <div id="menuAjustes" class="menu-ajustes oculto" role="menu">
-                            <button id="cerrarSesionAjustes" class="menu-ajuste-item" type="button"
-                                role="menuitem">Cerrar sesión</button>
-                            <button id="cambiarCuentaAjustes" class="menu-ajuste-item" type="button"
-                                role="menuitem">Cambiar cuenta</button>
-                            <button id="eliminarCuentaAjustes" class="menu-ajuste-item" type="button"
-                                role="menuitem">Eliminar cuenta</button>
-                            <button id="cambiarContrasenaAjustes" class="menu-ajuste-item" type="button"
-                                role="menuitem">Cambiar contraseña</button>
-                            <button id="verPerfilesAjustes" class="menu-ajuste-item" type="button" role="menuitem">Ver
-                                perfiles</button>
-                        </div>
-                    </div>
-                    <span id="usuarioAdminValor" class="etiqueta-perfil">Usuario: Admin</span>
-                </div>
-            </header>
-
-            <!-- VISTA DE PROVEEDORES -->
             <main class="tab-content">
-                <section id="tabProveedores" class="tab-pane tab-activa">
-                    <div class="tarjeta-proveedores">
-                        <h1 class="titulo-proveedores">Gestión de Proveedores</h1>
 
-                        <!-- Barra de Búsqueda -->
-                        <div class="search-bar-pill">
-                            <span class="icono-buscar" aria-hidden="true">🔍</span>
-                            <input type="text" id="inputBuscarProveedor"
-                                placeholder="Buscar proveedor por nombre, cédula o departamento..."
-                                aria-label="Buscar proveedor" />
-                        </div>
+                <section class="tarjeta">
+                    <h1>Gestión de Proveedores</h1>
 
-                        <!-- Tabla de Registro de Proveedores -->
-                        <div class="tabla-panel">
-                            <table class="inventory-table">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Nombre del Proveedor</th>
-                                        <th scope="col">Teléfono</th>
-                                        <th scope="col">Cédula</th>
-                                        <th scope="col">Dirección</th>
-                                        <th scope="col">Departamento</th>
-                                        <th scope="col">Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tablaProveedores">
-                                    <!-- Filas generadas dinámicamente con JS -->
-                                </tbody>
-                            </table>
-                            <div id="mensajeSinProveedores" class="estado-vacio" style="display: none;">
-                                No hay proveedores registrados.
-                            </div>
-                        </div>
+                    <div class="search-bar-pill">
+                        <span class="icono-buscar">🔍</span>
+                        <input type="text" id="inputBuscarProveedor"
+                            placeholder="Buscar por nombre, cédula o departamento...">
+                    </div>
 
-                        <!-- Botones de Acción Principales -->
-                        <div class="acciones-inventario-pills">
-                            <button type="button" id="btnAbrirModalProveedor" class="btn-pill btn-pill-menta">
-                                Añadir Proveedor
-                            </button>
-                            <button type="button" id="btnAbrirModalEliminarProveedor" class="btn-pill btn-pill-oscuro">
-                                Eliminar Proveedor
-                            </button>
+                    <div class="tabla-panel">
+                        <table class="tabla">
+                            <thead>
+                                <tr>
+                                    <th>Nombre del Proveedor</th>
+                                    <th>Teléfono</th>
+                                    <th>Cédula</th>
+                                    <th>Dirección</th>
+                                    <th>Departamento</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaProveedores"></tbody>
+                        </table>
+                        <div id="mensajeSinProveedores" class="estado-vacio" style="display: none;">
+                            No hay proveedores registrados.
                         </div>
+                    </div>
+
+<div class="acciones-inventario-pills">
+                        <button type="button" id="btnAbrirModalProveedor" class="btn-pill btn-pill-menta">
+                            Añadir Proveedor
+                        </button>
                     </div>
                 </section>
-            </main>
 
+            </main>
         </div>
     </div>
 
-    <!-- MODAL 1: Agregar Proveedor -->
+    <!-- Modal: registrar proveedor -->
     <div id="modalProveedor" class="modal modal-oculto" aria-hidden="true">
         <div class="modal-contenido">
             <div class="modal-cabecera">
-                <h3 id="tituloModalProveedor">Añadir Nuevo Proveedor</h3>
+                <h3>Añadir Nuevo Proveedor</h3>
                 <button id="cerrarModalProveedor" class="boton-cerrar" type="button"
-                    aria-label="Cerrar modal">×</button>
+                    aria-label="Cerrar">&times;</button>
             </div>
-            <form id="formProveedor" class="formulario">
 
+            <form id="formProveedor" class="formulario">
                 <label for="nombreProveedor">Nombre del Proveedor</label>
-                <input id="nombreProveedor" name="nombreProveedor" type="text" placeholder="Ej. Distribuidora Central"
-                    required />
+                <input id="nombreProveedor" name="nombreProveedor" type="text"
+                    placeholder="Ej. Distribuidora Central" required>
 
                 <label for="telefonoProveedor">Número de Teléfono</label>
-                <input id="telefonoProveedor" name="telefonoProveedor" type="tel" placeholder="Ej. 8888-8888"
-                    required />
+                <input id="telefonoProveedor" name="telefonoProveedor" type="tel"
+                    placeholder="Ej. 8888-8888" required>
 
                 <label for="cedulaProveedor">Cédula / RUC</label>
-                <input id="cedulaProveedor" name="cedulaProveedor" type="text" placeholder="Ej. 001-000000-0000A"
-                    required />
+                <input id="cedulaProveedor" name="cedulaProveedor" type="text"
+                    placeholder="Ej. 001-000000-0000A" required>
 
                 <label for="direccionProveedor">Dirección</label>
-                <input id="direccionProveedor" name="direccionProveedor" type="text" placeholder="Dirección exacta"
-                    required />
+                <input id="direccionProveedor" name="direccionProveedor" type="text"
+                    placeholder="Dirección exacta" required>
 
                 <label for="departamentoProveedor">Departamento</label>
                 <input id="departamentoProveedor" name="departamentoProveedor" type="text"
-                    placeholder="Ej. Managua, Masaya..." required />
+                    placeholder="Ej. Managua, Masaya..." required>
 
-                <button type="submit" id="btnGuardarProveedor" class="boton boton-principal">Guardar Proveedor</button>
+                <div class="modal-acciones">
+                    <button type="button" id="btnCancelarProveedor" class="btn-pill btn-pill-oscuro">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn-pill btn-pill-menta">Guardar Proveedor</button>
+                </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL 2: Eliminar Proveedor (Ingreso de Nombre) -->
-    <div id="modalEliminarProveedor" class="modal modal-oculto" aria-hidden="true">
-        <div class="modal-contenido">
-            <div class="modal-cabecera">
-                <h3>Eliminar Proveedor</h3>
-                <button id="cerrarModalEliminarProveedor" class="boton-cerrar" type="button"
-                    aria-label="Cerrar modal">×</button>
-            </div>
-            <form id="formEliminarProveedor" class="formulario">
-                <p>Ingresa el nombre exacto del proveedor que deseas eliminar:</p>
+<script src="js/core.js"></script>
+    <script src="js/demo.js"></script>
 
-                <label for="nombreProveedorEliminar">Nombre del Proveedor</label>
-                <input id="nombreProveedorEliminar" name="nombreProveedorEliminar" type="text"
-                    placeholder="Ej. Distribuidora Central" required />
-
-                <button type="submit" id="btnConfirmarEliminarProveedor" class="boton boton-principal"
-                    style="background-color: #d9534f;">
-                    Confirmar Eliminación
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL 3: Confirmación de Éxito -->
-    <div id="modalExitoEliminado" class="modal modal-oculto" aria-hidden="true">
-        <div class="modal-contenido text-center">
-            <div class="modal-cabecera">
-                <h3>Operación Exitosa</h3>
-                <button id="cerrarModalExitoEliminado" class="boton-cerrar" type="button"
-                    aria-label="Cerrar modal">×</button>
-            </div>
-            <div class="modal-cuerpo">
-                <p>✅ Proveedor eliminado exitosamente</p>
-                <button type="button" id="btnAceptarExitoEliminado" class="btn-pill btn-pill-menta"
-                    style="margin-top: 15px;">
-                    Aceptar
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scripts en archivos separados -->
-    <script src="../Backend/validacionesUsuario.js"></script>
-    <script src="../Backend/app.js"></script>
-    <script src="../Backend/provedores.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/pages/provedores.js"></script>
 </body>
 
 </html>

@@ -4,88 +4,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GestiónApp - Panel Principal</title>
-
-    <!-- Hojas de estilo del sistema -->
-    <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="inicio.css" />
+    <title>Gestión de Tienda Alexander</title>
+    <link rel="stylesheet" href="css/base.css">
 </head>
 
 <body>
 
     <div class="dashboard-layout">
 
-        <!-- SIDEBAR: Navegación Lateral -->
-        <aside class="sidebar">
-            <div class="sidebar-brand">
-                <div class="logo-circulo">
-                    <img src="https://i.postimg.cc/XqZdZjvF/logo-TD.jpg" alt="Logo Tienda Alexander" />
-                </div>
-                <div>
-                    <h2>GestiónApp</h2>
-                    <p>Control principal</p>
-                </div>
-            </div>
+        <!-- El sidebar lo inyecta js/core/layout.js -->
+        <aside class="sidebar" id="sidebar"></aside>
 
-            <nav class="sidebar-nav" aria-label="Navegación del panel">
-                <button class="nav-item nav-item-activa" type="button"
-                    onclick="location.href='inicio.html'">Inicio</button>
-                <button class="nav-item" type="button" onclick="location.href='ventas.html'">Ventas</button>
-                <button class="nav-item" type="button" onclick="location.href='almacen.html'">Inventario</button>
-                <button class="nav-item" type="button" onclick="location.href='reportes.html'">Reportes</button>
-                <button class="nav-item" type="button" onclick="location.href='provedores.html'">Proveedores</button>
-            </nav>
-
-            <div class="sidebar-footer">
-                <button class="nav-item nav-item-secundario" type="button">Copia de seguridad</button>
-                <small>© 2026 Sistema</small>
-            </div>
-        </aside>
-
-        <!-- ÁREA PRINCIPAL DE TRABAJO -->
         <div class="pagina-admin">
 
-            <!-- HEADER: Encabezado y perfil -->
-            <header class="barra-superior">
-                <div class="marca">
-                    <div class="logo-circulo">
-                        <img src="https://i.postimg.cc/XqZdZjvF/logo-TD.jpg" alt="Logo Tienda" />
-                    </div>
-                    <div>
-                        <h2>Gestión de Tienda Alexander</h2>
-                        <p>Panel de administración e inventario</p>
-                    </div>
-                </div>
+            <header class="barra-superior" id="barraSuperior"></header>
 
-                <div class="acciones-superior">
-                    <div class="ajustes-wrapper">
-                        <button id="botonAjustes" class="boton boton-secundario boton-ajuste" type="button"
-                            aria-expanded="false" aria-controls="menuAjustes">
-                            ⚙ Ajustes
+            <main class="tab-content">
+
+                <section class="tarjeta">
+                    <h1>Panel de control</h1>
+
+                    <div class="kpi-grid">
+                        <article class="kpi-card">
+                            <h3>Productos registrados</h3>
+                            <p class="kpi-valor" id="kpiProductos">0</p>
+                        </article>
+                        <article class="kpi-card">
+                            <h3>Valor del inventario</h3>
+                            <p class="kpi-valor" id="kpiValorInventario">$0.00</p>
+                        </article>
+                        <article class="kpi-card">
+                            <h3>Productos agotados</h3>
+                            <p class="kpi-valor" id="kpiAgotados">0</p>
+                        </article>
+                    </div>
+
+                    <div class="acciones-inventario-pills">
+                        <button type="button" id="btnIrInventario" class="btn-pill btn-pill-menta">
+                            Ir al inventario
                         </button>
-                        <div id="menuAjustes" class="menu-ajustes oculto" role="menu">
-                            <button id="cerrarSesionAjustes" class="menu-ajuste-item" type="button"
-                                role="menuitem">Cerrar sesión</button>
-                            <button id="cambiarCuentaAjustes" class="menu-ajuste-item" type="button"
-                                role="menuitem">Cambiar cuenta</button>
-                            <button id="eliminarCuentaAjustes" class="menu-ajuste-item" type="button"
-                                role="menuitem">Eliminar cuenta</button>
-                            <button id="cambiarContrasenaAjustes" class="menu-ajuste-item" type="button"
-                                role="menuitem">Cambiar contraseña</button>
-                            <button id="verPerfilesAjustes" class="menu-ajuste-item" type="button" role="menuitem">Ver
-                                perfiles</button>
+                    </div>
+                </section>
+
+                <section class="tarjeta" style="margin-top: 24px;">
+                    <h1>Alertas de stock bajo</h1>
+
+                    <div class="tabla-panel">
+                        <table class="tabla">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Categoría</th>
+                                    <th>Precio</th>
+                                    <th>Stock</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaStockBajo"></tbody>
+                        </table>
+                        <div id="mensajeSinAlertas" class="estado-vacio" style="display: none;">
+                            No hay productos con stock bajo.
                         </div>
                     </div>
-                    <span id="usuarioAdminValor" class="etiqueta-perfil">Usuario: Admin</span>
-                </div>
-            </header>
+                </section>
 
+            </main>
         </div>
     </div>
 
-    <script src="../Backend/validacionesUsuario.js"></script>
-    <script src="../Backend/app.js"></script>
+    <script src="js/core.js"></script>
+    <script src="js/demo.js"></script>
 
+    <script src="js/layout.js"></script>
+    <script src="js/pages/inicio.js"></script>
 </body>
 
 </html>

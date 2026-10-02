@@ -2,25 +2,59 @@
 <html lang="es">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Agregar usuario</title>
-    <link rel="stylesheet" href="EstiloUsuarios.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear usuario - Tienda Alexander</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/login.css">
 </head>
 
 <body>
-    <form id="formUsuarioModal" class="formulario">
-        <label for="usuarioModal">Nombre de usuario</label>
-        <input id="usuarioModal" name="usuarioModal" type="text" placeholder="Ingrese nombre" required />
 
-        <label for="claveModal">Contraseña</label>
-        <input id="claveModal" name="claveModal" type="password" placeholder="Ingrese contraseña" required />
+    <main class="login-contenedor">
+        <section class="login-panel">
 
-        <button type="submit">Guardar usuario</button>
-        <p id="mensajeModal" class="mensaje" aria-live="polite"></p>
-    </form>
+            <div class="login-brand">
+                <div class="logo-circulo">
+                    <img src="https://i.postimg.cc/XqZdZjvF/logo-TD.jpg" alt="Gestión Alexander">
+                </div>
+                <div>
+                    <h1>GestiónApp</h1>
+                    <p>Alta de usuario</p>
+                </div>
+            </div>
 
-    <script src="../Backend/usuarios.js"></script>
+            <div class="login-card">
+                <h2>Crear cuenta de vendedor</h2>
+
+                <form id="formUsuarioModal" class="formulario">
+                    <label for="usuarioModal">Nombre de usuario</label>
+                    <input id="usuarioModal" name="usuarioModal" type="text"
+                        placeholder="Mínimo 3 caracteres" minlength="3"
+                        autocomplete="username" required>
+
+                    <label for="claveModal">Contraseña</label>
+                    <input id="claveModal" name="claveModal" type="password"
+                        placeholder="Mínimo 4 caracteres" minlength="4"
+                        autocomplete="new-password" required>
+
+<button type="submit" class="btn-pill btn-pill-oscuro">Guardar usuario</button>
+                    <button type="button" id="btnEntrarNuevo" class="btn-pill btn-pill-menta" hidden>
+                        Ir a iniciar sesión
+                    </button>
+                    <button type="button" id="btnVolverLogin" class="btn-pill btn-pill-menta">
+                        Volver al inicio de sesión
+                    </button>
+
+                    <p id="mensajeModal" class="mensaje" aria-live="polite"></p>
+                </form>
+            </div>
+
+        </section>
+    </main>
+    <script src="js/core.js"></script>
+    <script src="js/demo.js"></script>
+    <script src="js/pages/registro.js"></script>
 </body>
 
 </html>

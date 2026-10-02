@@ -1,0 +1,74 @@
+/* Módulo de ventas: dos columnas con selector y carrito. */
+
+.layout-ventas {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 24px;
+}
+
+@media (max-width: 1024px) {
+    .layout-ventas {
+        grid-template-columns: 1fr;
+    }
+}
+
+.panel-venta {
+    background: var(--fondo-panel);
+    border: 1px solid var(--borde);
+    border-radius: 16px;
+    padding: 18px;
+}
+
+.resumen-cobro {
+    margin-top: 18px;
+    background: var(--blanco);
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.linea-resumen {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    color: var(--texto);
+}
+
+.total-destacado {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--azul-marino);
+    border-top: 2px solid var(--borde);
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+.form-cobro-acciones {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-cobro-acciones label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--texto);
+}
+
+.form-cobro-acciones select {
+    padding: 11px 14px;
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    font-size: 0.95rem;
+    background: #fbfffe;
+    color: var(--texto);
+    outline: none;
+    width: 100%;
+}
+
+.form-cobro-acciones select:focus {
+    outline: 2px solid rgba(94, 231, 183, 0.25);
+    border-color: var(--verde-menta);
+}
