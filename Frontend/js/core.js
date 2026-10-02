@@ -252,9 +252,9 @@ App.api = (function () {
 App.fmt = (function () {
     function dinero(valor) {
         const numero = Number(valor);
-        if (!Number.isFinite(numero)) return "$0.00";
+        if (!Number.isFinite(numero)) return "C$0.00";
         return (
-            "$" +
+            "C$" +
             numero.toLocaleString("en-US", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
@@ -686,7 +686,7 @@ App.factura = (function () {
                 <td>Sin detalle de productos</td>
                 <td class="num">—</td>
                 <td class="num">—</td>
-                <td class="num">${App.fmt.dinero(venta.total)}</td>
+                <td class="num">C${App.fmt.dinero(venta.total)}</td>
             </tr>`;
     }
 
@@ -887,7 +887,7 @@ App.factura = (function () {
         </div>
         <div class="doc">
             <div class="tipo">Factura</div>
-            <div class="folio">#${App.fmt.entero(id)}</div>
+            <div class="folio">#C${App.fmt.entero(id)}</div>
         </div>
     </header>
 
