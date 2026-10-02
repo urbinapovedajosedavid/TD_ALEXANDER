@@ -431,25 +431,19 @@ def actualizar_producto(id_producto):
 @app.delete("/api/productos/<int:id_producto>")
 @requiere_auth
 def eliminar_producto(id_producto):
+    """Borra el producto del inventario.
+
+    Si ya se vendió, sus filas en detalle_ventas quedan con producto_id en
+    NULL (ON DELETE SET NULL) pero conservan el nombre y el precio que se
+    cobraron: la factura de aquella venta sigue diciendo exactamente lo que
+    dijo. Borrar el producto no toca el historial.
+    """
     with db.conectar_db() as conn:
         existe = conn.execute(
             "SELECT 1 FROM productos WHERE id = ?", (id_producto,)
         ).fetchone()
         if not existe:
             return error("Producto no encontrado.", 404)
-
-        # detalle_ventas.producto_id no tiene ON DELETE: un producto que ya
-        # aparece en una venta no se puede borrar sin romper el historial.
-        # Se informa con claridad en vez de dejar que reviente el FK.
-        if conn.execute(
-            "SELECT 1 FROM detalle_ventas WHERE producto_id = ? LIMIT 1",
-            (id_producto,),
-        ).fetchone():
-            return error(
-                "Este producto ya tiene ventas registradas y no se puede "
-                "eliminar. Puedes dejar su stock en 0.",
-                409,
-            )
 
         conn.execute("DELETE FROM productos WHERE id = ?", (id_producto,))
 
@@ -535,9 +529,16 @@ def registrar_venta():
 
         for linea in detalle:
             conn.execute(
-                "INSERT INTO detalle_ventas (venta_id, producto_id, cantidad, precio_unitario) "
-                "VALUES (?, ?, ?, ?)",
-                (venta_id, linea["id"], linea["cantidad"], linea["precio_unitario"]),
+                "INSERT INTO detalle_ventas "
+                "(venta_id, producto_id, nombre_producto, cantidad, precio_unitario) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (
+                    venta_id,
+                    linea["id"],
+                    linea["nombre"],
+                    linea["cantidad"],
+                    linea["precio_unitario"],
+                ),
             )
             conn.execute(
                 "UPDATE productos SET stock = stock - ? WHERE id = ?",
@@ -576,17 +577,20 @@ def obtener_venta(venta_id):
         if venta is None:
             return error("La venta no existe.", 404)
 
+        # El nombre sale de la copia que quedó en la línea de venta, no de
+        # productos: un producto borrado del inventario tiene producto_id en
+        # NULL y su JOIN se perdería. Así la factura vieja sobrevive al
+        # borrado del producto.
         filas = conn.execute(
-            "SELECT d.producto_id, d.cantidad, d.precio_unitario, p.nombre "
-            "FROM detalle_ventas d JOIN productos p ON p.id = d.producto_id "
-            "WHERE d.venta_id = ? ORDER BY d.id",
+            "SELECT producto_id, cantidad, precio_unitario, nombre_producto "
+            "FROM detalle_ventas WHERE venta_id = ? ORDER BY id",
             (venta_id,),
         ).fetchall()
 
     detalle = [
         {
             "id": f["producto_id"],
-            "nombre": f["nombre"],
+            "nombre": f["nombre_producto"],
             "cantidad": f["cantidad"],
             "precio_unitario": f["precio_unitario"],
             "subtotal": dinero(Decimal(str(f["precio_unitario"])) * f["cantidad"]),

@@ -56,13 +56,23 @@ CREATE TABLE IF NOT EXISTS ventas (
 );
 
 -- 6. Detalle de venta (relación N:M entre ventas y productos)
+--
+-- producto_id queda como referencia floja (ON DELETE SET NULL) a propósito:
+-- un producto que ya se vendió se puede eliminar del inventario y la venta
+-- antigua tiene que seguir mostrando lo que se cobró, no una línea vacía.
+--
+-- Por eso el nombre va copiado aquí. El precio_unitario ya era una foto del
+-- momento de la venta, y el nombre va por el mismo camino: si el producto
+-- se renombra o se borra, la factura vieja no cambia. Es la misma razón por
+-- la que ventas.cliente_id usa SET NULL.
 CREATE TABLE IF NOT EXISTS detalle_ventas (
-    id             INTEGER PRIMARY KEY AUTOINCREMENT,
-    venta_id       INTEGER NOT NULL REFERENCES ventas (id) ON DELETE CASCADE,
-    producto_id    INTEGER NOT NULL REFERENCES productos (id),
-    cantidad       INTEGER NOT NULL CHECK (cantidad > 0),
-    precio_unitario REAL NOT NULL CHECK (precio_unitario >= 0),
-    subtotal       REAL GENERATED ALWAYS AS (cantidad * precio_unitario) STORED
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    venta_id         INTEGER NOT NULL REFERENCES ventas (id) ON DELETE CASCADE,
+    producto_id      INTEGER REFERENCES productos (id) ON DELETE SET NULL,
+    nombre_producto  TEXT NOT NULL DEFAULT '',
+    cantidad         INTEGER NOT NULL CHECK (cantidad > 0),
+    precio_unitario  REAL NOT NULL CHECK (precio_unitario >= 0),
+    subtotal         REAL GENERATED ALWAYS AS (cantidad * precio_unitario) STORED
 );
 
 -- 7. Proveedores

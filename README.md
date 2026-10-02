@@ -94,8 +94,8 @@ Backend/
 database/
   esquema.sql      Única fuente del esquema (DDL)
 tests/
-  test_api.py      142 comprobaciones contra la API real
-  test_demo.js     71 comprobaciones contra la demo aislada
+  test_api.py      160 comprobaciones contra la API real
+  test_demo.js     77 comprobaciones contra la demo aislada
   test_modo_demo.js 30 comprobaciones del arranque sin servidor
   test_factura.js  52 comprobaciones de la factura imprimible
 test_registro.js  28 comprobaciones del alta de cuentas sin servidor
@@ -175,13 +175,14 @@ node tests\auditar_css.js     # clases que faltan y CSS que sobra
 
 `test_api.py` arranca desde una base limpia y comprueba el esquema, que los
 22 endpoints responden 401 sin token, los permisos por rol, el ciclo de vida
-del token, el cambio y borrado de contraseña, los 409 por duplicados o por
-historial, la compra, los reportes y los respaldos. **142 comprobaciones.**
+del token, el cambio y borrado de contraseña, los 409 por duplicados, la
+compra, los reportes, los respaldos y la migración de una base vieja.
+**160 comprobaciones.**
 
 Los otros cuatro corren el JavaScript en un entorno simulado, sin navegador y
 sin servidor. `test_demo.js` y `test_modo_demo.js` cubren el arranque en modo
 demostración y, sobre todo, que **un 401 o un 403 del servidor real nunca se
-conviertan en una sesión de demostración**. **71 + 30 comprobaciones.**
+conviertan en una sesión de demostración**. **77 + 30 comprobaciones.**
 `test_factura.js` revisa la factura como documento: que tenga tabla de
 verdad, que los números cuadren y que escape los nombres de producto.
 **52 comprobaciones.** `test_registro.js` recorre el alta completa: crear una
@@ -222,10 +223,14 @@ mucho a uno bien escrito, y a simple vista el código parece correcto.
   SQLite con el esquema del sistema y al menos un administrador. Si algo
   falla, se conserva la base anterior. Al restaurar se invalidan todas las
   sesiones, así que hay que volver a entrar.
-- Un producto que ya aparece en alguna venta no se puede eliminar
-  (la API responde 409). Deja su stock en 0 en su lugar.
-- Por la misma razón, una cuenta con ventas registradas no se puede
-  eliminar, y el sistema no permite quedarse sin ningún administrador.
+- Un producto se elimina aunque ya se haya vendido. La línea de venta guarda
+  una copia del nombre y del precio del momento, y `producto_id` queda en
+  `NULL` (`ON DELETE SET NULL`), así que borrar el producto del inventario no
+  toca las facturas antiguas: siguen diciendo lo que se cobró. Es la misma
+  razón por la que `ventas.cliente_id` usa `SET NULL`.
+- Una cuenta con ventas registradas sí que no se puede eliminar, y el sistema
+  no permite quedarse sin ningún administrador. Ahí el borrado rompería datos
+  que no están duplicados en ningún sitio más.
 - El IVA es 15 % y se calcula con `ROUND_HALF_UP` para no descuadrar
   centavos.
 - Las fechas se guardan siempre en hora local escritas por el servidor.

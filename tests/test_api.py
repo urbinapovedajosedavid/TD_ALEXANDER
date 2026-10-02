@@ -451,10 +451,44 @@ check("eliminar proveedor", r.status_code == 200, r.get_json())
 r = cliente.delete("/api/proveedores/%d" % id_prov, headers=A)
 check("eliminar proveedor 2 veces -> 404", r.status_code == 404)
 
+# Un producto que ya se vendió se borra igual. Lo que no puede pasar es que
+# la factura de aquella venta se quede sin nombre o cambie de importe: por eso
+# se compara contra la factura que se guardó antes de borrar (variable
+# `factura`), línea por línea.
 r = cliente.delete("/api/productos/%d" % id_p2, headers=A)
-check("eliminar producto vendido -> 409", r.status_code == 409, r.get_json())
-check("producto vendido sigue existindo",
-      any(p["id"] == id_p2 for p in cliente.get("/api/productos", headers=A).get_json()))
+check("eliminar producto vendido -> 200", r.status_code == 200, r.get_json())
+check("el producto vendido ya no esta en el inventario",
+      not any(p["id"] == id_p2 for p in cliente.get("/api/productos", headers=A).get_json()))
+
+with db.conectar_db() as conn:
+    huerfano = conn.execute(
+        "SELECT COUNT(*) FROM detalle_ventas WHERE producto_id IS NULL"
+    ).fetchone()[0]
+check("sus lineas de venta quedan con producto_id NULL, no se borran",
+      huerfano >= 1, huerfano)
+
+r = cliente.get("/api/ventas/%d" % venta["venta_id"], headers=A)
+check("la factura sigue disponible tras borrar el producto",
+      r.status_code == 200, r.get_json())
+factura_vieja = r.get_json()
+check("sus totales no cambian al borrar el producto",
+      (factura_vieja["subtotal"], factura_vieja["impuesto"], factura_vieja["total"])
+      == (factura["subtotal"], factura["impuesto"], factura["total"]),
+      (factura, factura_vieja))
+def sin_ids(items):
+    """Las lineas sin su id de producto, para comparar dos facturas."""
+    return [{k: v for k, v in i.items() if k != "id"} for i in items]
+
+
+check("el nombre, el precio y el importe de cada linea no cambian",
+      sin_ids(factura_vieja["items"]) == sin_ids(factura["items"]),
+      (factura["items"], factura_vieja["items"]))
+check("la factura sigue poniendo el nombre, no un id",
+      all(i["nombre"] for i in factura_vieja["items"]), factura_vieja["items"])
+check("solo se pierde el id del producto borrado",
+      [i["id"] for i in factura["items"]] != [i["id"] for i in factura_vieja["items"]]
+      and factura_vieja["items"][1]["id"] is None,
+      (factura["items"], factura_vieja["items"]))
 
 r = cliente.post("/api/productos", headers=A, json={
     "nombre": "Basurero", "codigo": "BAS-1", "precio": 8.0, "stock": 3})
@@ -561,6 +595,120 @@ r = cliente.delete("/api/auth/cuenta", headers=A)
 check("ultimo admin no puede borrarse -> 409", r.status_code == 409, r.get_json())
 check("el motivo es ser el unico admin",
       "administrador" in (r.get_json() or {}).get("mensaje", "").lower(), r.get_json())
+
+# ---------------------------------------------------------------- migración
+# Una base creada antes del borrado en cascada tiene detalle_ventas con
+# producto_id NOT NULL y sin nombre copiado. Si la migración fallara, el
+# servidor seguiría arrancando pero no se podría borrar un producto vendido.
+print("\n== migración de una base vieja ==")
+
+# Se parte del esquema REAL y solo se reemplaza detalle_ventas por su versión
+# vieja. Si el esquema viejo se escribiera a mano, faltaría cualquier columna
+# que otro CREATE INDEX use (ventas.fecha, por ejemplo) y la migración
+# fallaría por un motivo que no es el que se quiere probar.
+DETALLE_VIEJO = """CREATE TABLE IF NOT EXISTS detalle_ventas (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    venta_id       INTEGER NOT NULL REFERENCES ventas (id) ON DELETE CASCADE,
+    producto_id    INTEGER NOT NULL REFERENCES productos (id),
+    cantidad       INTEGER NOT NULL CHECK (cantidad > 0),
+    precio_unitario REAL NOT NULL CHECK (precio_unitario >= 0),
+    subtotal       REAL GENERATED ALWAYS AS (cantidad * precio_unitario) STORED
+);"""
+
+ruta_vieja = RAIZ / "database" / "_base_vieja_prueba.db"
+ruta_vieja.unlink(missing_ok=True)
+ruta_real = db.RUTA_DB
+
+try:
+    import re
+    import sqlite3
+
+    esquema_actual = db.RUTA_ESQUEMA.read_text(encoding="utf-8")
+    esquema_viejo, veces = re.subn(
+        r"CREATE TABLE IF NOT EXISTS detalle_ventas \(.*?\n\);",
+        DETALLE_VIEJO,
+        esquema_actual,
+        flags=re.S,
+    )
+    check("se pudo armar el esquema viejo", veces == 1, veces)
+
+    v = sqlite3.connect(ruta_vieja)
+    v.executescript(esquema_viejo)
+    # Sin un usuario la venta no se puede guardar: ventas.usuario_id es FK.
+    v.execute(
+        "INSERT INTO usuarios (nombre, usuario, password_hash, rol) "
+        "VALUES ('Administrador', 'admin', 'x', 'ADMIN')"
+    )
+    v.execute("INSERT INTO productos (nombre, precio, stock) VALUES ('Licuadora', 75.0, 2)")
+    v.execute(
+        "INSERT INTO ventas (cliente_id, usuario_id, fecha, total, metodo_pago) "
+        "VALUES (NULL, 1, '2026-01-01 10:00:00', 75.0, 'efectivo')"
+    )
+    v.execute(
+        "INSERT INTO detalle_ventas (venta_id, producto_id, cantidad, precio_unitario) "
+        "VALUES (1, 1, 1, 75.0)"
+    )
+    v.commit()
+    v.close()
+
+    db.RUTA_DB = ruta_vieja
+    db.inicializar_db()
+
+    v = sqlite3.connect(ruta_vieja)
+    v.row_factory = sqlite3.Row
+    # Igual que conectar_db() en la app: sin esto SQLite no aplica el
+    # ON DELETE SET NULL y el borrado no tocaría las líneas de venta.
+    v.execute("PRAGMA foreign_keys = ON")
+    try:
+        columnas = {f[1] for f in v.execute("PRAGMA table_info(detalle_ventas)")}
+        check("la migración agrega la columna del nombre",
+              "nombre_producto" in columnas, columnas)
+
+        fk = [dict(f) for f in v.execute("PRAGMA foreign_key_list(detalle_ventas)")]
+        de_producto = next((f for f in fk if f["table"] == "productos"), None)
+        check("la fk de productos pasa a SET NULL",
+              de_producto is not None and de_producto["on_delete"] == "SET NULL",
+              de_producto)
+        check("producto_id ya puede ser NULL",
+              not any(f["notnull"] for f in v.execute("PRAGMA table_info(detalle_ventas)")
+                      if f[1] == "producto_id"))
+
+        linea = dict(v.execute("SELECT * FROM detalle_ventas WHERE id=1").fetchone())
+        check("la venta anterior no se pierde", linea["cantidad"] == 1, linea)
+        check("la venta anterior conserva el precio",
+              linea["precio_unitario"] == 75.0, linea)
+        check("la venta anterior se rellena con el nombre del producto",
+              linea["nombre_producto"] == "Licuadora", linea)
+        check("el subtotal sigue siendo una columna calculada",
+              linea["subtotal"] == 75.0, linea)
+
+        v.execute("DELETE FROM productos WHERE id = 1")
+        v.commit()
+        tras = dict(v.execute("SELECT * FROM detalle_ventas WHERE id=1").fetchone())
+        check("con la base migrada ya se puede borrar un producto vendido",
+              tras["producto_id"] is None, tras)
+        check("y la linea conserva el nombre",
+              tras["nombre_producto"] == "Licuadora", tras)
+        check("y el importe sigue intacto", tras["subtotal"] == 75.0, tras)
+    finally:
+        v.close()
+
+    # La migración es idempotente: correrla dos veces no debe romper nada.
+    db.inicializar_db()
+    v = sqlite3.connect(ruta_vieja)
+    v.execute("PRAGMA foreign_keys = ON")
+    try:
+        check("correrla dos veces no rompe nada",
+              v.execute("SELECT COUNT(*) FROM detalle_ventas").fetchone()[0] == 1)
+    finally:
+        v.close()
+
+except Exception as e:  # noqa: BLE001
+    check("la migración de una base vieja no revienta", False, repr(e))
+
+finally:
+    db.RUTA_DB = ruta_real
+    ruta_vieja.unlink(missing_ok=True)
 
 print("\n" + "=" * 46)
 if fallos:

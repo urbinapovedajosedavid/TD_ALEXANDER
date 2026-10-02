@@ -455,9 +455,10 @@ App.demo = (function () {
         if (ruta.startsWith("/productos/") && metodo === "DELETE") {
             const existe = d.productos.some((x) => x.id === idProducto);
             if (!existe) return Promise.reject(new Error("Producto no encontrado."));
-            if (d.ventas.some((v) => v.items.some((i) => i.id === idProducto))) {
-                return Promise.reject(new Error("Este producto ya tiene ventas registradas y no se puede eliminar. Puedes dejar su stock en 0."));
-            }
+
+            // No se mira si tiene ventas. Cada línea de venta guarda una copia
+            // del nombre y del precio del momento, así que la factura vieja
+            // sigue mostrando lo que se cobró aunque el producto ya no exista.
             d.productos = d.productos.filter((x) => x.id !== idProducto);
             escribir(d);
             return Promise.resolve({ exito: true, mensaje: "Producto eliminado correctamente." });
@@ -476,10 +477,20 @@ App.demo = (function () {
 
             const items = v.items.map((i) => {
                 const p = d.productos.find((x) => x.id === i.id);
-                const nombre = p ? p.nombre : "Producto " + i.id;
+
+                // El nombre va copiado en la linea de venta, igual que en el
+                // servidor: si el producto se borra o se le cambia el nombre,
+                // la factura vieja tiene que seguir diciendo lo que se cobró.
+                // Solo se busca el producto cuando la linea no trae nombre,
+                // que pasa con ventas guardadas antes de que existiera la copia.
+                const nombre = i.nombre !== undefined
+                    ? i.nombre
+                    : (p ? p.nombre : "Producto " + i.id);
+
                 const precio = i.precio_unitario !== undefined
                     ? i.precio_unitario
                     : (p ? p.precio : 0);
+
                 return {
                     id: i.id,
                     nombre: nombre,
