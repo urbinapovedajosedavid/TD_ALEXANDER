@@ -2,55 +2,55 @@
 <html lang="es">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gestión Alexander - Acceso y Registro</title>
-    <link rel="stylesheet" href="login.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión Alexander - Acceso</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/login.css">
 </head>
 
 <body>
+
     <main class="login-contenedor">
         <section class="login-panel">
+
             <div class="login-brand">
-                <div class="logo-login">
-                    <img src="https://i.postimg.cc/XqZdZjvF/logo-TD.jpg" alt="Gestión Alexander" />
+                <div class="logo-circulo">
+                    <img src="https://i.postimg.cc/XqZdZjvF/logo-TD.jpg" alt="Gestión Alexander">
                 </div>
                 <div>
                     <h1>GestiónApp</h1>
-                    <p>Inicia sesión o crea una nueva cuenta</p>
+                    <p>Tienda Alexander</p>
                 </div>
             </div>
 
             <div class="login-card">
                 <h2>Acceder al sistema</h2>
 
-                <form id="formLogin" class="login-form">
+                <form id="formLogin" class="formulario">
                     <label for="usuarioLogin">Usuario</label>
-                    <input id="usuarioLogin" type="text" placeholder="admin" required />
+                    <input id="usuarioLogin" name="usuarioLogin" type="text"
+                        placeholder="admin" autocomplete="username" required>
 
                     <label for="claveLogin">Contraseña</label>
-                    <input id="claveLogin" type="password" placeholder="Pass" required />
+                    <input id="claveLogin" name="claveLogin" type="password"
+                        placeholder="Contraseña" autocomplete="current-password" required>
 
-                    <button type="submit" class="btn btn-principal" >Iniciar sesión</button>
-                    
+                    <button type="submit" class="btn-pill btn-pill-oscuro">Iniciar sesión</button>
 
-                    <button type="button" id="btnIrRegistro" class="btn btn-crear-cuenta">Crear cuenta</button>
+<button type="button" id="btnIrRegistro" class="btn-pill btn-pill-menta">
+                          Crear cuenta
+                      </button>
 
-
-                    <p id="mensajeLogin" class="mensaje"></p>
-                    <section id="tabInicio" class="tab-pane">
-                    <div class="tarjeta-inventario">
+                    <p id="mensajeLogin" class="mensaje" aria-live="polite"></p>
                 </form>
             </div>
 
-
-            </div>
         </section>
     </main>
-
-<!-- Deben coincidir exactamente con los nombres reales de tus archivos JS -->
-<script src="../Backend/validacionesUsuario.js"></script>
-<script src="../Backend/login.js"></script>
+    <script src="js/core.js"></script>
+    <script src="js/demo.js"></script>
+    <script src="js/pages/login.js"></script>
 </body>
 
 </html>
