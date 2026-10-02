@@ -8,7 +8,7 @@ set /p mensaje="Escribe el mensaje para el commit (o presiona Enter para usar un
 if "%mensaje%"=="" set mensaje="Actualizacion automatica del proyecto"
 
 git commit -m "%mensaje%"
-git push -u origin main
+git push -u origin develop
 
 echo ========================================
 echo   ¡Proceso completado con exito!
