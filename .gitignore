@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Base de datos: se regenera sola al arrancar Backend/server.py
+# a partir de database/esquema.sql
+*.db
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

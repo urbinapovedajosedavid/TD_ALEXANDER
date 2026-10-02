@@ -1,0 +1,776 @@
+/* ==========================================
+   Tienda Alexander - Estilos base
+   ==========================================
+   Reúne lo que estaba repartido y en conflicto entre style.css,
+   almacen.css, reportes.css, ventas.css y proveedores.css:
+
+   - .btn-pill / -menta / -oscuro estaban definidos 4 veces con tres
+     colores distintos para el mismo botón.
+   - .inventory-table estaba duplicada palabra por palabra en
+     reportes.css y proveedores.css.
+   - .tabla-panel aparecía en 3 archivos, .search-bar-pill en 3 y
+     .estado-vacio en 3.
+   - inicio.css redefinía .dashboard-layout, .sidebar y .pagina-admin.
+
+   Ahora cada componente tiene una sola definición. Las variables de
+   :root son la fuente de los colores; ninguna hoja las vuelve a
+   declarar.
+   ========================================== */
+
+:root {
+    --verde-menta: #5ee7b7;
+    --verde-menta-oscuro: #2bbd8c;
+    --azul-marino: #102a43;
+    --azul-marino-suave: #274060;
+    --blanco: #ffffff;
+    --fondo: #f4fbf8;
+    --fondo-panel: #f8fdfb;
+    --texto: #16324f;
+    --texto-suave: #67809a;
+    --borde: #dcefeb;
+    --error: #d9485f;
+    --exito: #2b8a3e;
+    
+    --sombra: 0 14px 32px rgba(16, 42, 67, 0.08);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--texto);
+    background: linear-gradient(135deg, #f7fffc 0%, var(--fondo) 100%);
+    min-height: 100vh;
+}
+
+/* ==========================================
+   LAYOUT Y SIDEBAR
+   ========================================== */
+
+.dashboard-layout {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    background-color: #a4a0a0e8;
+}
+
+.sidebar {
+    width: 300px;
+    min-width: 300px;
+    flex-shrink: 0;
+    background-color: var(--azul-marino);
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 36px;
+}
+
+.sidebar-brand h2 {
+    font-size: 20px;
+    color: #dff7f0;
+}
+
+.sidebar-brand p {
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 13px;
+}
+
+.logo-circulo {
+    width: 78px;
+    height: 78px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid rgba(94, 231, 183, 0.24);
+    background: linear-gradient(135deg, var(--verde-menta), var(--verde-menta-oscuro));
+    display: grid;
+    place-items: center;
+}
+
+.logo-circulo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.nav-item {
+    border: none;
+    background: rgba(255, 255, 255, 0.126);
+    color: #ffffff;
+    text-align: left;
+    padding: 14px 18px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.395);
+}
+
+.nav-item-activa {
+    background: var(--verde-menta);
+    color: var(--azul-marino);
+}
+
+.sidebar-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 13px;
+    margin-top: auto;
+    width: 100%;
+}
+
+.nav-item-secundario {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    width: 100%;
+}
+
+.pagina-admin {
+    flex: 1;
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 8px 0;
+    overflow-y: auto;
+    background: #a4a0a0e8;
+    border-radius: 28px;
+    box-shadow: 0 18px 40px rgba(16, 42, 67, 0.12);
+}
+
+.tab-content {
+    padding: 0 8px 24px;
+}
+
+/* ==========================================
+   CABECERA
+   ========================================== */
+
+.barra-superior {
+    background: var(--blanco);
+    border: 1px solid var(--borde);
+    border-radius: 20px;
+    padding: 18px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(16, 42, 67, 0.06);
+    margin-bottom: 24px;
+}
+
+.marca {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.marca h2 {
+    font-size: 20px;
+    color: var(--azul-marino);
+}
+
+.marca p {
+    font-size: 13px;
+    color: var(--texto-suave);
+}
+
+.acciones-superior {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.etiqueta-perfil {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #e8f7f1;
+    color: var(--azul-marino);
+    padding: 10px 16px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.ajustes-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.menu-ajustes {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    background: #ffffff;
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(16, 42, 67, 0.18);
+    display: flex;
+    flex-direction: column;
+    min-width: 180px;
+    z-index: 100;
+    padding: 6px;
+    overflow: hidden;
+}
+
+.menu-ajustes.oculto {
+    display: none;
+}
+
+.menu-ajuste-item {
+    background: transparent;
+    border: none;
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    color: var(--texto);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.menu-ajuste-item:hover {
+    background: #e8f7f1;
+    color: var(--azul-marino);
+}
+
+/* ==========================================
+   TARJETAS Y TÍTULOS
+   ========================================== */
+
+.tarjeta {
+    background: var(--blanco);
+    border: 1px solid var(--borde);
+    border-radius: 24px;
+    padding: 28px;
+    box-shadow: var(--sombra);
+}
+
+.tarjeta h1 {
+    margin: 0 0 20px;
+    font-size: 26px;
+    color: var(--azul-marino);
+    font-weight: 700;
+}
+
+.tarjeta h3 {
+    font-size: 1.1rem;
+    color: var(--azul-marino);
+    margin-bottom: 12px;
+}
+
+/* ==========================================
+   INDICADORES (KPI) — usados por inicio y reportes
+   ========================================== */
+
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 18px;
+    margin-bottom: 28px;
+}
+
+.kpi-card {
+    background: var(--fondo-panel);
+    border: 1px solid var(--borde);
+    border-radius: 16px;
+    padding: 18px 20px;
+}
+
+.kpi-card h3 {
+    font-size: 0.85rem;
+    color: var(--texto-suave);
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.kpi-valor {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--azul-marino);
+    margin: 0;
+}
+
+/* ==========================================
+   BUSCADOR
+   ========================================== */
+
+.search-bar-pill {
+    position: relative;
+    margin-bottom: 24px;
+}
+
+.search-bar-pill input {
+    width: 100%;
+    padding: 14px 20px 14px 46px;
+    border-radius: 999px;
+    border: 1px solid var(--borde);
+    background-color: #fbfffe;
+    font-size: 15px;
+    color: var(--texto);
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.search-bar-pill input:focus {
+    outline: 2px solid rgba(94, 231, 183, 0.25);
+    border-color: var(--verde-menta);
+}
+
+.icono-buscar {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    opacity: 0.6;
+}
+
+/* ==========================================
+   TABLAS
+   ========================================== */
+
+.tabla-panel {
+    background: var(--blanco);
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.tabla-panel-scroll {
+    max-height: 380px;
+    overflow-y: auto;
+}
+
+.tabla {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 14px;
+}
+
+.tabla th {
+    background-color: #eaf6f0;
+    color: var(--azul-marino);
+    padding: 14px 16px;
+    font-weight: 700;
+    border-bottom: 2px solid var(--borde);
+    white-space: nowrap;
+}
+
+.tabla td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--borde);
+    color: var(--texto);
+}
+
+.tabla tbody tr:hover {
+    background-color: var(--fondo-panel);
+}
+
+.acciones-tabla {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.sub-categoria {
+    color: var(--texto-suave);
+    font-weight: 600;
+}
+
+/* ==========================================
+   ESTADOS Y BADGES
+   ========================================== */
+
+.estado-vacio {
+    padding: 24px;
+    text-align: center;
+    color: var(--texto-suave);
+    font-style: italic;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.badge.disponible {
+    color: var(--exito);
+    background: #e8f7ec;
+}
+
+.badge.agotado {
+    color: var(--error);
+    background: #fde8ec;
+}
+
+/* ==========================================
+   BOTONES
+   ========================================== */
+
+.boton {
+    border: none;
+    padding: 12px 16px;
+    border-radius: 999px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.boton:hover {
+    transform: translateY(-1px);
+}
+
+.boton-secundario {
+    background: #ebfbf5;
+    color: var(--azul-marino);
+}
+
+.boton-secundario:hover {
+    background: #d6f4e4;
+}
+
+/* Serie de botones tipo píldora. Antes existía con tres colores
+   distintos en cuatro archivos; aquí hay una sola definición. */
+.btn-pill {
+    border: none;
+    padding: 12px 20px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.btn-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(16, 42, 67, 0.1);
+}
+
+.btn-pill-menta {
+    background: var(--verde-menta);
+    color: var(--azul-marino);
+}
+
+.btn-pill-menta:hover {
+    background: var(--verde-menta-oscuro);
+    color: var(--blanco);
+}
+
+.btn-pill-oscuro {
+    background: var(--azul-marino);
+    color: var(--blanco);
+}
+
+.btn-pill-oscuro:hover {
+    background: var(--azul-marino-suave);
+}
+
+/* Para lo que destruye datos: restaurar un respaldo, borrar la cuenta. */
+.btn-pill-peligro {
+    background: var(--error);
+    color: var(--blanco);
+}
+
+.btn-pill-peligro:hover {
+    background: #b9344a;
+    box-shadow: 0 6px 16px rgba(217, 72, 95, 0.25);
+}
+
+.btn-bloque {
+    width: 100%;
+    text-align: center;
+}
+
+.acciones-inventario-pills {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+}
+
+.btn-accion {
+    padding: 6px 12px;
+    min-width: 64px;
+    border-radius: 8px;
+    border: 1px solid var(--borde);
+    background: #ebfbf5;
+    color: var(--azul-marino);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.btn-accion:hover {
+    background: var(--verde-menta);
+    transform: translateY(-1px);
+}
+
+.btn-accion.eliminar {
+    background: #fde8ec;
+    color: var(--error);
+    border-color: #f7d2d8;
+}
+
+.btn-accion.eliminar:hover {
+    background: var(--error);
+    color: var(--blanco);
+}
+
+.btn-accion:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-cantidad {
+    border: 1px solid var(--borde);
+    background: #ebfbf5;
+    color: var(--azul-marino);
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-cantidad:hover {
+    background: var(--verde-menta);
+}
+
+.celda-cantidad {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ==========================================
+   FORMULARIOS
+   ========================================== */
+
+.formulario {
+    display: grid;
+    gap: 10px;
+}
+
+.formulario label {
+    font-weight: 600;
+    color: var(--azul-marino);
+    font-size: 0.85rem;
+}
+
+.formulario input,
+.formulario select {
+    padding: 12px 14px;
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    font-size: 15px;
+    background: #fbfffe;
+    color: var(--texto);
+    outline: none;
+    width: 100%;
+}
+
+.formulario input:focus,
+.formulario select:focus {
+    outline: 2px solid rgba(94, 231, 183, 0.25);
+    border-color: var(--verde-menta);
+}
+
+.form-producto {
+    display: grid;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--texto);
+}
+
+/* ==========================================
+   MODALES
+   ========================================== */
+
+.modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8, 12, 20, 0.45);
+    z-index: 1200;
+    padding: 20px;
+}
+
+.modal-oculto {
+    display: none;
+}
+
+.modal-activo {
+    display: flex;
+}
+
+.modal-contenido {
+    background: var(--blanco);
+    border-radius: 12px;
+    padding: 18px 20px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 18px 48px rgba(16, 42, 67, 0.12);
+}
+
+.modal-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.modal-cabecera h3 {
+    margin: 0;
+}
+
+.boton-cerrar {
+    float: right;
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--texto-suave);
+}
+
+.modal-acciones {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+/* ==========================================
+   MENSAJES Y AVISOS
+   ========================================== */
+
+.mensaje {
+    min-height: 20px;
+    margin: 0;
+    font-size: 14px;
+    color: var(--texto-suave);
+}
+
+.mensaje.error {
+    color: var(--error);
+}
+
+.mensaje.exito {
+    color: var(--exito);
+}
+
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translate(-50%, 20px);
+    background: var(--azul-marino);
+    color: var(--blanco);
+    padding: 14px 22px;
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(16, 42, 67, 0.28);
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 2000;
+    max-width: min(560px, 90vw);
+    text-align: center;
+}
+
+.toast-visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+
+@media (max-width: 960px) {
+    .dashboard-layout {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        min-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .acciones-inventario-pills {
+        flex-direction: column;
+    }
+
+    .btn-pill {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+@media (max-width: 640px) {
+    .barra-superior,
+    .acciones-superior {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .tabla-panel-scroll {
+        max-height: none;
+    }
+}
+
+@media print {
+    .sidebar,
+    .barra-superior,
+    .acciones-inventario-pills {
+        display: none;
+    }
+}
