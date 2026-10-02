@@ -194,13 +194,32 @@ async function pedir(ruta, method, body, cuerpo) {
     });
     check("metodo de pago invalido", !r.ok, r);
 
-    /* --- producto vendido no se borra --- */
+    /* --- un producto vendido sí se borra, y la factura sobrevive --- */
     r = await pedir("/productos/" + idNuevo, "DELETE");
-    check("producto vendido no se borra", !r.ok && /ventas registradas/.test(r.error), r);
+    check("producto vendido se borra", r.ok, r);
+
+    r = await pedir("/productos", "GET");
+    check("el producto ya no esta en el inventario",
+        r.ok && !r.datos.some((p) => p.id === idNuevo), r);
+
+    r = await pedir("/productos/" + idNuevo, "DELETE");
+    check("borrarlo otra vez -> no encontrado",
+        !r.ok && /no encontrado/.test(r.error), r);
+
+    r = await pedir("/ventas/" + idVenta, "GET");
+    check("la factura sigue disponible tras borrar el producto",
+        r.ok && r.datos.id === idVenta, r);
+    check("la factura conserva sus totales",
+        r.ok && r.datos.subtotal === 20 && r.datos.impuesto === 3 && r.datos.total === 23, r.datos);
+    check("la factura conserva el nombre del producto borrado",
+        r.ok && r.datos.items[0].nombre === "Nuevo XL", r.datos && r.datos.items[0]);
+    check("la factura conserva el precio que se cobro",
+        r.ok && r.datos.items[0].precio_unitario === 10, r.datos && r.datos.items[0]);
 
     /* --- inventario y reportes --- */
     r = await pedir("/inventario/resumen", "GET");
-    check("resumen de inventario", r.ok && r.datos.total_productos === 5, r.datos);
+    // Eran 5 productos y se borró el que se había vendido.
+    check("resumen de inventario", r.ok && r.datos.total_productos === 4, r.datos);
 
     r = await pedir("/reportes?periodo=hoy", "GET");
     check("reporte cuenta la venta",

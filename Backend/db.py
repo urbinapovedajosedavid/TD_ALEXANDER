@@ -147,10 +147,80 @@ def inicializar_db():
     try:
         conn.executescript(sql)
         conn.commit()
+        _migrar_detalle_ventas(conn)
+        conn.commit()
         _sembrar(conn)
         conn.commit()
     finally:
         conn.close()
+
+
+def _migrar_detalle_ventas(conn: sqlite3.Connection) -> None:
+    """Rehace detalle_ventas en las bases creadas antes del borrado en cascada.
+
+    CREATE TABLE IF NOT EXISTS no altera una tabla que ya existe, así que
+    una base vieja seguiría con producto_id NOT NULL y sin nombre copiado, y
+    el borrado de un producto ya vendido seguiría reventando el FK. SQLite no
+    puede cambiar una clave foránea con ALTER TABLE: hay que recrear la tabla
+    y copiar los datos.
+
+    Es idempotente: si la columna nueva ya está, no hace nada.
+    """
+    columnas = {f[1] for f in conn.execute("PRAGMA table_info(detalle_ventas)")}
+    if not columnas or "nombre_producto" in columnas:
+        return
+
+    # Con las claves foráneas activas no se puede rehacer una tabla que otras
+    # referencian, así que se apagan solo mientras dura el cambio.
+    conn.execute("PRAGMA foreign_keys = OFF")
+    try:
+        conn.executescript(
+            """
+            CREATE TABLE detalle_ventas_nueva (
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                venta_id         INTEGER NOT NULL REFERENCES ventas (id) ON DELETE CASCADE,
+                producto_id      INTEGER REFERENCES productos (id) ON DELETE SET NULL,
+                nombre_producto  TEXT NOT NULL DEFAULT '',
+                cantidad         INTEGER NOT NULL CHECK (cantidad > 0),
+                precio_unitario  REAL NOT NULL CHECK (precio_unitario >= 0),
+                subtotal         REAL GENERATED ALWAYS AS (cantidad * precio_unitario) STORED
+            );
+
+            INSERT INTO detalle_ventas_nueva
+                (id, venta_id, producto_id, nombre_producto, cantidad, precio_unitario)
+            SELECT d.id, d.venta_id, d.producto_id,
+                   COALESCE(p.nombre, 'Producto eliminado'),
+                   d.cantidad, d.precio_unitario
+            FROM detalle_ventas d
+            LEFT JOIN productos p ON p.id = d.producto_id;
+
+            DROP TABLE detalle_ventas;
+            ALTER TABLE detalle_ventas_nueva RENAME TO detalle_ventas;
+
+            CREATE INDEX IF NOT EXISTS idx_detalle_venta    ON detalle_ventas (venta_id);
+            CREATE INDEX IF NOT EXISTS idx_detalle_producto ON detalle_ventas (producto_id);
+            """
+        )
+        # El AUTOINCREMENT sigue con su secuencia propia: se le devuelve el
+        # valor más alto para que no reutilice ids de filas ya borradas.
+        # sqlite_sequence no tiene restricción UNIQUE sobre name, así que un
+        # INSERT ... ON CONFLICT(name) no vale: solo un UPDATE. Si la tabla
+        # nunca tuvo filas, no hay fila que actualizar y el contador arranca
+        # en 1, que es lo correcto.
+        conn.execute(
+            "UPDATE sqlite_sequence SET seq = "
+            "(SELECT COALESCE(MAX(id), 0) FROM detalle_ventas) "
+            "WHERE name = 'detalle_ventas'"
+        )
+
+        problemas = conn.execute("PRAGMA foreign_key_check").fetchall()
+        if problemas:
+            raise RuntimeError(
+                "La migración de detalle_ventas dejó referencias rotas: "
+                + "; ".join(str(p) for p in problemas)
+            )
+    finally:
+        conn.execute("PRAGMA foreign_keys = ON")
 
 
 def _sembrar(conn: sqlite3.Connection):
