@@ -21,7 +21,7 @@ set /p gname="Escribe tu nombre de usuario: "
 set /p rama="Escribe la rama a la que deseas subir (ej: main, develop): "
 git config --global user.email "%gemail%"
 git config --global user.name "%gname%"
-goto ejecutar
+goto pedir_commit
 
 :modo2
 echo.
@@ -31,6 +31,15 @@ set /p gname="Escribe tu nombre de usuario: "
 git config --global user.email "%gemail%"
 git config --global user.name "%gname%"
 set rama=develop
+goto pedir_commit
+
+:pedir_commit
+echo.
+echo ========================================
+echo   MENSAJE PARA EL COMMIT
+echo ========================================
+set /p mensaje="Escribe el mensaje del commit: "
+if "%mensaje%"=="" set mensaje=Actualizacion del sistema
 goto ejecutar
 
 :ejecutar
@@ -43,9 +52,6 @@ echo ========================================
 git checkout %rama% 2>nul || git checkout -b %rama%
 
 git add .
-set /p mensaje="Escribe el mensaje para el commit (o presiona Enter para usar uno por defecto): "
-if "%mensaje%"=="" set mensaje="Actualizacion automatica del proyecto"
-
 git commit -m "%mensaje%"
 git push -u origin %rama%
 
