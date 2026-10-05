@@ -1,10 +1,3 @@
-"""Acceso a datos de Tienda Alexander.
-
-Concentra todo lo que antes estaba duplicado en los dos servidores Flask:
-la conexión, la inicialización del esquema y el formato del hash de
-contraseña. El DDL vive únicamente en database/esquema.sql.
-"""
-
 import hashlib
 import hmac
 import os
@@ -14,8 +7,6 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
 
-# Rutas resueltas desde la raíz del proyecto, no desde el directorio actual,
-# para que el servidor funcione igual sin importar dónde se ejecute.
 RAIZ = Path(__file__).resolve().parent.parent
 RUTA_ESQUEMA = RAIZ / "database" / "esquema.sql"
 RUTA_DB = RAIZ / "database" / "tienda_alexander.db"

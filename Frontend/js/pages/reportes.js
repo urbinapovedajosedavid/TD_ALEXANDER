@@ -106,3 +106,4 @@ $("tablaVentasReporte").addEventListener("click", (evento) => {
         cargar("hoy");
     });
 })();
+

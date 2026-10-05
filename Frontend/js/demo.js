@@ -514,7 +514,7 @@ App.demo = (function () {
             });
         }
 
-        /* --- proveedores --- */
+        
         if (ruta === "/proveedores" && metodo === "GET") {
             return Promise.resolve(d.proveedores.slice().sort((a, b) => a.nombre.localeCompare(b.nombre)));
         }

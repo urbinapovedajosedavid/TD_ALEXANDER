@@ -17,6 +17,7 @@
         window.location.href = "inicio.html";
     }
 
+    
     document.addEventListener("DOMContentLoaded", () => {
         const form = $("formLogin");
 

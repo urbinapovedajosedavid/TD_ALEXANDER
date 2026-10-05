@@ -1,20 +1,3 @@
-/* Copia de seguridad.
- *
- * Antes esto era una simulación: pintaba respaldos inventados en
- * D:\Backups y anunciaba que el sistema se había restaurado sin tocar
- * nada. Ahora hace las dos cosas de verdad:
- *
- *   - Descargar copia: el servidor entrega el archivo .db (o, en modo
- *     demostración, se exporta el JSON que hay en el navegador).
- *   - Restaurar: se sube el archivo y el servidor reemplaza la base,
- *     previa validación. En la demo se importan los datos del JSON.
- *
- * No hay ninguna rama "si estoy en demo" en esta página: App.api ya baja a
- * la API simulada cuando el servidor no responde, y la ruta /respaldos/info
- * existe en las dos versiones. Lo que sí cambia es el archivo, un .db del
- * servidor contra el JSON del navegador, y eso lo decide la propia API.
- */
-
 (function () {
     if (!App.auth.exigir()) return;
     const $ = (id) => document.getElementById(id);

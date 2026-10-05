@@ -1,5 +1,3 @@
-/* Módulo de ventas: dos columnas con selector y carrito. */
-
 .layout-ventas {
     display: grid;
     grid-template-columns: 1fr 400px;

@@ -1,12 +1,3 @@
-/* Copia de seguridad.
- *
- * Antes esta página usaba Tailwind por CDN y Lucide, con un sistema de
- * diseño distinto al resto del sistema. Ahora usa los mismos componentes
- * y variables que base.css. Solo queda lo que la página usa de verdad:
- * la copia se descarga y se restaura, sin historial ni programación
- * automática, así que no hay tablas, barras de progreso ni pestañas.
- */
-
 .seccion {
     background: var(--blanco);
     border: 1px solid var(--borde);

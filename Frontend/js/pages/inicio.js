@@ -51,6 +51,7 @@
             }
         );
     }
+    
 
     document.addEventListener("DOMContentLoaded", async () => {
         if (!App.auth.exigir()) return;

@@ -1,15 +1,3 @@
-"""Tienda Alexander - Servidor Flask único.
-
-Sustituye a los dos servidores que competían por el puerto 5000:
-  - "sistema de guardado.py"  (categorías + CRUD de productos)
-  - "sistema de ventas.py"    (categorías + productos + registro de ventas)
-
-Las rutas y el mapeo de filas que estaban copiados en ambos archivos
-existen aquí una sola vez. El DDL viene de database/esquema.sql.
-
-Ejecutar:  python Backend/server.py
-"""
-
 import io
 import sqlite3
 from datetime import datetime, timedelta

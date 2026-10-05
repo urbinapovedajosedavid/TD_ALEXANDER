@@ -1,16 +1,4 @@
-/* Alta de usuarios.
- *
- * Esta pantalla se abre desde el login, donde no hay sesión, así que no
- * puede pasar por App.auth.exigir(): el endpoint /auth/registro es de uso
- * exclusivo del ADMIN y sin sesión no hay a quién preguntarle. Antes el
- * botón "Crear usuario" del login rebotaba al propio login y el alta era
- * un callejón sin salida.
- *
- * Por eso el alta usa App.cuentas, un almacén de cuentas del navegador que
- * no necesita servidor: la cuenta creada sirve para entrar enseguida, haya
- * servidor o no. Si quien llega es un administrador con sesión real de
- * servidor, además se da de alta allí para no romper el despliegue normal.
- */
+
 
 (function () {
     const $ = (id) => document.getElementById(id);

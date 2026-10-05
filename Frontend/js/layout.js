@@ -86,6 +86,7 @@ App.layout = (function () {
                 </div>
             </div>
 
+            
             <div class="acciones-superior">
                 <div class="ajustes-wrapper">
                     <button id="botonAjustes" class="boton boton-secundario"

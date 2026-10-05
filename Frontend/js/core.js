@@ -513,9 +513,7 @@ App.cuentas = (function () {
    ========================================== */
 
 App.ui = (function () {
-    /* ---------- Modales ----------
-     * Se maquetan con `modal-oculto` / `modal-activo` (ver base.css).
-     */
+    
     function abrir(idModal) {
         const modal = document.getElementById(idModal);
         if (!modal) return null;

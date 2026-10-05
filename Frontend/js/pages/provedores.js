@@ -109,6 +109,7 @@ $("inputBuscarProveedor").addEventListener("input", filtrar);
         $("btnCancelarProveedor").addEventListener("click", () => App.ui.cerrar("modalProveedor"));
 
         App.ui.cerrarAlTocarFondo("modalProveedor");
+        
 
         $("tablaProveedores").addEventListener("click", (evento) => {
             const boton = evento.target.closest("[data-eliminar]");

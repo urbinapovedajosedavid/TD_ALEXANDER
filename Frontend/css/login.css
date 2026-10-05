@@ -1,11 +1,3 @@
-/* Pantallas de acceso (login y alta de usuario).
- *
- * Antes repetía el bloque :root con otros colores y volvía a definir
- * .modal, .modal-oculto, .modal-activo, .modal-contenido, .modal-cabecera,
- * .boton-cerrar y .mensaje, que ya viven en base.css. Aquí se usan las
- * variables de base.css y no queda ningún selector en conflicto.
- */
-
 .login-contenedor {
     min-height: 100vh;
     display: grid;

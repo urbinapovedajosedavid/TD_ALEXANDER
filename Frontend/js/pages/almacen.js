@@ -1,10 +1,3 @@
-/* Módulo de inventario (almacen).
- *
- * Sustituye a dos implementaciones que coexistían: la de Backend/app.js
- * (localStorage) y la de Backend/almacen.js (fetch). Ahora hay una sola,
- * hablando con la API de Flask.
- */
-
 (function () {
     const STOCK_MAXIMO = 64;
 

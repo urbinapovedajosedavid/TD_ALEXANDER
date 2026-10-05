@@ -166,6 +166,7 @@ try {
         }
     }
 
+    
     function cancelarVenta() {
         if (carrito.length === 0) return;
         if (!App.ui.confirmar("¿Vaciar el carrito y cancelar la venta?")) return;
