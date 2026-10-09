@@ -22,7 +22,25 @@
 
                 <section class="tarjeta">
                     <h1 id="tituloVistaReporte">Reporte de Ventas del Día Actual</h1>
-                    
+
+                    <div class="filtro-fechas">
+                        <div class="filtro-fechas-campo">
+                            <label for="inputFechaInicio">Fecha de inicio</label>
+                            <input type="date" id="inputFechaInicio">
+                        </div>
+                        <div class="filtro-fechas-campo">
+                            <label for="inputFechaFin">Fecha de fin</label>
+                            <input type="date" id="inputFechaFin">
+                        </div>
+                        <div class="filtro-fechas-acciones">
+                            <button type="button" id="btnFiltrarFechas" class="btn-pill btn-pill-menta">
+                                Filtrar
+                            </button>
+                            <button type="button" id="btnLimpiarFiltro" class="btn-pill btn-pill-oscuro">
+                                Limpiar
+                            </button>
+                        </div>
+                    </div>
 
                     <div class="kpi-grid">
                         <article class="kpi-card">
@@ -36,6 +54,10 @@
                         <article class="kpi-card">
                             <h3>Productos Vendidos</h3>
                             <p class="kpi-valor" id="kpiProductosVendidosHoy">0</p>
+                        </article>
+                        <article class="kpi-card">
+                            <h3>Ticket Promedio</h3>
+                            <p class="kpi-valor" id="kpiTicketPromedio">$0.00</p>
                         </article>
                     </div>
 
@@ -51,7 +73,7 @@
                         </button>
                     </div>
 
-                    <div class="tabla-panel">
+                    <div class="tabla-panel tabla-scroll" id="contenedorTablaReporte">
                         <table class="tabla">
                             <thead>
                                 <tr>

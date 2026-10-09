@@ -11,6 +11,7 @@
 
     let productos = [];
     let carrito = [];
+    let totalActual = 0;
 
     async function cargarProductos() {
         try {
@@ -93,6 +94,48 @@
         renderCarrito();
     }
 
+    /* ---------- Pago en efectivo y vuelto ---------- */
+
+    function efectivoRecibido() {
+        const valor = Number($("inputEfectivoRecibido").value);
+        return Number.isFinite(valor) && valor > 0 ? valor : 0;
+    }
+
+    /* Recalcula el vuelto en vivo y colorea el panel según el monto. */
+    function actualizarVuelto() {
+        const recibido = efectivoRecibido();
+        const vuelto = Math.round((recibido - totalActual) * 100) / 100;
+        const panel = $("vueltoPanel");
+        const alerta = $("alertaPago");
+
+        $("vueltoValor").textContent = App.fmt.dinero(vuelto > 0 ? vuelto : 0);
+        panel.classList.remove("ok", "insuficiente");
+        alerta.classList.remove("visible");
+        alerta.textContent = "";
+
+        if (totalActual === 0 || recibido === 0) return;
+
+        if (recibido < totalActual) {
+            const faltante = Math.round((totalActual - recibido) * 100) / 100;
+            panel.classList.add("insuficiente");
+            alerta.textContent = `Faltan ${App.fmt.dinero(faltante)} para cubrir el total.`;
+            alerta.classList.add("visible");
+        } else {
+            panel.classList.add("ok");
+        }
+    }
+
+    /* El monto en efectivo solo aplica al método "efectivo". */
+    function actualizarPanelPago() {
+        const esEfectivo = $("selectMetodoPago").value === "efectivo";
+        $("panelPagoEfectivo").classList.toggle("oculto", !esEfectivo);
+    }
+
+    function limpiarPago() {
+        $("inputEfectivoRecibido").value = "";
+        actualizarVuelto();
+    }
+
     function renderCarrito() {
         App.ui.pintarTabla(
             "tablaCarritoVentas",
@@ -117,10 +160,61 @@
             0
         );
         const impuesto = Math.round(subtotal * IVA * 100) / 100;
+        totalActual = Math.round((subtotal + impuesto) * 100) / 100;
 
         $("subtotalVentaValor").textContent = App.fmt.dinero(subtotal);
         $("impuestoVentaValor").textContent = App.fmt.dinero(impuesto);
         $("totalVentaValor").textContent = App.fmt.dinero(subtotal + impuesto);
+
+        actualizarVuelto();
+    }
+
+    /* ---------- Confirmación "¿Estás seguro?" con Sí / No ----------
+     * Se construye en JavaScript y reutiliza los estilos de modal y
+     * botones píldora que ya están en base.css. Devuelve una promesa
+     * que resuelve true (Sí) o false (No / cerrar / clic fuera).
+     */
+    function pedirConfirmacion(mensaje) {
+        let modal = $("modalConfirmarVenta");
+
+        if (!modal) {
+            modal = document.createElement("div");
+            modal.id = "modalConfirmarVenta";
+            modal.className = "modal modal-oculto";
+            modal.setAttribute("role", "dialog");
+            modal.setAttribute("aria-modal", "true");
+            modal.innerHTML = `
+                <div class="modal-contenido">
+                    <div class="modal-cabecera">
+                        <h3>¿Estás seguro?</h3>
+                        <button type="button" class="boton-cerrar" data-no aria-label="Cerrar">&times;</button>
+                    </div>
+                    <p data-mensaje style="color: var(--texto-suave); font-size: 0.9rem; line-height: 1.5; margin-bottom: 4px;"></p>
+                    <div class="modal-acciones">
+                        <button type="button" class="btn-pill btn-pill-oscuro" data-no>No</button>
+                        <button type="button" class="btn-pill btn-pill-menta" data-si>Sí, cobrar</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+        }
+
+        modal.querySelector("[data-mensaje]").textContent = mensaje;
+
+        return new Promise((resolver) => {
+            const responder = (respuesta) => {
+                modal.removeEventListener("click", alTocar);
+                App.ui.cerrar("modalConfirmarVenta");
+                resolver(respuesta);
+            };
+
+            const alTocar = (evento) => {
+                if (evento.target.closest("[data-si]")) responder(true);
+                else if (evento.target.closest("[data-no]") || evento.target === modal) responder(false);
+            };
+
+            modal.addEventListener("click", alTocar);
+            App.ui.abrir("modalConfirmarVenta");
+        });
     }
 
     async function completarVenta() {
@@ -130,6 +224,18 @@
         }
 
         const usuario = App.auth.actual();
+
+        if ($("selectMetodoPago").value === "efectivo" && efectivoRecibido() < totalActual) {
+            App.ui.aviso("El efectivo recibido no alcanza para cubrir el total.");
+            $("inputEfectivoRecibido").focus();
+            return;
+        }
+
+        const confirmado = await pedirConfirmacion(
+            `Se registrará la venta por ${App.fmt.dinero(totalActual)} y se vaciará el carrito.`
+        );
+        if (!confirmado) return;
+
         const cuerpo = {
             usuario_id: usuario ? usuario.id : null,
             metodo_pago: $("selectMetodoPago").value,
@@ -158,6 +264,7 @@ try {
             });
 
             carrito = [];
+            limpiarPago();
             renderCarrito();
             await cargarProductos();
             filtrarProductos();
@@ -171,6 +278,7 @@ try {
         if (carrito.length === 0) return;
         if (!App.ui.confirmar("¿Vaciar el carrito y cancelar la venta?")) return;
         carrito = [];
+        limpiarPago();
         renderCarrito();
     }
 
@@ -181,6 +289,21 @@ try {
         $("inputBuscarVentaProducto").addEventListener("input", filtrarProductos);
         $("btnCompletarVenta").addEventListener("click", completarVenta);
         $("btnCancelarVenta").addEventListener("click", cancelarVenta);
+        $("inputEfectivoRecibido").addEventListener("input", actualizarVuelto);
+        $("selectMetodoPago").addEventListener("change", actualizarPanelPago);
+
+        document.querySelector(".montos-rapidos").addEventListener("click", (evento) => {
+            const chip = evento.target.closest(".chip-monto");
+            if (!chip) return;
+            const input = $("inputEfectivoRecibido");
+            if (chip.dataset.exacto) {
+                input.value = totalActual > 0 ? totalActual.toFixed(2) : "";
+            } else {
+                // Suma acumulativa: pulsar billetes seguidos cuenta el efectivo.
+                input.value = (efectivoRecibido() + Number(chip.dataset.monto)).toFixed(2);
+            }
+            actualizarVuelto();
+        });
 
         $("tablaBusquedaProductosVenta").addEventListener("click", (evento) => {
             const boton = evento.target.closest("[data-agregar]");
@@ -202,6 +325,7 @@ try {
 
         await cargarProductos();
         filtrarProductos();
+        actualizarPanelPago();
         renderCarrito();
     });
 })();

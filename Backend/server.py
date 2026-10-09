@@ -665,31 +665,81 @@ def eliminar_proveedor(id_proveedor):
 
 # ---------- Reportes ----------
 
+def rango_fechas():
+    """Lee fecha_inicio / fecha_fin (AAAA-MM-DD) de la query.
+
+    Devuelve (desde, hasta) como texto listo para comparar contra la
+    columna de SQLite, con el día final completo hasta las 23:59:59.
+    Lanza ValueError si el formato no es válido. Devuelve (None, None)
+    cuando no se pidió un rango explícito.
+    """
+    inicio = (request.args.get("fecha_inicio") or "").strip()
+    fin = (request.args.get("fecha_fin") or "").strip()
+    if not inicio and not fin:
+        return None, None
+
+    desde = datetime.strptime(inicio, "%Y-%m-%d") if inicio else None
+    hasta = (
+        datetime.strptime(fin, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+        if fin else None
+    )
+
+    if desde and hasta and desde > hasta:
+        raise ValueError("inicio_posterior")
+
+    formato = "%Y-%m-%d %H:%M:%S"
+    return (
+        desde.strftime(formato) if desde else None,
+        hasta.strftime(formato) if hasta else None,
+    )
+
+
 @app.get("/api/reportes")
 @requiere_auth
 def obtener_reportes():
-    """KPIs y detalle de ventas para el período pedido."""
-    periodo = request.args.get("periodo", "hoy")
-    desde = rango_periodo(periodo)
+    """KPIs y detalle de ventas para el período o rango de fechas pedido."""
+    try:
+        desde_txt, hasta_txt = rango_fechas()
+    except ValueError:
+        return error("Formato de fecha inválido. Usa AAAA-MM-DD.", 400)
+
+    if desde_txt is None and hasta_txt is None:
+        periodo = request.args.get("periodo", "hoy")
+        desde_txt = rango_periodo(periodo).strftime("%Y-%m-%d %H:%M:%S")
+        hasta_txt = None
+    else:
+        periodo = "rango"
+
+    condiciones = []
+    parametros = []
+    if desde_txt:
+        condiciones.append("v.fecha >= ?")
+        parametros.append(desde_txt)
+    if hasta_txt:
+        condiciones.append("v.fecha <= ?")
+        parametros.append(hasta_txt)
+    filtro = " AND ".join(condiciones)
 
     with db.conectar_db() as conn:
         ventas = conn.execute(
             "SELECT v.id, v.fecha, v.total, v.metodo_pago, u.nombre AS vendedor "
             "FROM ventas v JOIN usuarios u ON u.id = v.usuario_id "
-            "WHERE v.fecha >= ? ORDER BY v.fecha DESC",
-            (desde.strftime("%Y-%m-%d %H:%M:%S"),),
+            f"WHERE {filtro} ORDER BY v.fecha DESC",
+            tuple(parametros),
         ).fetchall()
 
         unidades = conn.execute(
             "SELECT COALESCE(SUM(d.cantidad), 0) FROM detalle_ventas d "
-            "JOIN ventas v ON v.id = d.venta_id WHERE v.fecha >= ?",
-            (desde.strftime("%Y-%m-%d %H:%M:%S"),),
+            "JOIN ventas v ON v.id = d.venta_id "
+            f"WHERE {filtro}",
+            tuple(parametros),
         ).fetchone()[0]
 
     totales = [f["total"] for f in ventas]
     return jsonify({
         "periodo": periodo,
-        "desde": desde.strftime("%Y-%m-%d %H:%M:%S"),
+        "desde": desde_txt,
+        "hasta": hasta_txt,
         "kpis": {
             "total_vendido": round(sum(totales), 2),
             "cantidad_ventas": len(ventas),

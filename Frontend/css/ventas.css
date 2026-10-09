@@ -42,20 +42,170 @@
     margin-top: 10px;
 }
 
-.form-cobro-acciones {
+/* ==========================================
+   PAGO Y CÁLCULO DE VUELTO
+   ========================================== */
+
+.panel-pago {
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid var(--borde);
+    border-radius: 16px;
+    background: linear-gradient(160deg, #f2fdf9 0%, #eaf7f2 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transition: opacity 0.2s ease;
+}
+
+.panel-pago.oculto {
+    display: none;
+}
+
+.campo-pago label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--azul-marino);
+    margin-bottom: 8px;
+}
+
+.input-dinero {
+    display: flex;
+    align-items: center;
+    background: var(--blanco);
+    border: 1px solid var(--borde);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-dinero:focus-within {
+    border-color: var(--verde-menta);
+    box-shadow: 0 0 0 3px rgba(94, 231, 183, 0.25);
+}
+
+.simbolo-moneda {
+    padding: 0 4px 0 16px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--texto-suave);
+}
+
+.input-dinero input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 14px 16px 14px 6px;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--azul-marino);
+    width: 100%;
+}
+
+.input-dinero input::placeholder {
+    color: #b9c8d6;
+    font-weight: 600;
+}
+
+/* Quita las flechas del input numérico para un look más limpio. */
+.input-dinero input::-webkit-outer-spin-button,
+.input-dinero input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.input-dinero input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.montos-rapidos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.chip-monto {
+    border: 1px solid var(--borde);
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--azul-marino);
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 7px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
+}
+
+.chip-monto:hover {
+    background: var(--verde-menta);
+    border-color: var(--verde-menta);
+    transform: translateY(-1px);
+}
+
+.vuelto-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: var(--azul-marino);
+    color: var(--blanco);
+    transition: background 0.25s ease;
+}
+
+.vuelto-etiqueta {
+    font-size: 0.88rem;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.vuelto-valor {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.vuelto-panel.ok {
+    background: linear-gradient(135deg, var(--verde-menta-oscuro), #1f9e74);
+}
+
+.vuelto-panel.insuficiente {
+    background: linear-gradient(135deg, var(--error), #b9344a);
+}
+
+.alerta-pago {
+    margin: 10px 2px 0;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--error);
+    min-height: 18px;
+    display: none;
+}
+
+.alerta-pago.visible {
+    display: block;
+}
+
+.metodo-pago {
     margin-top: 18px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
-.form-cobro-acciones label {
+.metodo-pago label {
     font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--texto);
+    font-weight: 700;
+    color: var(--azul-marino);
 }
 
-.form-cobro-acciones select {
+.metodo-pago select {
     padding: 11px 14px;
     border: 1px solid var(--borde);
     border-radius: 12px;
@@ -66,7 +216,14 @@
     width: 100%;
 }
 
-.form-cobro-acciones select:focus {
+.metodo-pago select:focus {
     outline: 2px solid rgba(94, 231, 183, 0.25);
     border-color: var(--verde-menta);
+}
+
+.form-cobro-acciones {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }

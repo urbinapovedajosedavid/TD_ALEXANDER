@@ -176,6 +176,11 @@ App.api = (function () {
 
         // ---------- Reportes ----------
         reportes: (periodo) => pedir(`/reportes?periodo=${periodo}`),
+        reportesPorFechas: (inicio, fin) =>
+            pedir(
+                `/reportes?fecha_inicio=${encodeURIComponent(inicio)}` +
+                    `&fecha_fin=${encodeURIComponent(fin)}`
+            ),
         resumenInventario: () => pedir("/inventario/resumen"),
 
         // ---------- Copias de seguridad ----------
@@ -611,6 +616,28 @@ App.ui = (function () {
         });
     }
 
+    /* Limita un panel de tabla a `filasVisibles` filas; el resto se desplaza.
+     * Se recalcula según el alto real de las filas para que el corte sea exacto. */
+    function ajustarAlturaTabla(idPanel, idCuerpo, filasVisibles) {
+        const maximo = filasVisibles || 5;
+        const panel = document.getElementById(idPanel);
+        const cuerpo = document.getElementById(idCuerpo);
+        if (!panel || !cuerpo) return;
+
+        const filas = cuerpo.querySelectorAll("tr");
+        if (filas.length <= maximo) {
+            panel.style.maxHeight = "";
+            return;
+        }
+
+        const cabecera = panel.querySelector("thead");
+        let alto = cabecera ? cabecera.offsetHeight : 0;
+        for (let i = 0; i < maximo; i++) {
+            alto += filas[i].offsetHeight;
+        }
+        panel.style.maxHeight = `${alto}px`;
+    }
+
     return {
         abrir,
         cerrar,
@@ -621,6 +648,7 @@ App.ui = (function () {
         descargar,
         estadoVacio,
         pintarTabla,
+        ajustarAlturaTabla,
     };
 })();
 

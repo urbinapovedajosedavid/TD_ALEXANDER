@@ -20,15 +20,25 @@ App.layout = (function () {
     const PAGINAS = [
         { clave: "inicio", ruta: "inicio.html", texto: "Inicio" },
         { clave: "ventas", ruta: "ventas.html", texto: "Ventas" },
-        { clave: "almacen", ruta: "almacen.html", texto: "Inventario" },
+        { clave: "almacen", ruta: "almacen.html", texto: "Producto" },
         { clave: "reportes", ruta: "reportes.html", texto: "Reportes" },
         { clave: "proveedores", ruta: "provedores.html", texto: "Proveedores" },
     ];
 
+    /* Ícono de cada opción. El sidebar colapsado muestra solo estos. */
+    const ICONOS = {
+        inicio: "🏠",
+        ventas: "🛒",
+        almacen: "📦",
+        reportes: "📊",
+        proveedores: "🚚",
+        copia_de_seguridad: "💾",
+    };
+
     /* Subtítulo de la cabecera por página. */
     const SUBTITULOS = {
         inicio: "Panel de administración e inventario",
-        almacen: "Módulo de gestión de inventario",
+        almacen: "Módulo de gestión de productos",
         ventas: "Módulo de registro y procesamiento de ventas",
         reportes: "Módulo de analítica y reportes",
         proveedores: "Módulo de administración de proveedores",
@@ -50,7 +60,10 @@ App.layout = (function () {
         const botones = PAGINAS.map(
             (p) => `
             <button class="nav-item ${p.clave === activa ? "nav-item-activa" : ""}"
-                    type="button" data-ruta="${p.ruta}">${p.texto}</button>`
+                    type="button" data-ruta="${p.ruta}">
+                <span class="nav-icono" aria-hidden="true">${ICONOS[p.clave] || "•"}</span>
+                <span class="nav-texto">${p.texto}</span>
+            </button>`
         ).join("");
 
         return `
@@ -58,7 +71,7 @@ App.layout = (function () {
                 <div class="logo-circulo">
                     <img src="${LOGO}" alt="Logo Tienda Alexander">
                 </div>
-                <div>
+                <div class="sidebar-marca-texto">
                     <h2>GestiónApp</h2>
                     <p>Control principal</p>
                 </div>
@@ -70,7 +83,10 @@ App.layout = (function () {
 
             <div class="sidebar-footer">
                 <button class="nav-item nav-item-secundario" type="button"
-                        id="btnCopiaSeguridad">Copia de seguridad</button>
+                        id="btnCopiaSeguridad">
+                    <span class="nav-icono" aria-hidden="true">${ICONOS.copia_de_seguridad}</span>
+                    <span class="nav-texto">Copia de seguridad</span>
+                </button>
             </div>`;
     }
 
@@ -338,6 +354,53 @@ App.layout = (function () {
         }
     }
 
+    /* ---------- Sidebar retráctil ----------
+     * Por defecto se ve compacto (solo íconos). Se despliega al pasar el
+     * cursor sobre él o al acercarlo al borde izquierdo, y se contrae al
+     * retirarlo. El panel es una capa fija: al abrirse no empuja ni
+     * desacomoda el contenido del dashboard.
+     */
+    function conectarSidebar(sidebar) {
+        if (!sidebar) return;
+
+        const escritorio = window.matchMedia("(min-width: 961px)");
+        const MARGEN_BORDE = 24;
+        let enElBorde = false;
+
+        const desplegar = (valor) => {
+            if (valor === enElBorde) return;
+            enElBorde = valor;
+            sidebar.classList.toggle("sidebar-expandida", valor);
+        };
+
+        // Acercar el cursor al borde izquierdo (o al panel ya desplegado)
+        // mantiene la barra abierta; retirarlo la contrae.
+        document.addEventListener("mousemove", (evento) => {
+            if (!escritorio.matches) {
+                desplegar(false);
+                return;
+            }
+            const limite = sidebar.getBoundingClientRect().right + MARGEN_BORDE;
+            desplegar(evento.clientX <= limite);
+        });
+
+        // Al salir de la ventana o perder el foco, siempre se contrae.
+        document.addEventListener("mouseleave", () => desplegar(false));
+        window.addEventListener("blur", () => desplegar(false));
+
+        // En pantallas táctiles (sin hover) un toque despliega o contrae.
+        sidebar.addEventListener(
+            "touchstart",
+            () => desplegar(!enElBorde),
+            { passive: true }
+        );
+
+        // Si se pasa a un ancho de móvil, se descarta la expansión.
+        escritorio.addEventListener("change", (evento) => {
+            if (!evento.matches) desplegar(false);
+        });
+    }
+
     /* Monta sidebar y cabecera, y conecta la navegación. */
     function montar() {
         if (!App.auth.exigir()) return false;
@@ -370,6 +433,8 @@ App.layout = (function () {
                     window.location.href = "copia_de_seguridad.html";
                 });
             }
+
+            conectarSidebar(sidebar);
         }
 
         conectarAjustes();

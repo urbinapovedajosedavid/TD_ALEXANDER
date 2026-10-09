@@ -8,7 +8,18 @@
 (function () {
     const $ = (id) => document.getElementById(id);
 
+    const FILAS_VISIBLES = 5;
+
     let proveedores = [];
+
+    /* La tabla muestra máximo 5 filas visibles (helper compartido). */
+    function ajustarAlturaTabla() {
+        App.ui.ajustarAlturaTabla(
+            "contenedorTablaProveedores",
+            "tablaProveedores",
+            FILAS_VISIBLES
+        );
+    }
 
     async function cargar() {
         try {
@@ -47,6 +58,8 @@
                     <button class="btn-accion eliminar" data-eliminar="${p.id}">Eliminar</button>
                 </td>`
         );
+
+        ajustarAlturaTabla();
     }
 
     async function guardar(evento) {
@@ -96,9 +109,9 @@
 
     document.addEventListener("DOMContentLoaded", async () => {
         if (!App.auth.exigir()) return;
-    App.layout.montar();
+        App.layout.montar();
 
-$("inputBuscarProveedor").addEventListener("input", filtrar);
+        $("inputBuscarProveedor").addEventListener("input", filtrar);
         $("formProveedor").addEventListener("submit", guardar);
 
         $("btnAbrirModalProveedor").addEventListener("click", () =>
@@ -109,12 +122,13 @@ $("inputBuscarProveedor").addEventListener("input", filtrar);
         $("btnCancelarProveedor").addEventListener("click", () => App.ui.cerrar("modalProveedor"));
 
         App.ui.cerrarAlTocarFondo("modalProveedor");
-        
 
         $("tablaProveedores").addEventListener("click", (evento) => {
             const boton = evento.target.closest("[data-eliminar]");
             if (boton) eliminar(Number(boton.dataset.eliminar));
         });
+
+        window.addEventListener("resize", ajustarAlturaTabla);
 
         await cargar();
     });

@@ -547,8 +547,8 @@ App.demo = (function () {
 
         /* --- reportes e inventario --- */
         if (ruta.startsWith("/reportes")) {
-            const periodo = (ruta.split("periodo=")[1] || "hoy").toLowerCase();
-            return Promise.resolve(reportes(d, periodo));
+            const query = new URLSearchParams(ruta.split("?")[1] || "");
+            return Promise.resolve(reportes(d, query));
         }
 
         if (ruta === "/inventario/resumen") {
@@ -681,13 +681,33 @@ App.demo = (function () {
         });
     }
 
-    function reportes(d, periodo) {
-        const desde =
-            periodo === "semana" ? haceDias(7) :
-            periodo === "mes" ? haceDias(30) :
-            ahora().slice(0, 11) + "00:00:00";
+    function reportes(d, query) {
+        const inicio = (query.get("fecha_inicio") || "").trim();
+        const fin = (query.get("fecha_fin") || "").trim();
 
-        const ventas = d.ventas.filter((v) => v.fecha >= desde).sort((a, b) => b.fecha.localeCompare(a.fecha));
+        let ventas;
+        let periodo;
+        let desde;
+
+        if (inicio || fin) {
+            // Rango explícito: día inicial desde las 00:00 y final hasta 23:59:59,
+            // igual que el filtro del servidor.
+            periodo = "rango";
+            desde = inicio ? inicio + " 00:00:00" : null;
+            const hasta = fin ? fin + " 23:59:59" : null;
+            ventas = d.ventas.filter(
+                (v) => (!desde || v.fecha >= desde) && (!hasta || v.fecha <= hasta)
+            );
+        } else {
+            periodo = (query.get("periodo") || "hoy").toLowerCase();
+            desde =
+                periodo === "semana" ? haceDias(7) :
+                periodo === "mes" ? haceDias(30) :
+                ahora().slice(0, 11) + "00:00:00";
+            ventas = d.ventas.filter((v) => v.fecha >= desde);
+        }
+
+        ventas = ventas.sort((a, b) => b.fecha.localeCompare(a.fecha));
         const totales = ventas.map((v) => v.total);
         const suma = totales.reduce((s, t) => s + t, 0);
 

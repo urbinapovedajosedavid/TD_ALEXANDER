@@ -32,6 +32,10 @@
     --exito: #2b8a3e;
     
     --sombra: 0 14px 32px rgba(16, 42, 67, 0.08);
+
+    /* Sidebar retráctil: ancho compacto y ancho desplegado. */
+    --sidebar-colapsado: 80px;
+    --sidebar-expandido: 280px;
 }
 
 * {
@@ -124,6 +128,26 @@ body {
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.nav-icono {
+    flex-shrink: 0;
+    width: 24px;
+    text-align: center;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.nav-texto {
+    white-space: nowrap;
+}
+
+.nav-item:focus-visible {
+    outline: 2px solid var(--verde-menta);
+    outline-offset: 2px;
 }
 
 .nav-item:hover {
@@ -149,6 +173,77 @@ body {
     background: rgba(255, 255, 255, 0.1);
     color: #ffffff;
     width: 100%;
+}
+
+/* ==========================================
+   SIDEBAR RETRÁCTIL
+   ==========================================
+   En escritorio el panel queda fijo a la izquierda, compacto (solo
+   íconos). Se despliega al pasar el cursor sobre él o al acercarlo al
+   borde. Al abrirse se superpone al contenido en lugar de empujarlo,
+   así el dashboard no se desacomoda en ninguna página. */
+
+@media (min-width: 961px) {
+    .dashboard-layout {
+        padding-left: var(--sidebar-colapsado);
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: var(--sidebar-colapsado);
+        min-width: 0;
+        padding: 1.5rem 12px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        z-index: 600;
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                    box-shadow 0.3s ease;
+    }
+
+    .sidebar:hover,
+    .sidebar:focus-within,
+    .sidebar.sidebar-expandida {
+        width: var(--sidebar-expandido);
+        box-shadow: 0 0 45px rgba(16, 42, 67, 0.4);
+    }
+
+    /* Los textos arrancan recogidos y se revelan al desplegar. */
+    .sidebar .nav-texto,
+    .sidebar .sidebar-marca-texto {
+        max-width: 0;
+        opacity: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        transition: max-width 0.3s ease, opacity 0.25s ease;
+    }
+
+    .sidebar:hover .nav-texto,
+    .sidebar:hover .sidebar-marca-texto,
+    .sidebar:focus-within .nav-texto,
+    .sidebar:focus-within .sidebar-marca-texto,
+    .sidebar.sidebar-expandida .nav-texto,
+    .sidebar.sidebar-expandida .sidebar-marca-texto {
+        max-width: 200px;
+        opacity: 1;
+    }
+
+    .sidebar .sidebar-brand {
+        gap: 12px;
+        overflow: hidden;
+    }
+
+    .sidebar .logo-circulo {
+        width: 48px;
+        height: 48px;
+        flex-shrink: 0;
+    }
+
+    .sidebar .nav-item {
+        padding: 13px 16px;
+    }
 }
 
 .pagina-admin {
@@ -318,6 +413,60 @@ body {
 }
 
 /* ==========================================
+   FILTRO POR RANGO DE FECHAS — reportes
+   ========================================== */
+
+.filtro-fechas {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 18px 20px;
+    background: var(--fondo-panel);
+    border: 1px solid var(--borde);
+    border-radius: 16px;
+}
+
+.filtro-fechas-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1 1 180px;
+    min-width: 160px;
+}
+
+.filtro-fechas-campo label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--azul-marino);
+}
+
+.filtro-fechas-campo input[type="date"] {
+    padding: 11px 14px;
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: var(--blanco);
+    color: var(--texto);
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.filtro-fechas-campo input[type="date"]:focus {
+    outline: 2px solid rgba(94, 231, 183, 0.25);
+    border-color: var(--verde-menta);
+}
+
+.filtro-fechas-acciones {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* ==========================================
    BUSCADOR
    ========================================== */
 
@@ -353,6 +502,149 @@ body {
 }
 
 /* ==========================================
+   BARRA Y PANEL DE FILTROS DE PRODUCTOS — almacén
+   ========================================== */
+
+.barra-filtros {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.barra-filtros .search-bar-pill {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.btn-filtro {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.icono-filtro {
+    width: 16px;
+    height: 16px;
+}
+
+.filtros-wrapper {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.panel-filtros {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    width: min(320px, 86vw);
+    background: var(--blanco);
+    border: 1px solid var(--borde);
+    border-radius: 16px;
+    box-shadow: 0 18px 40px rgba(16, 42, 67, 0.16);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 60;
+    transform-origin: top right;
+    animation: aparecerFiltro 0.18s ease;
+}
+
+.panel-filtros.oculto {
+    display: none;
+}
+
+@keyframes aparecerFiltro {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.filtro-grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.filtro-grupo label,
+.filtro-etiqueta {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--azul-marino);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.filtro-grupo select {
+    padding: 11px 14px;
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    font-size: 0.95rem;
+    background: #fbfffe;
+    color: var(--texto);
+    outline: none;
+    width: 100%;
+}
+
+.filtro-grupo select:focus {
+    outline: 2px solid rgba(94, 231, 183, 0.25);
+    border-color: var(--verde-menta);
+}
+
+.orden-precio {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chip-orden {
+    border: 1px solid var(--borde);
+    background: #fbfffe;
+    color: var(--azul-marino);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 10px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.chip-orden:hover {
+    background: #e8f7f1;
+}
+
+.chip-orden.activo {
+    background: var(--verde-menta);
+    border-color: var(--verde-menta);
+    color: var(--azul-marino);
+}
+
+.panel-filtros-pie {
+    border-top: 1px solid var(--borde);
+    padding-top: 14px;
+}
+
+@media (max-width: 640px) {
+    .barra-filtros {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filtros-wrapper,
+    .btn-filtro {
+        width: 100%;
+    }
+
+    .panel-filtros {
+        left: 0;
+        right: auto;
+        width: 100%;
+    }
+}
+
+/* ==========================================
    TABLAS
    ========================================== */
 
@@ -366,6 +658,38 @@ body {
 .tabla-panel-scroll {
     max-height: 380px;
     overflow-y: auto;
+}
+
+/* Desplazamiento interno de tabla: máximo 5 filas visibles y scroll si hay más. */
+.tabla-scroll {
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #bfe3d8 transparent;
+}
+
+.tabla-scroll .tabla thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    box-shadow: inset 0 -2px 0 var(--borde);
+}
+
+.tabla-scroll::-webkit-scrollbar {
+    width: 8px;
+}
+
+.tabla-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.tabla-scroll::-webkit-scrollbar-thumb {
+    background: #bfe3d8;
+    border-radius: 999px;
+}
+
+.tabla-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--verde-menta);
 }
 
 .tabla {

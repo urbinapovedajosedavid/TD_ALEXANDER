@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Inventario - Tienda Alexander</title>
+    <title>Producto - Tienda Alexander</title>
     <link rel="stylesheet" href="css/base.css">
 </head>
 
@@ -21,15 +21,57 @@
             <main class="tab-content">
 
                 <section class="tarjeta">
-                    <h1>Gestión de Inventario</h1>
+                    <h1>Producto</h1>
 
-                    <div class="search-bar-pill">
-                        <span class="icono-buscar">🔍</span>
-                        <input type="text" id="inputBuscarProducto"
-                            placeholder="Buscar productos por nombre, código o categoría...">
+                    <div class="barra-filtros">
+                        <div class="search-bar-pill">
+                            <span class="icono-buscar">🔍</span>
+                            <input type="text" id="inputBuscarProducto"
+                                placeholder="Buscar productos por nombre, código o categoría...">
+                        </div>
+
+                        <div class="filtros-wrapper">
+                            <button type="button" id="btnAbrirFiltros"
+                                class="btn-pill btn-pill-oscuro btn-filtro"
+                                aria-expanded="false" aria-controls="panelFiltros">
+                                <svg class="icono-filtro" viewBox="0 0 24 24" width="16" height="16"
+                                    fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"></path>
+                                </svg>
+                                Filtrar
+                            </button>
+
+                            <div id="panelFiltros" class="panel-filtros oculto"
+                                role="dialog" aria-label="Filtros de productos">
+                                <div class="filtro-grupo">
+                                    <label for="filtroCategoria">Categoría</label>
+                                    <select id="filtroCategoria">
+                                        <option value="">Todas las categorías</option>
+                                    </select>
+                                </div>
+
+                                <div class="filtro-grupo">
+                                    <span class="filtro-etiqueta">Ordenar por precio</span>
+                                    <div class="orden-precio" role="group" aria-label="Orden por precio">
+                                        <button type="button" class="chip-orden" data-orden="asc">
+                                            ↑ Menor a mayor
+                                        </button>
+                                        <button type="button" class="chip-orden" data-orden="desc">
+                                            ↓ Mayor a menor
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="panel-filtros-pie">
+                                    <button type="button" id="btnLimpiarFiltros"
+                                        class="btn-pill btn-pill-oscuro btn-bloque">Limpiar filtros</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="tabla-panel">
+                    <div class="tabla-panel tabla-scroll" id="contenedorTablaProductos">
                         <table class="tabla">
                             <thead>
                                 <tr>
@@ -45,7 +87,7 @@
                         </table>
 
                         <div id="mensajeSinProductos" class="estado-vacio" style="display: none;">
-                            No hay productos disponibles en el inventario.
+                            No hay productos disponibles.
                         </div>
                     </div>
 

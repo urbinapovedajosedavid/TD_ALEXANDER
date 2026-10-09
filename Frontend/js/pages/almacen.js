@@ -1,10 +1,13 @@
 (function () {
     const STOCK_MAXIMO = 64;
+    const FILAS_VISIBLES = 5;
 
     const $ = (id) => document.getElementById(id);
 
     let productos = [];
     let categorias = [];
+    let filtroCategoria = "";
+    let ordenPrecio = "";
 
     async function cargarCategorias() {
         try {
@@ -15,17 +18,40 @@
         }
 
         const select = $("selectCategoria");
-        if (!select) return;
+        if (select) {
+            select.innerHTML =
+                '<option value="">-- Seleccionar Categoría --</option>' +
+                categorias
+                    .map(
+                        (c) =>
+                            `<option value="${c.id}">${App.fmt.texto(c.nombre)}</option>`
+                    )
+                    .join("") +
+                '<option value="OTRO">Otro (Añadir nueva...)</option>';
+        }
 
-        select.innerHTML =
-            '<option value="">-- Seleccionar Categoría --</option>' +
+        poblarFiltroCategorias();
+    }
+
+    /* Rellena el selector de categoría del panel de filtros. */
+    function poblarFiltroCategorias() {
+        const filtro = $("filtroCategoria");
+        if (!filtro) return;
+
+        filtro.innerHTML =
+            '<option value="">Todas las categorías</option>' +
             categorias
                 .map(
                     (c) =>
                         `<option value="${c.id}">${App.fmt.texto(c.nombre)}</option>`
                 )
-                .join("") +
-            '<option value="OTRO">Otro (Añadir nueva...)</option>';
+                .join("");
+
+        const sigueExistiendo = categorias.some(
+            (c) => String(c.id) === String(filtroCategoria)
+        );
+        filtro.value = sigueExistiendo ? filtroCategoria : "";
+        filtroCategoria = filtro.value;
     }
 
     /* Muestra u oculta el campo para crear una categoría nueva. */
@@ -56,14 +82,25 @@
         const entrada = $("inputBuscarProducto");
         const texto = entrada ? entrada.value.trim().toLowerCase() : "";
 
-        const filtrados = texto
-            ? productos.filter(
-                  (p) =>
-                      p.nombre.toLowerCase().includes(texto) ||
-                      (p.codigo || "").toLowerCase().includes(texto) ||
-                      (p.categoria_nombre || "").toLowerCase().includes(texto)
-              )
-            : productos;
+        let filtrados = productos.filter(
+            (p) =>
+                !texto ||
+                p.nombre.toLowerCase().includes(texto) ||
+                (p.codigo || "").toLowerCase().includes(texto) ||
+                (p.categoria_nombre || "").toLowerCase().includes(texto)
+        );
+
+        if (filtroCategoria) {
+            filtrados = filtrados.filter(
+                (p) => String(p.categoria_id) === String(filtroCategoria)
+            );
+        }
+
+        if (ordenPrecio === "asc") {
+            filtrados = filtrados.slice().sort((a, b) => a.precio - b.precio);
+        } else if (ordenPrecio === "desc") {
+            filtrados = filtrados.slice().sort((a, b) => b.precio - a.precio);
+        }
 
         App.ui.pintarTabla(
             "tablaProductos",
@@ -92,6 +129,43 @@
                     </td>`;
             }
         );
+
+        ajustarAlturaTabla();
+    }
+
+    /* La tabla muestra máximo 5 filas visibles (helper compartido). */
+    function ajustarAlturaTabla() {
+        App.ui.ajustarAlturaTabla(
+            "contenedorTablaProductos",
+            "tablaProductos",
+            FILAS_VISIBLES
+        );
+    }
+
+    /* ---------- Panel de filtros ---------- */
+
+    function alternarFiltros() {
+        const panel = $("panelFiltros");
+        const boton = $("btnAbrirFiltros");
+        if (!panel || !boton) return;
+
+        const abierto = !panel.classList.toggle("oculto");
+        boton.setAttribute("aria-expanded", String(abierto));
+    }
+
+    function cerrarFiltros() {
+        const panel = $("panelFiltros");
+        const boton = $("btnAbrirFiltros");
+        if (!panel || panel.classList.contains("oculto")) return;
+
+        panel.classList.add("oculto");
+        if (boton) boton.setAttribute("aria-expanded", "false");
+    }
+
+    function marcarOrdenActivo() {
+        document.querySelectorAll(".chip-orden").forEach((chip) => {
+            chip.classList.toggle("activo", chip.dataset.orden === ordenPrecio);
+        });
     }
 
     /* ---------- Modal ---------- */
@@ -193,7 +267,7 @@
 
     document.addEventListener("DOMContentLoaded", async () => {
         if (!App.auth.exigir()) return;
-    App.layout.montar();
+        App.layout.montar();
 
         $("inputBuscarProducto").addEventListener("input", filtrarProductos);
         $("botonAgregarProducto").addEventListener("click", abrirModalAgregar);
@@ -203,6 +277,38 @@
         $("cerrarModalProducto").addEventListener("click", () => App.ui.cerrar("modalProducto"));
         $("btnCancelarProducto").addEventListener("click", () => App.ui.cerrar("modalProducto"));
         App.ui.cerrarAlTocarFondo("modalProducto");
+
+        // Panel de filtros: categoría, orden por precio y limpieza.
+        $("btnAbrirFiltros").addEventListener("click", alternarFiltros);
+        $("filtroCategoria").addEventListener("change", () => {
+            filtroCategoria = $("filtroCategoria").value;
+            filtrarProductos();
+        });
+        document.querySelectorAll(".chip-orden").forEach((chip) => {
+            chip.addEventListener("click", () => {
+                ordenPrecio =
+                    ordenPrecio === chip.dataset.orden ? "" : chip.dataset.orden;
+                marcarOrdenActivo();
+                filtrarProductos();
+            });
+        });
+        $("btnLimpiarFiltros").addEventListener("click", () => {
+            filtroCategoria = "";
+            ordenPrecio = "";
+            $("filtroCategoria").value = "";
+            marcarOrdenActivo();
+            filtrarProductos();
+        });
+
+        // Cierra el dropdown al hacer clic fuera o presionar Escape.
+        document.addEventListener("click", (evento) => {
+            if (!evento.target.closest(".filtros-wrapper")) cerrarFiltros();
+        });
+        document.addEventListener("keydown", (evento) => {
+            if (evento.key === "Escape") cerrarFiltros();
+        });
+
+        window.addEventListener("resize", ajustarAlturaTabla);
 
         // Delegación: las filas se regeneran en cada render.
         $("tablaProductos").addEventListener("click", (evento) => {
