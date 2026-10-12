@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal de Ventas - Tienda Alexander</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/ventas.css">
+</head>
+
+<body>
+
+    <div class="dashboard-layout">
+
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <div class="pagina-admin">
+
+            <header class="barra-superior" id="barraSuperior"></header>
+
+            <main class="tab-content">
+
+                <section class="tarjeta">
+                    <h1>Terminal de Ventas</h1>
+
+                    <div class="layout-ventas">
+
+                        <div class="panel-venta">
+                            <h3>Buscar Producto</h3>
+
+                            <div class="search-bar-pill">
+                                <span class="icono-buscar">🔍</span>
+                                <input type="text" id="inputBuscarVentaProducto"
+                                    placeholder="Escanear código de barras o buscar por nombre...">
+                            </div>
+
+                            <div class="tabla-panel tabla-panel-scroll">
+                                <table class="tabla">
+                                    <thead>
+                                        <tr>
+                                            <th>Código</th>
+                                            <th>Producto</th>
+                                            <th>Precio</th>
+                                            <th>Stock</th>
+                                            <th>Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tablaBusquedaProductosVenta"></tbody>
+                                </table>
+                                <div id="mensajeSinProductosVenta" class="estado-vacio" style="display: none;">
+                                    No se encontraron productos.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Columna derecha: carrito y cobro -->
+                        <div class="panel-venta">
+                            <h3>Detalle de la Venta</h3>
+
+                            <div class="tabla-panel tabla-panel-scroll">
+                                <table class="tabla">
+                                    <thead>
+                                        <tr>
+                                            <th>Ítem</th>
+                                            <th>Cant.</th>
+                                            <th>Precio</th>
+                                            <th>Subtotal</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tablaCarritoVentas"></tbody>
+                                </table>
+                                <div id="mensajeCarritoVacio" class="estado-vacio" style="display: none;">
+                                    El carrito está vacío.
+                                </div>
+                            </div>
+
+                            <div class="resumen-cobro">
+                                <div class="linea-resumen">
+                                    <span>Subtotal:</span>
+                                    <span id="subtotalVentaValor">C$0.00</span>
+                                </div>
+                                <div class="linea-resumen">
+                                    <span>Impuesto (IVA):</span>
+                                    <span id="impuestoVentaValor">C$0.00</span>
+                                </div>
+                                <div class="linea-resumen total-destacado">
+                                    <span>Total a Pagar:</span>
+                                    <span id="totalVentaValor">C$0.00</span>
+                                </div>
+
+                                <div class="metodo-pago">
+                                    <label for="selectMetodoPago">Método de pago:</label>
+                                    <select id="selectMetodoPago">
+                                        <option value="efectivo">Efectivo</option>
+                                        <option value="tarjeta">Tarjeta de Crédito / Débito</option>
+                                        <option value="transferencia">Transferencia Bancaria</option>
+                                    </select>
+                                </div>
+
+                                <div class="panel-pago" id="panelPagoEfectivo">
+                                    <div class="campo-pago">
+                                        <label for="inputEfectivoRecibido">Efectivo recibido</label>
+                                        <div class="input-dinero">
+                                            <span class="simbolo-moneda">C$</span>
+                                            <input type="number" id="inputEfectivoRecibido" inputmode="decimal"
+                                                min="0" step="0.01" placeholder="0.00" autocomplete="off">
+                                        </div>
+                                        <div class="montos-rapidos">
+                                            <button type="button" class="chip-monto" data-exacto="1">Exacto</button>
+                                            <button type="button" class="chip-monto" data-monto="100">C$100</button>
+                                            <button type="button" class="chip-monto" data-monto="200">C$200</button>
+                                            <button type="button" class="chip-monto" data-monto="500">C$500</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="resumen-pago">
+                                        <div class="vuelto-panel" id="vueltoPanel">
+                                            <span class="vuelto-etiqueta">Vuelto a entregar</span>
+                                            <span class="vuelto-valor" id="vueltoValor">C$0.00</span>
+                                        </div>
+                                        <p class="alerta-pago" id="alertaPago" role="alert"></p>
+                                    </div>
+                                </div>
+
+                                <div class="form-cobro-acciones">
+                                    <button type="button" id="btnCompletarVenta"
+                                        class="btn-pill btn-pill-menta btn-bloque">
+                                        Procesar y Cobrar
+                                    </button>
+                                    <button type="button" id="btnCancelarVenta"
+                                        class="btn-pill btn-pill-oscuro btn-bloque">
+                                        Cancelar Venta
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <script src="js/core.js"></script>
+    <script src="js/demo.js"></script>
+
+    <script src="js/layout.js"></script>
+    <script src="js/pages/ventas.js"></script>
+</body>
+
+</html>
