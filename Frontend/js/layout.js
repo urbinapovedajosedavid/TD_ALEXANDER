@@ -16,11 +16,12 @@ window.App = window.App || {};
 App.layout = (function () {
     const LOGO = "https://i.postimg.cc/XqZdZjvF/logo-TD.jpg";
 
-    /* Origen único de la navegación. El orden es también el del menú. */
+    /* Origen único de la navegación. El orden coloca a Stock justo debajo de Producto. */
     const PAGINAS = [
         { clave: "inicio", ruta: "inicio.html", texto: "Inicio" },
         { clave: "ventas", ruta: "ventas.html", texto: "Ventas" },
         { clave: "almacen", ruta: "almacen.html", texto: "Producto" },
+        { clave: "stock", ruta: "stock.html", texto: "Stock" },
         { clave: "reportes", ruta: "reportes.html", texto: "Reportes" },
         { clave: "proveedores", ruta: "provedores.html", texto: "Proveedores" },
     ];
@@ -30,7 +31,8 @@ App.layout = (function () {
         inicio: "🏠",
         ventas: "🛒",
         almacen: "📦",
-        reportes: "📊",
+        stock: "📊",
+        reportes: "📈",
         proveedores: "🚚",
         copia_de_seguridad: "💾",
     };
@@ -39,6 +41,7 @@ App.layout = (function () {
     const SUBTITULOS = {
         inicio: "Panel de administración e inventario",
         almacen: "Módulo de gestión de productos",
+        stock: "Módulo de recarga y control de stock",
         ventas: "Módulo de registro y procesamiento de ventas",
         reportes: "Módulo de analítica y reportes",
         proveedores: "Módulo de administración de proveedores",
@@ -128,7 +131,7 @@ App.layout = (function () {
             </div>`;
     }
 
-/* ---------- Ajustes ----------
+    /* ---------- Ajustes ----------
      * Estas acciones se generan desde aquí porque aparecen en todas las
      * páginas con el sidebar. Los formularios viven en un <div> que se
      * inyecta una sola vez en el body.
@@ -283,7 +286,6 @@ App.layout = (function () {
 
         document.getElementById("verPerfilesAjustes").addEventListener("click", mostrarUsuarios);
 
-        // Los dos "x" de las cabeceras nuevas.
         document.getElementById("cerrarModalCambiarClave").addEventListener("click", () => {
             document.getElementById("formCambiarClave").reset();
             App.ui.mensaje(document.getElementById("mensajeCambiarClave"), "");
@@ -294,9 +296,6 @@ App.layout = (function () {
             App.ui.cerrar("modalUsuarios");
         });
 
-        // Listar usuarios es una operación de ADMIN: el servidor responde 403
-        // a un vendedor, así que el botón se oculta en vez de dejar un
-        // mensaje de error tras cada clic.
         if (!App.auth.esAdmin()) {
             const itemUsuarios = document.getElementById("verPerfilesAjustes");
             if (itemUsuarios) itemUsuarios.remove();
@@ -324,9 +323,6 @@ App.layout = (function () {
             .addEventListener("click", eliminarCuenta);
     }
 
-    /* Borrar la cuenta es irreversible y afecta al acceso al sistema, así
-     * que se pide confirmación explícita con el nombre de la cuenta. El
-     * servidor impide además quedarse sin ningún administrador. */
     async function eliminarCuenta() {
         const usuario = App.auth.actual();
         if (!usuario) return;
@@ -354,12 +350,6 @@ App.layout = (function () {
         }
     }
 
-    /* ---------- Sidebar retráctil ----------
-     * Por defecto se ve compacto (solo íconos). Se despliega al pasar el
-     * cursor sobre él o al acercarlo al borde izquierdo, y se contrae al
-     * retirarlo. El panel es una capa fija: al abrirse no empuja ni
-     * desacomoda el contenido del dashboard.
-     */
     function conectarSidebar(sidebar) {
         if (!sidebar) return;
 
@@ -373,8 +363,6 @@ App.layout = (function () {
             sidebar.classList.toggle("sidebar-expandida", valor);
         };
 
-        // Acercar el cursor al borde izquierdo (o al panel ya desplegado)
-        // mantiene la barra abierta; retirarlo la contrae.
         document.addEventListener("mousemove", (evento) => {
             if (!escritorio.matches) {
                 desplegar(false);
@@ -384,24 +372,20 @@ App.layout = (function () {
             desplegar(evento.clientX <= limite);
         });
 
-        // Al salir de la ventana o perder el foco, siempre se contrae.
         document.addEventListener("mouseleave", () => desplegar(false));
         window.addEventListener("blur", () => desplegar(false));
 
-        // En pantallas táctiles (sin hover) un toque despliega o contrae.
         sidebar.addEventListener(
             "touchstart",
             () => desplegar(!enElBorde),
             { passive: true }
         );
 
-        // Si se pasa a un ancho de móvil, se descarta la expansión.
         escritorio.addEventListener("change", (evento) => {
             if (!evento.matches) desplegar(false);
         });
     }
 
-    /* Monta sidebar y cabecera, y conecta la navegación. */
     function montar() {
         if (!App.auth.exigir()) return false;
 
@@ -419,7 +403,6 @@ App.layout = (function () {
             );
         }
 
-        // Navegación: antes cada botón llevaba su propio onclick.
         if (sidebar) {
             sidebar.querySelectorAll(".nav-item[data-ruta]").forEach((boton) => {
                 boton.addEventListener("click", () => {
