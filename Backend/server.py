@@ -9,9 +9,14 @@ from flask import Flask, g, jsonify, request, send_file
 from flask_cors import CORS
 
 import db
+from config import config
+from schemas import validar_producto, validar_usuario
 
 app = Flask(__name__)
 CORS(app)
+
+# Cargar configuración desde config.py (por defecto 'development')
+app.config.from_object(config['development'])
 
 STOCK_MAXIMO = 64
 IVA = 0.15  # 15 %
@@ -40,13 +45,7 @@ def token_de_peticion():
 
 
 def requiere_auth(funcion):
-    """Exige una sesión válida.
-
-    Antes esta comprobación solo vivía en el navegador: la API respondía
-    igual a cualquiera que la llamara por HTTP. Ahora el servidor es quien
-    decide, y el frontend solo se encarga de reaccionar al 401.
-    """
-
+    """Exige una sesión válida."""
     @wraps(funcion)
     def envoltura(*args, **kwargs):
         with db.conectar_db() as conn:
@@ -63,7 +62,6 @@ def requiere_auth(funcion):
 
 def requiere_admin(funcion):
     """Como requiere_auth, pero además exige el rol ADMIN."""
-
     @wraps(funcion)
     @requiere_auth
     def envoltura(*args, **kwargs):
@@ -98,11 +96,7 @@ def rango_periodo(periodo):
 
 
 def dinero(valor) -> float:
-    """Redondeo monetario con ROUND_HALF_UP.
-
-    El round() de Python usa redondeo a pares, así que 168.075 se va a
-    168.07. Para facturas eso descuadra un centavo, por eso se usa Decimal.
-    """
+    """Redondeo monetario con ROUND_HALF_UP."""
     return float(Decimal(str(valor)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
 
@@ -124,8 +118,6 @@ def login():
             (usuario,),
         ).fetchone()
 
-        # Mismo mensaje para usuario inexistente y clave incorrecta: no revela
-        # qué cuentas existen.
         if fila is None or not db.verify_password(clave, fila["password_hash"]):
             return error("Usuario o contraseña incorrectos.", 401)
 
@@ -162,7 +154,6 @@ def cerrar_sesion():
 @app.post("/api/auth/cambiar-clave")
 @requiere_auth
 def cambiar_clave():
-    """Cambia la contraseña de la cuenta conectada y cierra sus otras sesiones."""
     datos = cuerpo_json()
     actual = datos.get("actual") or ""
     nueva = datos.get("nueva") or ""
@@ -185,7 +176,6 @@ def cambiar_clave():
             "UPDATE usuarios SET password_hash = ? WHERE id = ?",
             (db.hash_password(nueva), g.usuario["id"]),
         )
-        # Se conserva solo la sesión desde la que se hizo el cambio.
         conn.execute(
             "DELETE FROM sesiones WHERE usuario_id = ? AND token <> ?",
             (g.usuario["id"], token_actual),
@@ -197,11 +187,6 @@ def cambiar_clave():
 @app.delete("/api/auth/cuenta")
 @requiere_auth
 def eliminar_cuenta_propia():
-    """Da de baja la cuenta conectada.
-
-    No se permite eliminar al último administrador, porque el sistema se
-    quedaría sin ninguna cuenta capaz de administrar usuarios.
-    """
     with db.conectar_db() as conn:
         admin = conn.execute(
             "SELECT 1 FROM usuarios WHERE rol = 'ADMIN' AND id <> ? LIMIT 1",
@@ -214,8 +199,6 @@ def eliminar_cuenta_propia():
                 409,
             )
 
-        # ventas.usuario_id no tiene ON DELETE: un usuario que ya vendió no
-        # puede desaparecer sin dejar las facturas sin vendedor.
         if conn.execute(
             "SELECT 1 FROM ventas WHERE usuario_id = ? LIMIT 1", (g.usuario["id"],)
         ).fetchone():
@@ -234,14 +217,15 @@ def eliminar_cuenta_propia():
 @requiere_admin
 def registrar_usuario():
     datos = cuerpo_json()
-    usuario = (datos.get("usuario") or "").strip()
-    clave = datos.get("clave") or ""
-    nombre = (datos.get("nombre") or "").strip()
+    
+    # Validación centralizada utilizando schemas.py
+    valido, problema = validar_usuario(datos)
+    if not valido:
+        return error(problema)
 
-    if len(usuario) < 3:
-        return error("El usuario debe tener al menos 3 caracteres.")
-    if len(clave) < 4:
-        return error("La clave debe tener al menos 4 caracteres.")
+    usuario = datos.get("usuario").strip()
+    clave = datos.get("clave")
+    nombre = (datos.get("nombre") or "").strip()
 
     with db.conectar_db() as conn:
         existe = conn.execute(
@@ -330,24 +314,13 @@ def obtener_productos():
 
 
 def _validar_producto(datos):
-    """Devuelve (limpios, mensaje_de_error)."""
-    nombre = (datos.get("nombre") or "").strip()
-    if len(nombre) < 2:
-        return None, "El nombre debe tener al menos 2 caracteres."
+    """Validador interno enriquecido apoyado por schemas.py."""
+    valido, mensaje = validar_producto(datos)
+    if not valido:
+        return None, mensaje
 
-    try:
-        precio = float(datos.get("precio"))
-    except (TypeError, ValueError):
-        return None, "El precio debe ser un número mayor que 0."
-    if precio <= 0:
-        return None, "El precio debe ser un número mayor que 0."
-
-    try:
-        stock = int(datos.get("stock"))
-    except (TypeError, ValueError):
-        return None, "El stock debe ser un número entero igual o mayor a 0."
-    if stock < 0:
-        return None, "El stock debe ser un número entero igual o mayor a 0."
+    # Validaciones adicionales propias de reglas de negocio de stock máximo
+    stock = int(datos.get("stock"))
     if stock > STOCK_MAXIMO:
         return None, f"El stock no puede superar las {STOCK_MAXIMO} unidades."
 
@@ -357,11 +330,11 @@ def _validar_producto(datos):
     except (TypeError, ValueError):
         return None, "La categoría seleccionada no es válida."
 
-    codigo = (datos.get("codigo") or "").strip() or None
+    codigo = (datos.get("codigo") or datos.get("codigo_barra") or "").strip() or None
     return {
-        "nombre": nombre,
+        "nombre": str(datos.get("nombre")).strip(),
         "codigo": codigo,
-        "precio": precio,
+        "precio": float(datos.get("precio")),
         "stock": stock,
         "categoria_id": categoria_id,
     }, None
@@ -418,7 +391,6 @@ def actualizar_producto(id_producto):
 @app.delete("/api/productos/<int:id_producto>")
 @requiere_auth
 def eliminar_producto(id_producto):
-    """Borra el producto del inventario."""
     with db.conectar_db() as conn:
         existe = conn.execute(
             "SELECT 1 FROM productos WHERE id = ?", (id_producto,)
@@ -434,7 +406,6 @@ def eliminar_producto(id_producto):
 @app.post("/api/productos/<int:id_producto>/recargar")
 @requiere_auth
 def recargar_stock_producto(id_producto):
-    """Permite recargar o sumar stock a un producto existente."""
     datos = cuerpo_json()
     try:
         cantidad = int(datos.get("cantidad", 0))
@@ -886,4 +857,4 @@ def resumen_inventario():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=app.config.get("DEBUG", True), port=5000)
