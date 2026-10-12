@@ -3,6 +3,7 @@ import sqlite3
 from datetime import datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from functools import wraps
+from typing import Optional
 
 from flask import Flask, g, jsonify, request, send_file
 from flask_cors import CORS
@@ -402,8 +403,6 @@ def actualizar_producto(id_producto):
             if not existe:
                 return error("Producto no encontrado.", 404)
 
-            # El UNIQUE de codigo_barra salta aquí igual que al crear, y sin
-            # este try el servidor respondía 500 en vez de explicar el choque.
             conn.execute(
                 "UPDATE productos SET codigo_barra = :codigo, nombre = :nombre, "
                 "precio = :precio, stock = :stock, categoria_id = :categoria_id "
@@ -419,13 +418,7 @@ def actualizar_producto(id_producto):
 @app.delete("/api/productos/<int:id_producto>")
 @requiere_auth
 def eliminar_producto(id_producto):
-    """Borra el producto del inventario.
-
-    Si ya se vendió, sus filas en detalle_ventas quedan con producto_id en
-    NULL (ON DELETE SET NULL) pero conservan el nombre y el precio que se
-    cobraron: la factura de aquella venta sigue diciendo exactamente lo que
-    dijo. Borrar el producto no toca el historial.
-    """
+    """Borra el producto del inventario."""
     with db.conectar_db() as conn:
         existe = conn.execute(
             "SELECT 1 FROM productos WHERE id = ?", (id_producto,)
@@ -438,17 +431,48 @@ def eliminar_producto(id_producto):
     return jsonify({"exito": True, "mensaje": "Producto eliminado correctamente."})
 
 
+@app.post("/api/productos/<int:id_producto>/recargar")
+@requiere_auth
+def recargar_stock_producto(id_producto):
+    """Permite recargar o sumar stock a un producto existente."""
+    datos = cuerpo_json()
+    try:
+        cantidad = int(datos.get("cantidad", 0))
+    except (TypeError, ValueError):
+        return error("La cantidad debe ser un número entero.")
+    
+    if cantidad <= 0:
+        return error("La cantidad a recargar debe ser mayor a 0.")
+
+    with db.conectar_db() as conn:
+        producto = conn.execute(
+            "SELECT id, nombre, stock FROM productos WHERE id = ?", (id_producto,)
+        ).fetchone()
+        
+        if not producto:
+            return error("Producto no encontrado.", 404)
+            
+        nuevo_stock = producto["stock"] + cantidad
+        if nuevo_stock > STOCK_MAXIMO:
+            return error(f"El stock no puede superar el límite máximo de {STOCK_MAXIMO} unidades.", 400)
+            
+        conn.execute(
+            "UPDATE productos SET stock = ? WHERE id = ?",
+            (nuevo_stock, id_producto)
+        )
+
+    return jsonify({
+        "exito": True,
+        "mensaje": f"Stock recargado correctamente. Nuevo stock: {nuevo_stock}",
+        "nuevo_stock": nuevo_stock
+    })
+
+
 # ---------- Ventas ----------
 
 @app.post("/api/ventas")
 @requiere_auth
 def registrar_venta():
-    """Registra la venta y descuenta stock en una sola transacción.
-
-    El usuario de la venta sale de la sesión (g.usuario), no del cuerpo de la
-    petición: si el cliente pudiera mandar usuario_id, cualquiera podría
-    registrar ventas a nombre de otro.
-    """
     datos = cuerpo_json()
     metodo_pago = datos.get("metodo_pago", "efectivo")
     cliente_id = datos.get("cliente_id")
@@ -467,11 +491,7 @@ def registrar_venta():
         cliente_id = None
 
     with db.conectar_db() as conn:
-
         total = Decimal("0")
-        # El detalle se arma con lo que lee el servidor, no con el cuerpo de
-        # la petición: el cliente solo manda id y cantidad, y el precio que
-        # queda en la factura tiene que ser el que se cobró de verdad.
         detalle = []
         for item in items:
             try:
@@ -549,11 +569,6 @@ def registrar_venta():
 @app.get("/api/ventas/<int:venta_id>")
 @requiere_auth
 def obtener_venta(venta_id):
-    """Una venta con su detalle, para poder reimprimir la factura.
-
-    El subtotal no está guardado en la tabla `ventas`: sale de la suma del
-    detalle, que es la misma operación con la que se creó la venta.
-    """
     with db.conectar_db() as conn:
         venta = conn.execute(
             "SELECT v.id, v.fecha, v.total, v.metodo_pago, u.nombre AS vendedor "
@@ -565,10 +580,6 @@ def obtener_venta(venta_id):
         if venta is None:
             return error("La venta no existe.", 404)
 
-        # El nombre sale de la copia que quedó en la línea de venta, no de
-        # productos: un producto borrado del inventario tiene producto_id en
-        # NULL y su JOIN se perdería. Así la factura vieja sobrevive al
-        # borrado del producto.
         filas = conn.execute(
             "SELECT producto_id, cantidad, precio_unitario, nombre_producto "
             "FROM detalle_ventas WHERE venta_id = ? ORDER BY id",
@@ -666,13 +677,6 @@ def eliminar_proveedor(id_proveedor):
 # ---------- Reportes ----------
 
 def rango_fechas():
-    """Lee fecha_inicio / fecha_fin (AAAA-MM-DD) de la query.
-
-    Devuelve (desde, hasta) como texto listo para comparar contra la
-    columna de SQLite, con el día final completo hasta las 23:59:59.
-    Lanza ValueError si el formato no es válido. Devuelve (None, None)
-    cuando no se pidió un rango explícito.
-    """
     inicio = (request.args.get("fecha_inicio") or "").strip()
     fin = (request.args.get("fecha_fin") or "").strip()
     if not inicio and not fin:
@@ -697,7 +701,6 @@ def rango_fechas():
 @app.get("/api/reportes")
 @requiere_auth
 def obtener_reportes():
-    """KPIs y detalle de ventas para el período o rango de fechas pedido."""
     try:
         desde_txt, hasta_txt = rango_fechas()
     except ValueError:
@@ -764,15 +767,6 @@ def obtener_reportes():
 @app.get("/api/respaldos/descargar")
 @requiere_admin
 def descargar_respaldo():
-    """Entrega una copia de la base de datos como descarga.
-
-    La copia se hace con la API de backup de SQLite, no copiando el archivo
-    a mano: si alguien está escribiendo al mismo tiempo, una copia de bytes
-    puede quedar a medio escribir y no abrir. El .db que baja el usuario es
-    el mismo que usa el servidor, así que restaurarlo es inmediato.
-    """
-    # El destino de backup() tiene que ser una ruta: SQLite no acepta un
-    # BytesIO. Se copia a un temporal y luego se leen los bytes.
     temporal = db.RUTA_DB.with_suffix(".descargando")
     conexion = sqlite3.connect(db.RUTA_DB)
     try:
@@ -797,16 +791,6 @@ def descargar_respaldo():
 @app.post("/api/respaldos/restaurar")
 @requiere_admin
 def restaurar_respaldo():
-    """Reemplaza la base de datos por el archivo .db que sube el usuario.
-
-    Solo para administradores, y con dos validaciones:
-      - el archivo tiene que ser un SQLite válido con las tablas del sistema;
-      - tiene que traer al menos un administrador, porque una base sin
-        admins dejaría la instalación sin forma de entrar.
-
-    Antes de tocar nada se guarda una copia del estado actual, para poder
-    volver atrás si el archivo resulta no servir.
-    """
     if "archivo" not in request.files:
         return error("No se recibió ningún archivo.")
 
@@ -814,8 +798,6 @@ def restaurar_respaldo():
     if not archivo.filename:
         return error("El archivo no tiene nombre.")
 
-    # Se escribe a un temporal: si el archivo subir no es un SQLite, se
-    # detecta al abrirlo y no se toca la base real.
     temporal = db.RUTA_DB.with_suffix(".restaurando")
     archivo.save(temporal)
 
@@ -824,17 +806,14 @@ def restaurar_respaldo():
         temporal.unlink(missing_ok=True)
         return error(problema)
 
-    # Respaldo del estado actual por si el archivo era válido pero viejo.
     copia_seguridad = db.RUTA_DB.with_suffix(".antes-de-restaurar")
     copia_seguridad.write_bytes(db.RUTA_DB.read_bytes())
 
     conexion = sqlite3.connect(db.RUTA_DB)
-    conexion.close()  # cierra la conexión que pudo quedar viva
+    conexion.close()
     db.RUTA_DB.write_bytes(temporal.read_bytes())
     temporal.unlink(missing_ok=True)
 
-    # La sesión actual vivía en la base que se acaba de cambiar: el token
-    # puede que ya no exista, así que se cierra y se pide entrar de nuevo.
     db.purgar_todas_las_sesiones()
 
     return jsonify({
@@ -843,8 +822,7 @@ def restaurar_respaldo():
     })
 
 
-def _validar_archivo_respaldo(ruta) -> str | None:
-    """Devuelve None si el archivo sirve como respaldo; el motivo si no."""
+def _validar_archivo_respaldo(ruta) -> Optional[str]:
     try:
         conexion = sqlite3.connect(f"file:{ruta}?mode=ro", uri=True)
     except sqlite3.Error:
@@ -857,7 +835,6 @@ def _validar_archivo_respaldo(ruta) -> str | None:
         if tabla is None:
             return "El archivo no contiene las tablas de Tienda Alexander."
 
-        # Todas las tablas que el sistema necesita para funcionar.
         for nombre in ("usuarios", "categorias", "productos", "ventas", "sesiones"):
             existe = conexion.execute(
                 "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?", (nombre,)
@@ -881,7 +858,6 @@ def _validar_archivo_respaldo(ruta) -> str | None:
 @app.get("/api/respaldos/info")
 @requiere_admin
 def informacion_respaldo():
-    """Tamaño y fecha de la base de datos actual."""
     existe = db.RUTA_DB.exists()
     datos = {
         "existe": existe,
@@ -894,7 +870,6 @@ def informacion_respaldo():
 @app.get("/api/inventario/resumen")
 @requiere_auth
 def resumen_inventario():
-    """Totales del inventario para la pantalla de inicio."""
     with db.conectar_db() as conn:
         fila = conn.execute("""
             SELECT COUNT(*) AS total_productos,
