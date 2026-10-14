@@ -34,7 +34,7 @@ case $opcion in
         echo "======================================================="
         echo "   SELECCIONA EL CORREO PREDEFINIDO"
         echo "======================================================="
-        echo "[1] correo1@dominio.com"
+        echo "[1] urbinapovedajosedavid@gmail.com"
         echo "[2] correo2@dominio.com"
         echo "[3] correo3@dominio.com"
         echo "======================================================="
@@ -82,12 +82,17 @@ echo "========================================"
 echo "   Iniciando subida automatica a GitHub"
 echo "========================================"
 
-# Cambiar a la rama seleccionada (si no existe localmente, la crea)
-git checkout "$rama" 2>/dev/null || git checkout -b "$rama"
+# Cambiar a la rama seleccionada o crearla si no existe (sin errores molestos)
+if git show-ref --verify --quiet "refs/heads/$rama"; then
+    git checkout "$rama"
+else
+    git checkout -b "$rama"
+fi
 
+# Añadir, confirmar y forzar la subida para reemplazar cambios remotos
 git add .
 git commit -m "$mensaje"
-git push -u origin "$rama"
+git push -u origin "$rama" --force
 
 echo "========================================"
 echo "   ¡Proceso completado con exito!"
