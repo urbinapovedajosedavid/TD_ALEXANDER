@@ -1,27 +1,31 @@
-/* Sidebar y cabecera común.
- *
- * Estas dos zonas estaban copiadas en inicio.html, almacen.html,
- * ventas.html, reportes.html y proveedores.html: unas 60 líneas por
- * archivo que solo cambiaban en el botón activo y el subtítulo. Aquí se
- * generan una vez a partir de la tabla PAGINAS.
- *
- * Cada página solo necesita:
- *   <aside id="sidebar"></aside>
- *   <header id="barraSuperior"></header>
- * y declarar su subtítulo en data-subtitulo.
- */
-
 window.App = window.App || {};
 
 App.layout = (function () {
     const LOGO = "https://i.postimg.cc/XqZdZjvF/logo-TD.jpg";
 
-    /* Origen único de la navegación. El orden coloca a Stock justo debajo de Producto. */
+   
     const PAGINAS = [
         { clave: "inicio", ruta: "inicio.html", texto: "Inicio" },
         { clave: "ventas", ruta: "ventas.html", texto: "Ventas" },
-        { clave: "almacen", ruta: "almacen.html", texto: "Producto" },
-        { clave: "stock", ruta: "stock.html", texto: "Stock" },
+        {
+            clave: "almacen",
+            texto: "Producto",
+            submenu: true,
+            items: [
+                { clave: "almacen", ruta: "almacen.html", texto: "Gestión de productos" },
+                { clave: "stock", ruta: "stock.html", texto: "Stock" },
+            ],
+        },
+        {
+            clave: "configuracion",
+            texto: "Configuración",
+            submenu: true,
+            items: [
+                { clave: "config_estilo", ruta: "#", texto: "Estilo/Fondo" },
+                { clave: "config_fuente", ruta: "#", texto: "Tamaño de letras" },
+                { clave: "config_contraste", ruta: "#", texto: "Contraste/Colores" },
+            ],
+        },
         { clave: "reportes", ruta: "reportes.html", texto: "Reportes" },
         { clave: "proveedores", ruta: "provedores.html", texto: "Proveedores" },
     ];
@@ -34,6 +38,10 @@ App.layout = (function () {
         stock: "📊",
         reportes: "📈",
         proveedores: "🚚",
+        configuracion: "⚙",
+        config_estilo: "🎨",
+        config_fuente: "🔤",
+        config_contraste: "☯",
         copia_de_seguridad: "💾",
     };
 
@@ -45,29 +53,64 @@ App.layout = (function () {
         ventas: "Módulo de registro y procesamiento de ventas",
         reportes: "Módulo de analítica y reportes",
         proveedores: "Módulo de administración de proveedores",
-        copia_de_seguridad: "Módulo de copia de seguridad",
+        configuracion: "Configuración visual",
+        copia_de_seguridad: "Copia de seguridad",
     };
 
-    /* Deduce la página activa a partir del archivo abierto.
-     * La copia de seguridad está en el pie del menú, no en la lista
-     * principal: se reconoce para poner su subtítulo, pero no se marca
-     * ninguna opción del menú como activa. */
+    
     function paginaActual() {
         const archivo = window.location.pathname.split("/").pop() || "";
-        const encontrada = PAGINAS.find((p) => p.ruta === archivo);
-        if (encontrada) return encontrada.clave;
+        const encontrada = PAGINAS.find((p) => {
+            if (p.submenu) {
+                return p.items.some((i) => i.ruta === archivo);
+            }
+            return p.ruta === archivo;
+        });
+        if (encontrada) {
+            if (encontrada.submenu) {
+                const itemActivo = encontrada.items.find((i) => i.ruta === archivo);
+                return itemActivo ? itemActivo.clave : encontrada.clave;
+            }
+            return encontrada.clave;
+        }
         return archivo === "copia_de_seguridad.html" ? "copia_de_seguridad" : "";
     }
 
     function plantillaSidebar(activa) {
-        const botones = PAGINAS.map(
-            (p) => `
+        const botones = PAGINAS.map((p) => {
+            if (p.submenu) {
+                const tieneActivo = p.items.some((i) => i.clave === activa);
+                const itemsHtml = p.items
+                    .map(
+                        (i) => `
+                    <button class="nav-subitem ${i.clave === activa ? "nav-subitem-activo" : ""}"
+                            type="button" data-ruta="${i.ruta}">
+                        <span class="nav-texto">${i.texto}</span>
+                    </button>`
+                    )
+                    .join("");
+
+                return `
+                <div class="nav-dropdown ${tieneActivo ? "nav-dropdown-abierto active" : ""}">
+                    <button class="nav-item nav-item-dropdown ${tieneActivo ? "nav-item-activa" : ""}"
+                            type="button" data-dropdown="${p.clave}" aria-expanded="${tieneActivo}">
+                        <span class="nav-icono" aria-hidden="true">${ICONOS[p.clave] || "•"}</span>
+                        <span class="nav-texto">${p.texto}</span>
+                        <span class="nav-flecha" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="nav-submenu">
+                        ${itemsHtml}
+                    </div>
+                </div>`;
+            }
+
+            return `
             <button class="nav-item ${p.clave === activa ? "nav-item-activa" : ""}"
                     type="button" data-ruta="${p.ruta}">
                 <span class="nav-icono" aria-hidden="true">${ICONOS[p.clave] || "•"}</span>
                 <span class="nav-texto">${p.texto}</span>
-            </button>`
-        ).join("");
+            </button>`;
+        }).join("");
 
         return `
             <div class="sidebar-brand">
@@ -132,9 +175,6 @@ App.layout = (function () {
     }
 
     /* ---------- Ajustes ----------
-     * Estas acciones se generan desde aquí porque aparecen en todas las
-     * páginas con el sidebar. Los formularios viven en un <div> que se
-     * inyecta una sola vez en el body.
      */
     function plantillasModales() {
         return `
@@ -169,7 +209,44 @@ App.layout = (function () {
             </div>
         </div>
 
-        <div id="modalUsuarios" class="modal modal-oculto" aria-hidden="true">
+
+        <div id="modalConfig" class="modal modal-oculto" aria-hidden="true">
+            <div class="modal-contenido">
+                <div class="modal-cabecera">
+                    <h3>Configuración visual (por perfil)</h3>
+                    <button id="cerrarModalConfig" class="boton-cerrar" type="button" aria-label="Cerrar">&times;</button>
+                </div>
+                <form id="formConfig" class="form-producto">
+                    <div class="form-row">
+                        <label for="cfgFondo">Color de fondo (hex)</label>
+                        <input type="color" id="cfgFondo" value="#f7fffc">
+                    </div>
+                    <div class="form-row">
+                        <label for="cfgTexto">Color de texto (hex)</label>
+                        <input type="color" id="cfgTexto" value="#1f3f4a">
+                    </div>
+                    <div class="form-row">
+                        <label for="cfgTamaño">Tamaño de letra base (%)</label>
+                        <input type="range" id="cfgTamaño" min="90" max="110" step="1" value="100">
+                        <small id="cfgTamañoVal">100%</small>
+                    </div>
+                    <div class="form-row">
+                        <label for="cfgRadio">Radio de bordes</label>
+                        <select id="cfgRadio">
+                            <option value="8">Suave (8px)</option>
+                            <option value="12" selected>Normal (12px)</option>
+                            <option value="16">Redondeado (16px)</option>
+                            <option value="20">Más redondeado (20px)</option>
+                        </select>
+                    </div>
+                    <p id="mensajeConfig" class="mensaje"></p>
+                    <div class="modal-acciones">
+                        <button type="button" id="btnResetConfig" class="btn-pill btn-pill-oscuro">Restaurar</button>
+                        <button type="submit" class="btn-pill btn-pill-menta">Guardar por perfil</button>
+                    </div>
+                </form>
+            </div>
+        </div>        <div id="modalUsuarios" class="modal modal-oculto" aria-hidden="true">
             <div class="modal-contenido">
                 <div class="modal-cabecera">
                     <h3>Usuarios del sistema</h3>
@@ -202,6 +279,34 @@ App.layout = (function () {
             document.body.appendChild(contenedor.firstChild);
         }
     }
+    function getConfigKey() {
+        const u = App.auth && App.auth.actual ? App.auth.actual() : null;
+        if (u && u.usuario) return "tdalex_config_" + u.usuario;
+        return "tdalex_config_global";
+    }
+
+    function cargarConfigVisual() {
+        try {
+            const key = getConfigKey();
+            const raw = localStorage.getItem(key);
+            if (!raw) return;
+            const cfg = JSON.parse(raw);
+            aplicarConfigVisual(cfg);
+        } catch (e) {}
+    }
+
+    function aplicarConfigVisual(cfg) {
+        if (!cfg) return;
+        const root = document.documentElement;
+        if (cfg.fondo) {
+            root.style.setProperty("--fondo", cfg.fondo);
+            root.style.setProperty("--fondo-app", cfg.fondo);
+        }
+        if (cfg.texto) root.style.setProperty("--texto", cfg.texto);
+        if (cfg.tamaño) root.style.setProperty("--font-size-base", cfg.tamaño + "%");
+        if (cfg.radio) root.style.setProperty("--border-radius", cfg.radio + "px");
+    }
+
 
     async function enviarCambioClave(evento) {
         evento.preventDefault();
@@ -384,9 +489,36 @@ App.layout = (function () {
         escritorio.addEventListener("change", (evento) => {
             if (!evento.matches) desplegar(false);
         });
+
+        // Manejo de dropdowns
+        sidebar.querySelectorAll("[data-dropdown]").forEach((boton) => {
+            boton.addEventListener("click", (evento) => {
+                evento.stopPropagation();
+                const dropdown = boton.closest(".nav-dropdown");
+                if (!dropdown) return;
+
+                const estaAbierto = dropdown.classList.contains("nav-dropdown-abierto") || dropdown.classList.contains("active");
+                dropdown.classList.toggle("nav-dropdown-abierto");
+                dropdown.classList.toggle("active");
+                boton.setAttribute("aria-expanded", String(dropdown.classList.contains("nav-dropdown-abierto") || dropdown.classList.contains("active")));
+            });
+        });
+
+        // Cerrar dropdowns al hacer clic fuera
+        document.addEventListener("click", (evento) => {
+            if (!sidebar.contains(evento.target)) {
+                sidebar.querySelectorAll(".nav-dropdown-abierto, .nav-dropdown.active").forEach((dropdown) => {
+                    dropdown.classList.remove("nav-dropdown-abierto");
+                    dropdown.classList.remove("active");
+                    const boton = dropdown.querySelector("[data-dropdown]");
+                    if (boton) boton.setAttribute("aria-expanded", "false");
+                });
+            }
+        });
     }
 
     function montar() {
+        cargarConfigVisual();
         if (!App.auth.exigir()) return false;
 
         const activa = paginaActual();
@@ -410,6 +542,20 @@ App.layout = (function () {
                 });
             });
 
+            sidebar.querySelectorAll(".nav-subitem[data-ruta]").forEach((boton) => {
+                boton.addEventListener("click", () => {
+                    if (boton.dataset.ruta === "#") {
+                        const txt = boton.querySelector(".nav-texto").textContent;
+                        if (txt.includes("Estilo") || txt.includes("Fondo")) App.layout.abrirConfig("estilo");
+                        else if (txt.includes("Tamaño")) App.layout.abrirConfig("fuente");
+                        else if (txt.includes("Contraste")) App.layout.abrirConfig("contraste");
+                        else App.layout.abrirConfig();
+                        return;
+                    }
+                    window.location.href = boton.dataset.ruta;
+                });
+            });
+
             const btnCopia = document.getElementById("btnCopiaSeguridad");
             if (btnCopia) {
                 btnCopia.addEventListener("click", () => {
@@ -424,5 +570,84 @@ App.layout = (function () {
         return true;
     }
 
-    return { montar, paginaActual };
+    function abrirConfig(preferido) {
+        asegurarModales();
+        const modal = document.getElementById("modalConfig");
+        if (!modal) return;
+        const key = getConfigKey();
+        try {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+                const cfg = JSON.parse(raw);
+                if (cfg.fondo) document.getElementById("cfgFondo").value = cfg.fondo;
+                if (cfg.texto) document.getElementById("cfgTexto").value = cfg.texto;
+                if (cfg.tamaño) {
+                    document.getElementById("cfgTamaño").value = cfg.tamaño;
+                    document.getElementById("cfgTamañoVal").textContent = cfg.tamaño + "%";
+                }
+                if (cfg.radio) document.getElementById("cfgRadio").value = cfg.radio;
+            }
+        } catch (e) {}
+        document.getElementById("mensajeConfig").textContent = "";
+        App.ui.abrir("modalConfig");
+
+        const foco = {
+            estilo: "cfgFondo",
+            fuente: "cfgTamaño",
+            contraste: "cfgTexto",
+        }[preferido];
+        if (foco) {
+            const campo = document.getElementById(foco);
+            if (campo) setTimeout(function () { campo.focus(); }, 120);
+        }
+
+        document.getElementById("formConfig").onsubmit = function (e) {
+            e.preventDefault();
+            guardarConfig();
+        };
+        document.getElementById("btnResetConfig").onclick = resetConfig;
+        document.getElementById("cfgTamaño").oninput = function () {
+            document.getElementById("cfgTamañoVal").textContent = this.value + "%";
+        };
+        const cerrar = document.getElementById("cerrarModalConfig");
+        if (cerrar) cerrar.onclick = function () {
+            App.ui.cerrar("modalConfig");
+        };
+        App.ui.cerrarAlTocarFondo("modalConfig");
+    }
+
+    function guardarConfig() {
+        const cfg = {
+            fondo: document.getElementById("cfgFondo").value,
+            texto: document.getElementById("cfgTexto").value,
+            tamaño: parseInt(document.getElementById("cfgTamaño").value),
+            radio: document.getElementById("cfgRadio").value,
+        };
+        localStorage.setItem(getConfigKey(), JSON.stringify(cfg));
+        aplicarConfigVisual(cfg);
+        document.getElementById("mensajeConfig").textContent =
+            "Configuración guardada para este perfil.";
+        setTimeout(function () {
+            App.ui.cerrar("modalConfig");
+        }, 800);
+    }
+
+    function resetConfig() {
+        const key = getConfigKey();
+        localStorage.removeItem(key);
+        document.documentElement.style.removeProperty("--fondo");
+        document.documentElement.style.removeProperty("--fondo-app");
+        document.documentElement.style.removeProperty("--texto");
+        document.documentElement.style.removeProperty("--font-size-base");
+        document.documentElement.style.removeProperty("--border-radius");
+        document.getElementById("cfgFondo").value = "#f7fffc";
+        document.getElementById("cfgTexto").value = "#1f3f4a";
+        document.getElementById("cfgTamaño").value = "100";
+        document.getElementById("cfgTamañoVal").textContent = "100%";
+        document.getElementById("cfgRadio").value = "12";
+        document.getElementById("mensajeConfig").textContent =
+            "Restaurado a valores por defecto.";
+    }
+
+    return { montar, paginaActual, abrirConfig, cargarConfigVisual };
 })();

@@ -22,20 +22,20 @@
             <main class="tab-content">
 
                 <section class="tarjeta">
-                    <h1>Terminal de Ventas</h1>
+                    <h1 style="margin: 0 0 8px 0; font-size: 1.05rem;">Terminal de Ventas</h1>
 
                     <div class="layout-ventas">
 
                         <div class="panel-venta">
-                            <h3>Buscar Producto</h3>
+                            <h3 style="margin: 0 0 8px 0; font-size: 0.9rem;">Buscar Producto</h3>
 
-                            <div class="search-bar-pill">
+                            <div class="search-bar-pill" style="margin-bottom: 8px;">
                                 <span class="icono-buscar">🔍</span>
                                 <input type="text" id="inputBuscarVentaProducto"
                                     placeholder="Escanear código de barras o buscar por nombre...">
                             </div>
 
-                            <div class="tabla-panel tabla-panel-scroll">
+                            <div class="tabla-panel tabla-panel-scroll" style="flex: 1 1 auto; min-height: calc(7 * 3rem);">
                                 <table class="tabla">
                                     <thead>
                                         <tr>
@@ -56,9 +56,9 @@
 
                         <!-- Columna derecha: carrito y cobro -->
                         <div class="panel-venta">
-                            <h3>Detalle de la Venta</h3>
+                            <h3 style="margin: 0 0 8px 0; font-size: 0.9rem;">Detalle de la Venta</h3>
 
-                            <div class="tabla-panel tabla-panel-scroll">
+                            <div class="tabla-panel" style="max-height: calc(4 * 3rem); overflow-y: auto; flex-shrink: 0;">
                                 <table class="tabla">
                                     <thead>
                                         <tr>
@@ -90,7 +90,7 @@
                                     <span id="totalVentaValor">C$0.00</span>
                                 </div>
 
-                                <div class="metodo-pago">
+                                <div class="metodo-pago" style="margin-top: 6px;">
                                     <label for="selectMetodoPago">Método de pago:</label>
                                     <select id="selectMetodoPago">
                                         <option value="efectivo">Efectivo</option>
@@ -131,7 +131,7 @@
                                     </button>
                                     <button type="button" id="btnCancelarVenta"
                                         class="btn-pill btn-pill-oscuro btn-bloque">
-                                        Cancelar Venta
+                                        Cancelar la Venta
                                     </button>
                                 </div>
                             </div>

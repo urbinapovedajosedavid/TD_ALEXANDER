@@ -1,45 +1,57 @@
 .layout-ventas {
     display: grid;
-    grid-template-columns: 1fr 400px;
-    gap: 24px;
+    grid-template-columns: 1fr 340px;
+    gap: 12px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
 }
 
 @media (max-width: 1024px) {
     .layout-ventas {
         grid-template-columns: 1fr;
+        overflow-y: auto;
     }
 }
 
 .panel-venta {
     background: var(--fondo-panel);
     border: 1px solid var(--borde);
-    border-radius: 16px;
-    padding: 18px;
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .resumen-cobro {
-    margin-top: 18px;
+    margin-top: 6px;
     background: var(--blanco);
     border: 1px solid var(--borde);
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: var(--border-radius, 12px);
+    padding: 9px 11px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
 
 .linea-resumen {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 8px;
-    font-size: 0.95rem;
+    margin-bottom: 5px;
+    font-size: 0.85rem;
     color: var(--texto);
 }
 
 .total-destacado {
-    font-size: 1.2rem;
+    font-size: 1.02rem;
     font-weight: 700;
     color: var(--azul-marino);
     border-top: 2px solid var(--borde);
-    padding-top: 10px;
-    margin-top: 10px;
+    padding-top: 7px;
+    margin-top: 6px;
 }
 
 /* ==========================================
@@ -47,15 +59,16 @@
    ========================================== */
 
 .panel-pago {
-    margin-top: 18px;
-    padding: 16px;
+    margin-top: 6px;
+    padding: 8px 10px;
     border: 1px solid var(--borde);
-    border-radius: 16px;
+    border-radius: 10px;
     background: linear-gradient(160deg, #f2fdf9 0%, #eaf7f2 100%);
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 7px;
     transition: opacity 0.2s ease;
+    flex-shrink: 0;
 }
 
 .panel-pago.oculto {
@@ -64,10 +77,10 @@
 
 .campo-pago label {
     display: block;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     font-weight: 700;
     color: var(--azul-marino);
-    margin-bottom: 8px;
+    margin-bottom: 5px;
 }
 
 .input-dinero {
@@ -75,7 +88,7 @@
     align-items: center;
     background: var(--blanco);
     border: 1px solid var(--borde);
-    border-radius: 14px;
+    border-radius: 11px;
     overflow: hidden;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -86,8 +99,8 @@
 }
 
 .simbolo-moneda {
-    padding: 0 4px 0 16px;
-    font-size: 1.1rem;
+    padding: 0 3px 0 12px;
+    font-size: 0.95rem;
     font-weight: 700;
     color: var(--texto-suave);
 }
@@ -97,8 +110,8 @@
     border: none;
     outline: none;
     background: transparent;
-    padding: 14px 16px 14px 6px;
-    font-size: 1.35rem;
+    padding: 7px 9px 7px 5px;
+    font-size: 0.95rem;
     font-weight: 700;
     color: var(--azul-marino);
     width: 100%;
@@ -109,7 +122,6 @@
     font-weight: 600;
 }
 
-/* Quita las flechas del input numérico para un look más limpio. */
 .input-dinero input::-webkit-outer-spin-button,
 .input-dinero input::-webkit-inner-spin-button {
     -webkit-appearance: none;
@@ -124,17 +136,17 @@
 .montos-rapidos {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 10px;
+    gap: 6px;
+    margin-top: 7px;
 }
 
 .chip-monto {
     border: 1px solid var(--borde);
     background: rgba(255, 255, 255, 0.85);
     color: var(--azul-marino);
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     font-weight: 700;
-    padding: 7px 14px;
+    padding: 4px 8px;
     border-radius: 999px;
     cursor: pointer;
     transition: background 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
@@ -150,22 +162,22 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
-    border-radius: 14px;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 9px;
     background: var(--azul-marino);
     color: var(--blanco);
     transition: background 0.25s ease;
 }
 
 .vuelto-etiqueta {
-    font-size: 0.88rem;
+    font-size: 0.78rem;
     font-weight: 600;
     opacity: 0.9;
 }
 
 .vuelto-valor {
-    font-size: 1.5rem;
+    font-size: 1.02rem;
     font-weight: 800;
     letter-spacing: 0.3px;
     white-space: nowrap;
@@ -180,11 +192,11 @@
 }
 
 .alerta-pago {
-    margin: 10px 2px 0;
-    font-size: 0.82rem;
+    margin: 6px 2px 0;
+    font-size: 0.76rem;
     font-weight: 600;
     color: var(--error);
-    min-height: 18px;
+    min-height: 16px;
     display: none;
 }
 
@@ -193,23 +205,23 @@
 }
 
 .metodo-pago {
-    margin-top: 18px;
+    margin-top: 10px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 5px;
 }
 
 .metodo-pago label {
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     font-weight: 700;
     color: var(--azul-marino);
 }
 
 .metodo-pago select {
-    padding: 11px 14px;
+    padding: 8px 11px;
     border: 1px solid var(--borde);
-    border-radius: 12px;
-    font-size: 0.95rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
     background: #fbfffe;
     color: var(--texto);
     outline: none;
@@ -222,8 +234,8 @@
 }
 
 .form-cobro-acciones {
-    margin-top: 18px;
+    margin-top: 6px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 6px;
 }
