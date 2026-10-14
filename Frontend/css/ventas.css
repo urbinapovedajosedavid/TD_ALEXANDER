@@ -1,7 +1,7 @@
 .layout-ventas {
     display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 12px;
+    grid-template-columns: 1fr 272px;
+    gap: 9.6px;
     flex: 1;
     min-height: 0;
     overflow: hidden;
@@ -17,8 +17,8 @@
 .panel-venta {
     background: var(--fondo-panel);
     border: 1px solid var(--borde);
-    border-radius: 12px;
-    padding: 10px 12px;
+    border-radius: 9.6px;
+    padding: 8px 9.6px;
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -26,32 +26,32 @@
 }
 
 .resumen-cobro {
-    margin-top: 6px;
+    margin-top: 4.8px;
     background: var(--blanco);
     border: 1px solid var(--borde);
     border-radius: var(--border-radius, 12px);
-    padding: 9px 11px;
+    padding: 7.2px 8.8px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 4px;
 }
 
 .linea-resumen {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 5px;
-    font-size: 0.85rem;
+    margin-bottom: 4px;
+    font-size: 0.68rem;
     color: var(--texto);
 }
 
 .total-destacado {
-    font-size: 1.02rem;
+    font-size: 0.816rem;
     font-weight: 700;
     color: var(--azul-marino);
     border-top: 2px solid var(--borde);
-    padding-top: 7px;
-    margin-top: 6px;
+    padding-top: 5.6px;
+    margin-top: 4.8px;
 }
 
 /* ==========================================
@@ -59,14 +59,14 @@
    ========================================== */
 
 .panel-pago {
-    margin-top: 6px;
-    padding: 8px 10px;
+    margin-top: 3.84px;
+    padding: 5.12px 6.4px;
     border: 1px solid var(--borde);
-    border-radius: 10px;
+    border-radius: 6.4px;
     background: linear-gradient(160deg, #f2fdf9 0%, #eaf7f2 100%);
     display: flex;
     flex-direction: column;
-    gap: 7px;
+    gap: 4.48px;
     transition: opacity 0.2s ease;
     flex-shrink: 0;
 }
@@ -77,10 +77,10 @@
 
 .campo-pago label {
     display: block;
-    font-size: 0.78rem;
+    font-size: 0.499rem;
     font-weight: 700;
     color: var(--azul-marino);
-    margin-bottom: 5px;
+    margin-bottom: 3.2px;
 }
 
 .input-dinero {
@@ -88,7 +88,7 @@
     align-items: center;
     background: var(--blanco);
     border: 1px solid var(--borde);
-    border-radius: 11px;
+    border-radius: 7.04px;
     overflow: hidden;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -99,8 +99,8 @@
 }
 
 .simbolo-moneda {
-    padding: 0 3px 0 12px;
-    font-size: 0.95rem;
+    padding: 0 1.92px 0 7.68px;
+    font-size: 0.608rem;
     font-weight: 700;
     color: var(--texto-suave);
 }
@@ -110,8 +110,8 @@
     border: none;
     outline: none;
     background: transparent;
-    padding: 7px 9px 7px 5px;
-    font-size: 0.95rem;
+    padding: 4.48px 5.76px 4.48px 3.2px;
+    font-size: 0.608rem;
     font-weight: 700;
     color: var(--azul-marino);
     width: 100%;
@@ -136,17 +136,17 @@
 .montos-rapidos {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 7px;
+    gap: 4.8px;
+    margin-top: 5.6px;
 }
 
 .chip-monto {
     border: 1px solid var(--borde);
     background: rgba(255, 255, 255, 0.85);
     color: var(--azul-marino);
-    font-size: 0.7rem;
+    font-size: 0.56rem;
     font-weight: 700;
-    padding: 4px 8px;
+    padding: 3.2px 6.4px;
     border-radius: 999px;
     cursor: pointer;
     transition: background 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
@@ -162,22 +162,22 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 8px;
-    padding: 7px 10px;
-    border-radius: 9px;
+    gap: 6.4px;
+    padding: 5.6px 8px;
+    border-radius: 7.2px;
     background: var(--azul-marino);
     color: var(--blanco);
     transition: background 0.25s ease;
 }
 
 .vuelto-etiqueta {
-    font-size: 0.78rem;
+    font-size: 0.624rem;
     font-weight: 600;
     opacity: 0.9;
 }
 
 .vuelto-valor {
-    font-size: 1.02rem;
+    font-size: 0.816rem;
     font-weight: 800;
     letter-spacing: 0.3px;
     white-space: nowrap;
@@ -192,11 +192,11 @@
 }
 
 .alerta-pago {
-    margin: 6px 2px 0;
-    font-size: 0.76rem;
+    margin: 4.8px 1.6px 0;
+    font-size: 0.608rem;
     font-weight: 600;
     color: var(--error);
-    min-height: 16px;
+    min-height: 12.8px;
     display: none;
 }
 
@@ -205,23 +205,23 @@
 }
 
 .metodo-pago {
-    margin-top: 10px;
+    margin-top: 8px;
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 4px;
 }
 
 .metodo-pago label {
-    font-size: 0.78rem;
+    font-size: 0.624rem;
     font-weight: 700;
     color: var(--azul-marino);
 }
 
 .metodo-pago select {
-    padding: 8px 11px;
+    padding: 6.4px 8.8px;
     border: 1px solid var(--borde);
-    border-radius: 10px;
-    font-size: 0.85rem;
+    border-radius: 8px;
+    font-size: 0.68rem;
     background: #fbfffe;
     color: var(--texto);
     outline: none;
@@ -234,8 +234,8 @@
 }
 
 .form-cobro-acciones {
-    margin-top: 6px;
+    margin-top: 4.8px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4.8px;
 }

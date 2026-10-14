@@ -413,35 +413,35 @@ body {
 .barra-superior {
     background: var(--blanco);
     border: 1px solid var(--borde);
-    border-radius: 14px;
-    padding: 10px 14px;
+    border-radius: 11.2px;
+    padding: 8px 11.2px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 10px 30px rgba(16, 42, 67, 0.06);
-    margin-bottom: 8px;
+    margin-bottom: 6.4px;
     flex-shrink: 0;
 }
 
 .marca {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .marca h2 {
-    font-size: 16px;
+    font-size: 12.8px;
     color: var(--azul-marino);
 }
 
 .marca p {
-    font-size: 11.5px;
+    font-size: 9.2px;
     color: var(--texto-suave);
 }
 
 .acciones-superior {
     display: flex;
-    gap: 8px;
+    gap: 6.4px;
     align-items: center;
     flex-wrap: wrap;
 }
@@ -449,13 +449,13 @@ body {
 .etiqueta-perfil {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4.8px;
     background: #e8f7f1;
     color: var(--azul-marino);
-    padding: 7px 12px;
+    padding: 5.6px 9.6px;
     border-radius: 999px;
     font-weight: 700;
-    font-size: 12px;
+    font-size: 9.6px;
 }
 
 .ajustes-wrapper {
@@ -469,13 +469,13 @@ body {
     top: calc(100% + 8px);
     background: #ffffff;
     border: 1px solid var(--borde);
-    border-radius: 12px;
+    border-radius: 9.6px;
     box-shadow: 0 10px 25px rgba(16, 42, 67, 0.18);
     display: flex;
     flex-direction: column;
-    min-width: 180px;
+    min-width: 144px;
     z-index: 100;
-    padding: 6px;
+    padding: 4.8px;
     overflow: hidden;
 }
 
@@ -487,8 +487,8 @@ body {
     background: transparent;
     border: none;
     text-align: left;
-    padding: 8px 12px;
-    font-size: 0.82rem;
+    padding: 6.4px 9.6px;
+    font-size: 0.66rem;
     color: var(--texto);
     cursor: pointer;
     border-radius: 8px;
@@ -507,8 +507,8 @@ body {
 .tarjeta {
     background: var(--fondo-panel);
     border: 1px solid var(--borde);
-    border-radius: 16px;
-    padding: 12px 14px;
+    border-radius: 12.8px;
+    padding: 9.6px 11.2px;
     box-shadow: 0 12px 30px rgba(16, 42, 67, 0.06);
     flex: 1;
     display: flex;
@@ -518,16 +518,16 @@ body {
 }
 
 .tarjeta h1 {
-    margin: 0 0 12px;
-    font-size: 20px;
+    margin: 0 0 9.6px;
+    font-size: 16px;
     color: var(--azul-marino);
     font-weight: 700;
 }
 
 .tarjeta h3 {
-    font-size: 1rem;
+    font-size: 0.8rem;
     color: var(--azul-marino);
-    margin-bottom: 8px;
+    margin-bottom: 6.4px;
 }
 
 /* ==========================================
@@ -536,27 +536,27 @@ body {
 
 .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-    gap: 12px;
-    margin-bottom: 18px;
+    grid-template-columns: repeat(auto-fit, minmax(152px, 1fr));
+    gap: 9.6px;
+    margin-bottom: 14.4px;
 }
 
 .kpi-card {
     background: var(--fondo-panel);
     border: 1px solid var(--borde);
-    border-radius: 12px;
-    padding: 12px 14px;
+    border-radius: 9.6px;
+    padding: 9.6px 11.2px;
 }
 
 .kpi-card h3 {
-    font-size: 0.78rem;
+    font-size: 0.624rem;
     color: var(--texto-suave);
     font-weight: 600;
-    margin-bottom: 4px;
+    margin-bottom: 3.2px;
 }
 
 .kpi-valor {
-    font-size: 1.4rem;
+    font-size: 1.12rem;
     font-weight: 700;
     color: var(--azul-marino);
     margin: 0;
@@ -570,33 +570,33 @@ body {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
-    gap: 12px;
-    margin-bottom: 14px;
-    padding: 12px 14px;
+    gap: 9.6px;
+    margin-bottom: 11.2px;
+    padding: 9.6px 11.2px;
     background: var(--fondo-panel);
     border: 1px solid var(--borde);
-    border-radius: 12px;
+    border-radius: 9.6px;
 }
 
 .filtro-fechas-campo {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    flex: 1 1 160px;
-    min-width: 140px;
+    gap: 3.2px;
+    flex: 1 1 128px;
+    min-width: 112px;
 }
 
 .filtro-fechas-campo label {
-    font-size: 0.78rem;
+    font-size: 0.624rem;
     font-weight: 700;
     color: var(--azul-marino);
 }
 
 .filtro-fechas-campo input[type="date"] {
-    padding: 8px 11px;
+    padding: 6.4px 8.8px;
     border: 1px solid var(--borde);
-    border-radius: 10px;
-    font-size: 0.85rem;
+    border-radius: 8px;
+    font-size: 0.68rem;
     font-family: inherit;
     background: var(--blanco);
     color: var(--texto);
@@ -622,16 +622,16 @@ body {
 
 .search-bar-pill {
     position: relative;
-    margin-bottom: 14px;
+    margin-bottom: 11.2px;
 }
 
 .search-bar-pill input {
     width: 100%;
-    padding: 8px 16px 8px 36px;
+    padding: 6.4px 12.8px 6.4px 28.8px;
     border-radius: 999px;
     border: 1px solid var(--borde);
     background-color: #fbfffe;
-    font-size: 13px;
+    font-size: 10.4px;
     color: var(--texto);
     outline: none;
     transition: all 0.2s ease;
@@ -644,17 +644,17 @@ body {
 
 .icono-buscar {
     position: absolute;
-    left: 13px;
+    left: 10.4px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 13px;
+    font-size: 10.4px;
     opacity: 0.6;
 }
 
 @media (max-width: 640px) {
     .search-bar-pill input {
-        padding: 8px 14px 8px 34px;
-        font-size: 12.5px;
+        padding: 6.4px 11.2px 6.4px 27.2px;
+        font-size: 10px;
     }
 }
 
@@ -665,8 +665,8 @@ body {
 .barra-filtros {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 14px;
+    gap: 8px;
+    margin-bottom: 11.2px;
 }
 
 .barra-filtros .search-bar-pill {
@@ -682,8 +682,8 @@ body {
 }
 
 .icono-filtro {
-    width: 16px;
-    height: 16px;
+    width: 12.8px;
+    height: 12.8px;
 }
 
 .filtros-wrapper {
@@ -695,15 +695,15 @@ body {
     position: absolute;
     right: 0;
     top: calc(100% + 10px);
-    width: min(320px, 86vw);
+    width: min(256px, 86vw);
     background: var(--blanco);
     border: 1px solid var(--borde);
-    border-radius: 12px;
+    border-radius: 9.6px;
     box-shadow: 0 18px 40px rgba(16, 42, 67, 0.16);
-    padding: 14px;
+    padding: 11.2px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 9.6px;
     z-index: 60;
     transform-origin: top right;
     animation: aparecerFiltro 0.18s ease;
@@ -721,12 +721,12 @@ body {
 .filtro-grupo {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4.8px;
 }
 
 .filtro-grupo label,
 .filtro-etiqueta {
-    font-size: 0.78rem;
+    font-size: 0.624rem;
     font-weight: 700;
     color: var(--azul-marino);
     text-transform: uppercase;
@@ -734,10 +734,10 @@ body {
 }
 
 .filtro-grupo select {
-    padding: 8px 11px;
+    padding: 6.4px 8.8px;
     border: 1px solid var(--borde);
-    border-radius: 10px;
-    font-size: 0.85rem;
+    border-radius: 8px;
+    font-size: 0.68rem;
     background: #fbfffe;
     color: var(--texto);
     outline: none;
@@ -752,17 +752,17 @@ body {
 .orden-precio {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6.4px;
 }
 
 .chip-orden {
     border: 1px solid var(--borde);
     background: #fbfffe;
     color: var(--azul-marino);
-    font-size: 0.8rem;
+    font-size: 0.64rem;
     font-weight: 600;
-    padding: 8px 11px;
-    border-radius: 10px;
+    padding: 6.4px 8.8px;
+    border-radius: 8px;
     cursor: pointer;
     text-align: left;
     transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
@@ -780,7 +780,7 @@ body {
 
 .panel-filtros-pie {
     border-top: 1px solid var(--borde);
-    padding-top: 14px;
+    padding-top: 11.2px;
 }
 
 @media (max-width: 640px) {
@@ -813,10 +813,10 @@ body {
 }
 
 .tabla-panel-scroll {
-    max-height: calc(7 * 3rem);
+    max-height: calc(7 * 2.4rem);
     overflow-y: auto;
     flex: 1 1 auto;
-    min-height: calc(7 * 3rem);
+    min-height: calc(7 * 2.4rem);
 }
 
 /* Desplazamiento interno de tabla: máximo 5 filas visibles y scroll si hay más. */
@@ -855,20 +855,20 @@ body {
     width: 100%;
     border-collapse: collapse;
     text-align: left;
-    font-size: 12.5px;
+    font-size: 10px;
 }
 
 .tabla th {
     background-color: #eaf6f0;
     color: var(--azul-marino);
-    padding: 8px 10px;
+    padding: 6.4px 8px;
     font-weight: 700;
     border-bottom: 2px solid var(--borde);
     white-space: nowrap;
 }
 
 .tabla td {
-    padding: 8px 10px;
+    padding: 6.4px 8px;
     border-bottom: 1px solid var(--borde);
     color: var(--texto);
 }
@@ -879,7 +879,7 @@ body {
 
 .acciones-tabla {
     display: flex;
-    gap: 8px;
+    gap: 6.4px;
     flex-wrap: wrap;
 }
 
@@ -893,18 +893,18 @@ body {
    ========================================== */
 
 .estado-vacio {
-    padding: 16px;
+    padding: 12.8px;
     text-align: center;
     color: var(--texto-suave);
     font-style: italic;
-    font-size: 0.85rem;
+    font-size: 0.68rem;
 }
 
 .badge {
     display: inline-block;
-    padding: 3px 8px;
+    padding: 2.4px 6.4px;
     border-radius: 999px;
-    font-size: 11px;
+    font-size: 8.8px;
     font-weight: 700;
 }
 
@@ -924,10 +924,10 @@ body {
 
 .boton {
     border: none;
-    padding: 8px 13px;
+    padding: 6.4px 10.4px;
     border-radius: 999px;
     font-weight: 700;
-    font-size: 12.5px;
+    font-size: 10px;
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
@@ -949,10 +949,10 @@ body {
    distintos en cuatro archivos; aquí hay una sola definición. */
 .btn-pill {
     border: none;
-    padding: 8px 15px;
+    padding: 6.4px 12px;
     border-radius: 999px;
     font-weight: 700;
-    font-size: 12.5px;
+    font-size: 10px;
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
@@ -999,19 +999,19 @@ body {
 
 .acciones-inventario-pills {
     display: flex;
-    gap: 10px;
-    margin-top: 16px;
+    gap: 8px;
+    margin-top: 12.8px;
     flex-wrap: wrap;
 }
 
 .btn-accion {
-    padding: 5px 10px;
-    min-width: 56px;
+    padding: 4px 8px;
+    min-width: 44.8px;
     border-radius: 8px;
     border: 1px solid var(--borde);
     background: #ebfbf5;
     color: var(--azul-marino);
-    font-size: 11px;
+    font-size: 8.8px;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s ease, transform 0.1s ease;
@@ -1042,8 +1042,8 @@ body {
     border: 1px solid var(--borde);
     background: #ebfbf5;
     color: var(--azul-marino);
-    width: 22px;
-    height: 22px;
+    width: 17.6px;
+    height: 17.6px;
     border-radius: 50%;
     font-weight: 700;
     cursor: pointer;
@@ -1056,7 +1056,7 @@ body {
 .celda-cantidad {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4.8px;
 }
 
 /* ==========================================
@@ -1065,21 +1065,21 @@ body {
 
 .formulario {
     display: grid;
-    gap: 8px;
+    gap: 6.4px;
 }
 
 .formulario label {
     font-weight: 600;
     color: var(--azul-marino);
-    font-size: 0.8rem;
+    font-size: 0.64rem;
 }
 
 .formulario input,
 .formulario select {
-    padding: 8px 11px;
+    padding: 6.4px 8.8px;
     border: 1px solid var(--borde);
-    border-radius: 10px;
-    font-size: 13px;
+    border-radius: 8px;
+    font-size: 10.4px;
     background: #fbfffe;
     color: var(--texto);
     outline: none;
@@ -1094,23 +1094,23 @@ body {
 
 .form-producto {
     display: grid;
-    gap: 8px;
+    gap: 6.4px;
     margin-top: 6px;
 }
 
 .form-row {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    font-size: 12px;
+    gap: 3.2px;
+    font-size: 9.6px;
     color: var(--texto);
 }
 
 /* Configuración visual: controles de color, rango y selección. */
 #formConfig input[type="color"] {
     width: 100%;
-    height: 36px;
-    padding: 2px;
+    height: 28.8px;
+    padding: 1.6px;
     border: 1px solid var(--borde);
     border-radius: var(--border-radius, 10px);
     background: var(--blanco);
@@ -1123,12 +1123,12 @@ body {
 }
 
 #formConfig select {
-    padding: 9px 12px;
+    padding: 7.2px 9.6px;
     border: 1px solid var(--borde);
     border-radius: var(--border-radius, 10px);
     background: var(--fondo-panel);
     color: var(--texto);
-    font-size: 13px;
+    font-size: 10.4px;
     outline: none;
 }
 
@@ -1162,10 +1162,10 @@ body {
 
 .modal-contenido {
     background: var(--blanco);
-    border-radius: 12px;
-    padding: 14px 16px;
+    border-radius: 9.6px;
+    padding: 11.2px 12.8px;
     width: 100%;
-    max-width: 460px;
+    max-width: 368px;
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 18px 48px rgba(16, 42, 67, 0.12);
@@ -1205,9 +1205,9 @@ body {
    ========================================== */
 
 .mensaje {
-    min-height: 18px;
+    min-height: 14.4px;
     margin: 0;
-    font-size: 12.5px;
+    font-size: 10px;
     color: var(--texto-suave);
 }
 
@@ -1226,10 +1226,10 @@ body {
     transform: translate(-50%, 20px);
     background: var(--azul-marino);
     color: var(--blanco);
-    padding: 10px 16px;
-    border-radius: 10px;
+    padding: 8px 12.8px;
+    border-radius: 8px;
     box-shadow: 0 12px 30px rgba(16, 42, 67, 0.28);
-    font-size: 12.5px;
+    font-size: 10px;
     font-weight: 600;
     opacity: 0;
     pointer-events: none;

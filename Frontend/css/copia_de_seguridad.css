@@ -1,57 +1,57 @@
 .seccion {
     background: var(--blanco);
     border: 1px solid var(--borde);
-    border-radius: 14px;
-    padding: 16px;
+    border-radius: 11.2px;
+    padding: 12.8px;
     box-shadow: var(--sombra);
-    margin-bottom: 14px;
+    margin-bottom: 11.2px;
 }
 
 .seccion h2 {
-    font-size: 1.1rem;
+    font-size: 0.88rem;
     color: var(--azul-marino);
-    margin-bottom: 4px;
+    margin-bottom: 3.2px;
 }
 
 .seccion p.subtitulo {
     color: var(--texto-suave);
-    font-size: 0.82rem;
-    margin-bottom: 14px;
+    font-size: 0.656rem;
+    margin-bottom: 11.2px;
 }
 
 .seccion code {
     background: var(--fondo);
     border: 1px solid var(--borde);
-    border-radius: 6px;
-    padding: 1px 5px;
-    font-size: 0.85em;
+    border-radius: 4.8px;
+    padding: 1px 4px;
+    font-size: 0.68em;
 }
 
 /* ---------- Datos de la base ---------- */
 
 .datos-copia {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px;
-    margin-bottom: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(144px, 1fr));
+    gap: 9.6px;
+    margin-bottom: 11.2px;
 }
 
 .dato-copia {
     background: var(--fondo-panel);
     border: 1px solid var(--borde);
-    border-radius: 10px;
-    padding: 10px 12px;
+    border-radius: 8px;
+    padding: 8px 9.6px;
 }
 
 .dato-copia span {
     display: block;
-    font-size: 0.72rem;
+    font-size: 0.576rem;
     color: var(--texto-suave);
-    margin-bottom: 3px;
+    margin-bottom: 2.4px;
 }
 
 .dato-copia strong {
-    font-size: 0.85rem;
+    font-size: 0.68rem;
     color: var(--azul-marino);
     word-break: break-all;
 }
@@ -61,22 +61,22 @@
 .campo {
     display: flex;
     flex-direction: column;
-    gap: 5px;
-    margin-bottom: 12px;
+    gap: 4px;
+    margin-bottom: 9.6px;
 }
 
 .campo label {
-    font-size: 0.8rem;
+    font-size: 0.64rem;
     font-weight: 600;
     color: var(--azul-marino);
 }
 
 .campo input[type="text"],
 .campo input[type="file"] {
-    padding: 8px 11px;
+    padding: 6.4px 8.8px;
     border: 1px solid var(--borde);
-    border-radius: 10px;
-    font-size: 0.85rem;
+    border-radius: 8px;
+    font-size: 0.68rem;
     background: #fbfffe;
     color: var(--texto);
     outline: none;
