@@ -6,7 +6,7 @@
 }
 
 .login-panel {
-    width: min(352px, 100%);
+    width: min(430px, 100%);
     background: var(--blanco);
     border: 1px solid var(--borde);
     border-radius: 14.4px;

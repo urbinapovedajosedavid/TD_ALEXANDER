@@ -546,6 +546,78 @@ App.demo = (function () {
         }
 
         /* --- reportes e inventario --- */
+        if (ruta.startsWith("/reportes/usuario/")) {
+            const idUsuario = Number(ruta.split("/")[3]);
+            const query = new URLSearchParams(ruta.split("?")[1] || "");
+            const yo = usuarioDeDemo();
+            const usuario = d.usuarios.find((u) => u.id === idUsuario);
+
+            if (yo.rol !== "ADMIN") {
+                return Promise.reject(
+                    new Error("Necesitas permisos de administrador para esta acción.")
+                );
+            }
+            if (!usuario) {
+                return Promise.reject(new Error("El usuario no existe."));
+            }
+
+            const inicio = (query.get("fecha_inicio") || "").trim();
+            const fin = (query.get("fecha_fin") || "").trim();
+            const desde = inicio ? inicio + " 00:00:00" : null;
+            const hasta = fin ? fin + " 23:59:59" : null;
+
+            const ventasFiltradas = d.ventas
+                .filter(
+                    (v) =>
+                        v.usuario_id === idUsuario &&
+                        (!desde || v.fecha >= desde) &&
+                        (!hasta || v.fecha <= hasta)
+                )
+                .sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+            const ventas = ventasFiltradas.map((v) => ({
+                id: v.id,
+                fecha: v.fecha,
+                metodo_pago: v.metodo_pago,
+                total: v.total,
+                vendedor: v.usuario,
+                items: (v.items || []).map((i) => ({
+                    id: i.id,
+                    nombre: i.nombre,
+                    cantidad: i.cantidad,
+                    precio_unitario: i.precio_unitario,
+                    subtotal: dinero(i.precio_unitario * i.cantidad),
+                })),
+            }));
+
+            const total = dinero(
+                ventas.reduce((s, v) => s + (Number(v.total) || 0), 0)
+            );
+            const unidades = ventas.reduce(
+                (s, v) =>
+                    s +
+                    (v.items || []).reduce((x, i) => x + (Number(i.cantidad) || 0), 0),
+                0
+            );
+
+            return Promise.resolve({
+                exito: true,
+                usuario: {
+                    id: usuario.id,
+                    nombre: usuario.nombre,
+                    usuario: usuario.usuario,
+                    rol: usuario.rol,
+                },
+                ventas: ventas,
+                kpis: {
+                    total_vendido: total,
+                    cantidad_ventas: ventas.length,
+                    productos_vendidos: unidades,
+                    ticket_promedio: ventas.length ? dinero(total / ventas.length) : 0,
+                },
+            });
+        }
+
         if (ruta.startsWith("/reportes")) {
             const query = new URLSearchParams(ruta.split("?")[1] || "");
             return Promise.resolve(reportes(d, query));
@@ -649,6 +721,7 @@ App.demo = (function () {
 
         const venta = {
             id: d.siguienteId.venta++,
+            usuario_id: yo.id,
             fecha: ahora(),
             total: totalFinal,
             metodo_pago: metodo,

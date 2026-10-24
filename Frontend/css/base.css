@@ -462,6 +462,52 @@ body {
 }
 
 /* ==========================================
+   UBICACIÓN ACTUAL (MIGA DE PAN / BREADCRUMB)
+   ========================================== */
+
+.breadcrumb {
+    margin-bottom: calc(20px * var(--escala-ui));
+}
+
+.breadcrumb-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: calc(6px * var(--escala-ui));
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: calc(0.78rem * var(--escala-ui));
+    color: var(--texto-suave);
+}
+
+.breadcrumb-item {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(6px * var(--escala-ui));
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    content: "/";
+    color: var(--borde);
+}
+
+.breadcrumb-link {
+    color: var(--azul-marino);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.breadcrumb-link:hover {
+    text-decoration: underline;
+}
+
+.breadcrumb-current {
+    color: var(--texto);
+    font-weight: 700;
+}
+
+/* ==========================================
    INDICADORES (KPI)
    ========================================== */
 
@@ -705,6 +751,16 @@ body {
 .panel-filtros-pie {
     border-top: calc(1px * var(--escala-ui)) solid var(--borde);
     padding-top: calc(14px * var(--escala-ui));
+}
+
+.oculto {
+    display: none;
+}
+
+.contenedor-historial-reporte {
+    display: flex;
+    flex-direction: column;
+    gap: calc(8px * var(--escala-ui));
 }
 
 /* ==========================================

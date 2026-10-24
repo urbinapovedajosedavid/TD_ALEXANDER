@@ -181,6 +181,8 @@ App.api = (function () {
                 `/reportes?fecha_inicio=${encodeURIComponent(inicio)}` +
                     `&fecha_fin=${encodeURIComponent(fin)}`
             ),
+        reportesPorUsuario: (usuarioId) =>
+            pedir(`/reportes/usuario/${usuarioId}`),
         resumenInventario: () => pedir("/inventario/resumen"),
 
         // ---------- Copias de seguridad ----------

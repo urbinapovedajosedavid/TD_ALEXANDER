@@ -733,6 +733,97 @@ def obtener_reportes():
     })
 
 
+@app.get("/api/reportes/usuario/<int:usuario_id>")
+@requiere_admin
+def reporte_ventas_de_usuario(usuario_id):
+    """Reporte de ventas por usuario (vendedor).
+
+    Devuelve el historial de ventas de un usuario concreto, con el detalle
+    de cada factura (items), opcionalmente acotado por rango de fechas.
+    Lo usan los reportes de ventas por vendedor del perfil de administrador.
+    """
+    try:
+        desde_txt, hasta_txt = rango_fechas()
+    except ValueError:
+        return error("Formato de fecha inválido. Usa AAAA-MM-DD.", 400)
+
+    with db.conectar_db() as conn:
+        usuario = conn.execute(
+            "SELECT id, nombre, usuario, rol FROM usuarios WHERE id = ?",
+            (usuario_id,),
+        ).fetchone()
+
+        if usuario is None:
+            return error("El usuario no existe.", 404)
+
+        condiciones = ["v.usuario_id = ?"]
+        parametros = [usuario_id]
+        if desde_txt:
+            condiciones.append("v.fecha >= ?")
+            parametros.append(desde_txt)
+        if hasta_txt:
+            condiciones.append("v.fecha <= ?")
+            parametros.append(hasta_txt)
+        where = " AND ".join(condiciones)
+
+        filas = conn.execute(
+            "SELECT v.id, v.fecha, v.total, v.metodo_pago, u.nombre AS vendedor "
+            "FROM ventas v JOIN usuarios u ON u.id = v.usuario_id "
+            f"WHERE {where} ORDER BY v.fecha DESC",
+            tuple(parametros),
+        ).fetchall()
+
+        ventas = []
+        unidades_vendidas = 0
+        totales = []
+        for fila in filas:
+            items = conn.execute(
+                "SELECT producto_id, cantidad, precio_unitario, nombre_producto "
+                "FROM detalle_ventas WHERE venta_id = ? ORDER BY id",
+                (fila["id"],),
+            ).fetchall()
+
+            lineas = [
+                {
+                    "id": item["producto_id"],
+                    "nombre": item["nombre_producto"],
+                    "cantidad": item["cantidad"],
+                    "precio_unitario": item["precio_unitario"],
+                    "subtotal": dinero(Decimal(str(item["precio_unitario"])) * item["cantidad"]),
+                }
+                for item in items
+            ]
+            unidades_vendidas += sum(linea["cantidad"] for linea in lineas)
+            totales.append(fila["total"])
+
+            ventas.append({
+                "id": fila["id"],
+                "fecha": fila["fecha"],
+                "metodo_pago": fila["metodo_pago"],
+                "total": fila["total"],
+                "vendedor": fila["vendedor"],
+                "items": lineas,
+            })
+
+    total_vendido = dinero(sum(totales)) if totales else 0.0
+    return jsonify({
+        "exito": True,
+        "usuario": {
+            "id": usuario["id"],
+            "nombre": usuario["nombre"],
+            "usuario": usuario["usuario"],
+            "rol": usuario["rol"],
+        },
+        "ventas": ventas,
+        "kpis": {
+            "total_vendido": total_vendido,
+            "cantidad_ventas": len(ventas),
+            "productos_vendidos": unidades_vendidas,
+            "ticket_promedio": dinero(total_vendido / len(ventas)) if ventas else 0.0,
+        },
+    })
+
+
 # ---------- Copias de seguridad ----------
 
 @app.get("/api/respaldos/descargar")
