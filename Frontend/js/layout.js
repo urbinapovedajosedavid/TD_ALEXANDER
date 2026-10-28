@@ -16,16 +16,6 @@ App.layout = (function () {
                 { clave: "stock", ruta: "stock.html", texto: "Stock" },
             ],
         },
-        {
-            clave: "configuracion",
-            texto: "Configuración",
-            submenu: true,
-            items: [
-                { clave: "config_estilo", ruta: "#", texto: "Estilo/Fondo" },
-                { clave: "config_fuente", ruta: "#", texto: "Tamaño de letras" },
-                { clave: "config_contraste", ruta: "#", texto: "Contraste/Colores" },
-            ],
-        },
         { clave: "reportes", ruta: "reportes.html", texto: "Reportes" },
         { clave: "proveedores", ruta: "provedores.html", texto: "Proveedores" },
     ];
@@ -33,15 +23,11 @@ App.layout = (function () {
     /* Ícono de cada opción. El sidebar colapsado muestra solo estos. */
     const ICONOS = {
         inicio: "🏠",
-        ventas: "🛒",
+        ventas: "💰",
         almacen: "📦",
         stock: "📊",
         reportes: "📈",
         proveedores: "🚚",
-        configuracion: "⚙",
-        config_estilo: "🎨",
-        config_fuente: "🔤",
-        config_contraste: "☯",
         copia_de_seguridad: "💾",
     };
 
@@ -53,7 +39,6 @@ App.layout = (function () {
         ventas: "Módulo de registro y procesamiento de ventas",
         reportes: "Módulo de analítica y reportes",
         proveedores: "Módulo de administración de proveedores",
-        configuracion: "Configuración visual",
         copia_de_seguridad: "Copia de seguridad",
     };
 
@@ -159,7 +144,7 @@ App.layout = (function () {
                         <button id="cerrarSesionAjustes" class="menu-ajuste-item"
                                 type="button" role="menuitem">Cerrar sesión</button>
                         <button id="cambiarCuentaAjustes" class="menu-ajuste-item"
-                                type="button" role="menuitem">Cambiar cuenta</button>
+                                type="button" role="menuitem">Cambiar de cuenta</button>
                         <button id="cambiarContrasenaAjustes" class="menu-ajuste-item"
                                 type="button" role="menuitem">Cambiar contraseña</button>
                         <button id="verPerfilesAjustes" class="menu-ajuste-item"
