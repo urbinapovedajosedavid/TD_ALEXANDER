@@ -1,253 +1,179 @@
-# Tienda Alexander
+# Tienda Alexander — Sistema de Gestión y Ventas Seguro
 
-Sistema de gestión de ventas e inventario: Flask + SQLite en el backend,
-HTML/CSS/JS sin framework en el frontend.
+Sistema empresarial de facturación, inventario y ventas desarrollado con **Flask** y **SQLite** en el backend, e interfaz web moderna sin frameworks en el frontend.
 
-## Puesta en marcha
+Diseñado bajo estándares de alta seguridad:
+- **Cero LocalStorage / Cero SessionStorage:** Ninguna credencial, contraseña ni token se almacena en el cliente.
+- **Autenticación en Servidor:** Sesiones cifradas nativas de Flask con cookies `HttpOnly` y `SameSite`.
+- **Protección contra Fuerza Bruta:** Bloqueo escalonado automático (3 intentos fallidos $\rightarrow$ 1 minuto, y $+2$ minutos adicionales por cada reincidencia) con cuenta regresiva en vivo.
+- **Persistencia Total:** Base de datos SQLite independiente que se auto-reproduce en el primer arranque y persiste indefinidamente.
 
-```bash
-pip install -r requirements.txt
-python Backend/server.py
-```
+---
 
-El servidor escucha en `http://127.0.0.1:5000` y crea
-`database/tienda_alexander.db` a partir de `database/esquema.sql` en el
-primer arranque, junto con el usuario administrador y las categorías
-iniciales.
+## 🚀 Inicio Rápido con 1 Solo Clic (Sin Compilar)
 
-Para usar la interfaz, abre `Frontend/index.html` en el navegador. Se
-redirige al login. Credenciales iniciales: **admin / admin123**
+Si tienes Python instalado en tu computadora, puedes iniciar el sistema inmediatamente con **un solo clic**:
 
-> El frontend son archivos estáticos: puedes abrirlos con doble clic.
-> No hace falta servir la carpeta con otro servidor.
+1. Haz doble clic en el archivo **`iniciar.bat`**.
+2. El script:
+   - Verifica Python e instala dependencias automáticamente.
+   - Reproduce e inicializa la base de datos SQLite si aún no existe.
+   - Crea el usuario Administrador por defecto.
+   - Inicia el servidor Flask en `http://127.0.0.1:5000/`.
+   - **Abre automáticamente tu navegador web** directamente en la pantalla de inicio de sesión.
 
-## Modo demostración (sin servidor)
+---
 
-Si abres el sistema sin que Flask esté corriendo, no se queda esperando:
-tras 1,5 segundos el frontend detecta que la API no responde y entra solo
-en **modo demostración**. No hay aviso en pantalla: el sistema se comporta
-igual y los datos quedan en el navegador.
+## 📦 Generar Archivo Ejecutable (.EXE) de 1 Solo Clic
 
-| | Con servidor | Modo demostración |
-|---|---|---|
-| Entrar con | admin / admin123 | **admin / admin** |
-| Dónde viven los datos | SQLite, en el servidor | `localStorage` del navegador |
-| Contraseñas | PBKDF2 con sal | texto simple, solo en el equipo |
+Para empaquetar todo el sistema (backend, frontend, base de datos y servidor) en un **ejecutable independiente de Windows (`.exe`)**:
 
-En la demo puedes registrar ventas, crear y editar productos, agregar
-proveedores, ver reportes e inventarios, cambiar tu contraseña y crear
-usuarios: todo funciona igual, pero contra los datos locales.
+### Método Automático (Recomendado)
+Haz doble clic en el archivo **`compilar_exe.bat`**.
 
-Tres cosas para tener claras:
+El script se encargará automáticamente de:
+1. Instalar `pyinstaller` y las dependencias necesarias.
+2. Empaquetar todo el código Python, el frontend estático (`Frontend/`), el esquema SQLite (`database/esquema.sql`) y las variables de entorno (`.env`).
+3. Generar la carpeta distribuible lista para usar:
+   ```
+   dist\TiendaAlexander\TiendaAlexander.exe
+   ```
 
-- **Solo pasa a la demo si la API no contesta.** Si el servidor responde
-  un `401` o un `403`, se respeta esa respuesta y no se entra en
-  demostración. Nadie se salta la seguridad de una instalación real.
-- **Los datos de la demo no son los del negocio.** No se mezclan ni se
-  sincronizan con la base de datos.
-- **Para volver a los datos reales** cierra la sesión y entra de nuevo con
-  `admin / admin123` teniendo Flask corriendo. Si enciendes el servidor con
-  una sesión de demo abierta, esa sesión se rechaza y vuelves al login.
-
-### Crear cuentas sin servidor
-
-El botón **Crear usuario** del login abre una pantalla que **no pide sesión
-abierta**, porque es justamente donde se crea la cuenta: pedir que ya hayas
-entrado convertía el alta en un callejón sin salida y el botón te rebotaba al
-propio login.
-
-Para que esa pantalla sirva sin conexión hay un almacén propio,
-`App.cuentas`, que guarda las cuentas en el `localStorage` del navegador
-bajo `tiendaAlexanderCuentasLocales`. La cuenta creada sirve para entrar en
-el acto, haya servidor o no:
-
-| | Con servidor | Sin servidor |
-|---|---|---|
-| Se crea en | la base de datos **y** el navegador | solo el navegador |
-| Se puede entrar con ella | sí | sí |
-| La ve el admin `admin123` | sí, siempre | — |
-
-Al entrar, si la cuenta es de este navegador la sesión queda marcada como
-**local**: el token `"local"` no existe para ningún servidor, así que las
-peticiones se responden con la demo en vez de mandar un token inventado que
-traería un `401` a mitad de sesión. Si quien crea la cuenta es un
-administrador con sesión real, además se da de alta en el servidor y así el
-despliegue normal no se rompe.
-
-> La contraseña se guarda en claro en ese `localStorage`, igual que las
-> cuentas de ejemplo de la demo. Es una medida para poder presentar sin base
-> de datos, **no** un almacén de claves: en un despliegue real el alta va por
-> `/auth/registro` y la contraseña nunca sale del servidor (PBKDF2 con sal).
-> Para borrarlas: `App.cuentas.borrarTodas()` desde la consola.
-
-Para empezar de cero con los datos de ejemplo,
-`Frontend/js/demo.js` expone `App.demo.reiniciar()` desde la consola del
-navegador. También puedes borrar el sitio desde las herramientas del
-navegador.
-
-## Estructura
-
-```
-Backend/
-  server.py        Servidor Flask: todas las rutas de la API
-  db.py            Conexión, arranque del esquema, sesiones y contraseñas
-database/
-  esquema.sql      Única fuente del esquema (DDL)
-tests/
-  test_api.py      160 comprobaciones contra la API real
-  test_demo.js     77 comprobaciones contra la demo aislada
-  test_modo_demo.js 30 comprobaciones del arranque sin servidor
-  test_factura.js  52 comprobaciones de la factura imprimible
-test_registro.js  28 comprobaciones del alta de cuentas sin servidor
-auditar_paginas.js  Botones muertos, métodos inexistentes, ids y scripts
-auditar_css.js      Clases que faltan y reglas que no usa nadie
-Frontend/
-  *.html           Una página por módulo
-  css/base.css     Tokens, layout y componentes comunes
-  css/*.css        Solo lo específico de cada página
-  js/core.js       api, auth, fmt, ui y la factura (lo que usa toda página)
-  js/demo.js       API simulada en localStorage, solo si el servidor no responde
-  js/layout.js     Sidebar y cabecera comunes
-  js/pages/        Un script por página
-```
-
-El código compartido vive en `Frontend/js/core.js` y
-`Frontend/js/layout.js`. El sidebar y la cabecera se generan una sola vez;
-las páginas solo ponen `<aside id="sidebar">` y `<header id="barraSuperior">`.
-
-## Sesiones y permisos
-
-El login devuelve un token opaco que el cliente manda en cada petición como
-`Authorization: Bearer <token>`. El servidor lo valida contra la tabla
-`sesiones`, que dura 8 horas. **Todos los endpoints exigen sesión salvo
-`/api/auth/login`.**
-
-- `POST /api/auth/registro` y `GET /api/usuarios` exigen rol `ADMIN`.
-- El usuario de una venta sale de la sesión, no del cuerpo de la petición.
-- Cerrar sesión revoca el token en el servidor: deja de servir aunque
-  alguien lo hubiera copiado.
-- Cambiar la contraseña revoca las demás sesiones abiertas de esa cuenta.
-
-Contraseñas con PBKDF2-SHA256 y sal por usuario; en el navegador solo se
-guarda el token y quién está conectado, en `sessionStorage`.
-
-## API
-
-| Método  | Ruta                      | Acceso  | Descripción                        |
-| ------- | ------------------------- | ------- | ---------------------------------- |
-| POST    | `/api/auth/login`         | público | Iniciar sesión                     |
-| GET     | `/api/auth/yo`            | sesión  | Usuario de la sesión actual        |
-| POST    | `/api/auth/logout`        | sesión  | Revocar el token                   |
-| POST    | `/api/auth/cambiar-clave` | sesión  | Cambiar la contraseña propia       |
-| DELETE  | `/api/auth/cuenta`        | sesión  | Eliminar la cuenta propia          |
-| POST    | `/api/auth/registro`      | admin   | Crear usuario vendedor             |
-| GET     | `/api/usuarios`           | admin   | Listar usuarios                    |
-| GET     | `/api/categorias`         | sesión  | Listar categorías                  |
-| POST    | `/api/categorias`         | sesión  | Crear categoría                    |
-| GET     | `/api/productos`          | sesión  | Listar productos                   |
-| POST    | `/api/productos`          | sesión  | Crear producto                     |
-| PUT     | `/api/productos/<id>`     | sesión  | Actualizar producto                |
-| DELETE  | `/api/productos/<id>`     | sesión  | Eliminar producto                  |
-| POST    | `/api/ventas`             | sesión  | Registrar venta y descontar stock  |
-| GET     | `/api/ventas/<id>`        | sesión  | Una venta con su detalle, para la factura |
-| GET     | `/api/proveedores`        | sesión  | Listar proveedores                 |
-| POST    | `/api/proveedores`        | sesión  | Crear proveedor                    |
-| DELETE  | `/api/proveedores/<id>`   | sesión  | Eliminar proveedor                 |
-| GET     | `/api/reportes?periodo=`   | sesión  | KPIs y ventas de hoy/semana/mes    |
-| GET     | `/api/inventario/resumen` | sesión  | Totales del inventario             |
-| GET     | `/api/respaldos/info`     | admin   | Fecha y tamaño de la base          |
-| GET     | `/api/respaldos/descargar` | admin  | Descargar copia `.db`              |
-| POST    | `/api/respaldos/restaurar` | admin  | Restaurar una copia `.db`          |
-
-Los errores siempre devuelven `{"exito": false, "mensaje": "..."}`.
-
-## Pruebas
+### Método Manual con PyInstaller
+Si prefieres compilar desde tu propia terminal de comandos (CMD o PowerShell):
 
 ```bash
-python tests\test_api.py      # API real
-node tests\test_demo.js       # lógica de la demo
-node tests\test_modo_demo.js  # arranque sin servidor
-node tests\test_factura.js    # factura imprimible
-node tests\test_registro.js   # alta de cuentas sin servidor
-node tests\auditar_paginas.js # botones muertos, métodos inexistentes, ids, scripts
-node tests\auditar_css.js     # clases que faltan y CSS que sobra
+# 1. Instalar PyInstaller
+pip install pyinstaller -r requirements.txt
+
+# 2. Compilar el proyecto
+pyinstaller --noconfirm --clean ^
+    --name "TiendaAlexander" ^
+    --onedir ^
+    --add-data "Frontend;Frontend" ^
+    --add-data "database\esquema.sql;database" ^
+    --add-data ".env;." ^
+    --hidden-import "werkzeug" ^
+    --hidden-import "werkzeug.security" ^
+    --hidden-import "sqlite3" ^
+    --hidden-import "flask_cors" ^
+    app.py
+
+# 3. Copiar configuración base a la carpeta compilada
+copy .env dist\TiendaAlexander\.env
+mkdir dist\TiendaAlexander\database
+copy database\esquema.sql dist\TiendaAlexander\database\esquema.sql
 ```
 
-`test_api.py` arranca desde una base limpia y comprueba el esquema, que los
-22 endpoints responden 401 sin token, los permisos por rol, el ciclo de vida
-del token, el cambio y borrado de contraseña, los 409 por duplicados, la
-compra, los reportes, los respaldos y la migración de una base vieja.
-**160 comprobaciones.**
+---
 
-Los otros cuatro corren el JavaScript en un entorno simulado, sin navegador y
-sin servidor. `test_demo.js` y `test_modo_demo.js` cubren el arranque en modo
-demostración y, sobre todo, que **un 401 o un 403 del servidor real nunca se
-conviertan en una sesión de demostración**. **77 + 30 comprobaciones.**
-`test_factura.js` revisa la factura como documento: que tenga tabla de
-verdad, que los números cuadren y que escape los nombres de producto.
-**52 comprobaciones.** `test_registro.js` recorre el alta completa: crear una
-cuenta sin sesión, entrar con ella, y comprobar que funciona igual con el
-servidor apagado y con el servidor encendido rechazando el login.
-**28 comprobaciones.**
+## 🗄️ ¿Cómo se reproduce la Base de Datos Automáticamente?
 
-Las dos auditorías revisan lo que no se nota al probar a mano: que cada botón
-tenga un evento, que no se repitan ids, que ninguna clase usada se haya
-quedado sin estilo y que ninguna página llame a un método de `App` que no
-existe.
+El sistema cuenta con un mecanismo de **autocreación y persistencia inteligente**:
 
-Lo último nació de un botón "Eliminar" del inventario que no hacía nada: el
-HTML estaba bien, el botón tenía su listener, y aun así no pasaba nada, porque
-la página llamaba a `App.ui.confirmir()` en vez de `App.ui.confirmar()`. Al no
-existir el método, la línea lanzaba `TypeError` y el clic moría en silencio.
-Las pruebas de la API no lo veían porque miran el servidor, no el DOM, así que
-la auditoría ahora compara cada llamada `App.<módulo>.<método>()` con lo que
-ese módulo exporta de verdad.
+1. **Ubicación Persistente:**
+   La base de datos se almacena en el archivo físico `database/tienda_alexander.db` junto al ejecutable o proyecto.
+2. **Auto-inicialización:**
+   Al ejecutarse `app.py` o `TiendaAlexander.exe`, la rutina `db.inicializar_db()`:
+   - Comprueba si el archivo `.db` existe.
+   - Si **no existe**, crea automáticamente la carpeta `database/`, lee `database/esquema.sql` y crea las 8 tablas oficiales (`usuarios`, `clientes`, `categorias`, `productos`, `ventas`, `detalle_ventas`, `proveedores`, `sesiones`).
+   - Aplica migraciones para borrado en cascada y columnas de seguridad.
+   - Siembra las categorías iniciales (*Electrodomésticos*, *Electrónica*, *Alimentos*).
+   - Crea automáticamente el **usuario Administrador por defecto**.
+3. **Persistencia Garantizada:**
+   Si la base de datos **ya existe**, no se borra ni se sobrescribe: tus productos, ventas y usuarios se conservan intactos entre reinicios.
 
-Esa forma de fallo es la peligrosa: no da error visible en la consola si nadie
-la mira, y el botón queda muerto para siempre. Un nombre mal escrito se parece
-mucho a uno bien escrito, y a simple vista el código parece correcto.
+---
 
-## Reglas del negocio
+## 🔐 Credenciales Iniciales y Configuración (.env)
 
-- El stock va de 0 a 64 unidades. La base de datos tiene un `CHECK` y la
-  API lo vuelve a validar para poder devolver un mensaje claro.
-- Las ventas se registran en una transacción: o se descuenta el stock de
-  todos los productos y se guarda la factura, o no se toca nada.
-- La factura guarda el precio que se cobró en ese momento, no el de hoy: si
-  después sube el precio de un producto, las facturas viejas siguen diciendo
-  lo que el cliente pagó. Por eso el detalle se arma con lo que lee el
-  servidor y no con lo que manda el navegador.
-- La factura es lo único que sale en papel. Va en blanco y negro, con tabla
-  de verdad y sin adornos: `App.factura` en `Frontend/js/core.js`.
-- Una copia de seguridad se valida antes de restaurar: tiene que ser una base
-  SQLite con el esquema del sistema y al menos un administrador. Si algo
-  falla, se conserva la base anterior. Al restaurar se invalidan todas las
-  sesiones, así que hay que volver a entrar.
-- Un producto se elimina aunque ya se haya vendido. La línea de venta guarda
-  una copia del nombre y del precio del momento, y `producto_id` queda en
-  `NULL` (`ON DELETE SET NULL`), así que borrar el producto del inventario no
-  toca las facturas antiguas: siguen diciendo lo que se cobró. Es la misma
-  razón por la que `ventas.cliente_id` usa `SET NULL`.
-- Una cuenta con ventas registradas sí que no se puede eliminar, y el sistema
-  no permite quedarse sin ningún administrador. Ahí el borrado rompería datos
-  que no están duplicados en ningún sitio más.
-- El IVA es 15 % y se calcula con `ROUND_HALF_UP` para no descuadrar
-  centavos.
-- Las fechas se guardan siempre en hora local escritas por el servidor.
-  `CURRENT_TIMESTAMP` de SQLite devuelve UTC, que en Nicaragua va seis horas
-  por detrás y hacía que las ventas de la tarde aparecieran como del día
-  siguiente en el reporte de "hoy".
+El archivo `.env` en la raíz contiene las credenciales iniciales para el primer arranque:
 
-## Publicar los cambios
+```env
+ADMIN_NOMBRE=Administrador
+ADMIN_USUARIO=admin
+ADMIN_CLAVE=admin123
+SECRET_KEY=clave-secreta-tienda-alexander-segura-2026
+```
+
+- **Usuario:** `admin`
+- **Contraseña:** `admin123`
+
+*(Puedes cambiar estos valores en el archivo `.env` antes de iniciar la aplicación por primera vez).*
+
+---
+
+## 🗜️ ¿Cómo comprimir y compartir la aplicación completa?
+
+### Opción 1: Compartir el Ejecutable Compilado (.EXE)
+1. Ejecuta `compilar_exe.bat`.
+2. Dirígete a la carpeta `dist\`.
+3. Haz clic derecho sobre la carpeta **`TiendaAlexander`** $\rightarrow$ **Enviar a** $\rightarrow$ **Carpeta comprimida (en zip)** (o usa WinRAR / 7-Zip).
+4. El archivo `.zip` resultante contiene todo lo necesario: cualquier persona en otra computadora con Windows puede descomprimirlo y hacer doble clic en `TiendaAlexander.exe` sin necesidad de tener Python instalado.
+
+### Opción 2: Compartir el Código Fuente Completo
+Comprime toda la carpeta del proyecto `TD_ALEXANDER` excluyendo carpetas temporales (`.git`, `__pycache__`, `dist`, `build`). El destinatario solo requerirá hacer doble clic en `iniciar.bat`.
+
+---
+
+## 🛡️ Características de Seguridad Avanzada
+
+### 1. Bloqueo Escalonado contra Fuerza Bruta
+- **3 contraseñas incorrectas:** Bloqueo de 1 minuto.
+- **Reincidencia tras desbloqueo:** $+2$ minutos adicionales por cada fallo sucesivo ($3\text{ min} \rightarrow 5\text{ min} \rightarrow 7\text{ min}\dots$).
+- **Cuenta regresiva en vivo:** En la pantalla de login los segundos se descuentan automáticamente en tiempo real en la pantalla sin necesidad de presionar Enter.
+- **Éxito:** Una contraseña correcta reinicia todos los contadores y niveles a cero.
+
+### 2. Cookies Seguras HttpOnly
+- La sesión se mantiene en el servidor en Flask (`session`).
+- La cookie de sesión viaja con la bandera `HttpOnly`, lo que impide que cualquier script malicioso en el navegador acceda a ella.
+
+---
+
+## 🧪 Pruebas Automatizadas
+
+El proyecto incluye suites completas de pruebas unitarias y de integración:
 
 ```bash
-.\subir.bat
+# Ejecutar todas las pruebas del sistema
+python tests\test_api.py            # API REST completa, permisos, ventas y respaldos
+python tests\test_fuerza_bruta.py   # Bloqueo escalonado e intentos fallidos
+python tests\test_sesion_cookie.py  # Autenticación mediante cookies HttpOnly de servidor
 ```
 
-## Pendientes conocidos
+---
 
-- La copia de seguridad es una simulación en el navegador; no genera
-  archivos de verdad.
-- La API responde igual desde cualquier origen porque se usa
-  `Flask-CORS` sin restringir. Al abrirla a una red real hay que limitar
-  `origins` y poner el servidor detrás de HTTPS.
+## 📁 Estructura del Proyecto
+
+```
+TD_ALEXANDER/
+├── app.py                      # Punto de entrada principal (Flask, API y Frontend)
+├── iniciar.bat                 # Lanzador de 1 solo clic (con auto-apertura de navegador)
+├── compilar_exe.bat            # Generador de ejecutable Windows (.exe)
+├── requirements.txt            # Dependencias del proyecto
+├── .env                        # Variables de entorno y credenciales seguras
+├── api/                        # Módulos RESTful (/api)
+│   ├── auth.py                 # Autenticación y sesiones
+│   ├── usuarios.py             # Gestión de vendedores
+│   ├── productos.py            # Inventario y recarga de stock
+│   ├── ventas.py               # Cobro y emisión de facturas
+│   ├── proveedores.py          # Gestión de proveedores
+│   ├── reportes.py             # KPIs y estadísticas de ventas
+│   └── respaldos.py            # Copias de seguridad de base de datos
+├── seguridad/                  # Capa de seguridad
+│   ├── autenticacion.py        # Hashing Werkzeug y algoritmo de fuerza bruta
+│   ├── decoradores.py          # @requiere_login y @requiere_rol
+│   └── modelos.py              # Sembrado de usuarios desde .env
+├── database/
+│   ├── esquema.sql             # Esquema DDL oficial de SQLite
+│   └── tienda_alexander.db     # Archivo persistente de base de datos
+├── Frontend/                   # Interfaz de usuario (HTML, CSS, JS)
+│   ├── Login.html              # Pantalla de acceso con cuenta regresiva en vivo
+│   ├── inicio.html             # Panel principal
+│   ├── almacen.html            # Gestión de productos
+│   ├── stock.html              # Alertas de stock crítico y recargas
+│   ├── ventas.html             # Punto de venta y facturación
+│   ├── reportes.html           # Reportes financieros
+│   └── ...
+└── tests/                      # Suites de pruebas automáticas
+```

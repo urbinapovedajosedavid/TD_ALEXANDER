@@ -1,119 +1,65 @@
-import hashlib
-import hmac
+"""Backend.db
+============
+Capa de acceso a la base de datos SQLite y persistencia del sistema.
+Compatible con entornos de desarrollo y ejecutables empaquetados (.exe).
+"""
+
 import os
-import secrets
 import sqlite3
+import sys
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
-RAIZ = Path(__file__).resolve().parent.parent
-RUTA_ESQUEMA = RAIZ / "database" / "esquema.sql"
-RUTA_DB = RAIZ / "database" / "tienda_alexander.db"
+# Detección de entorno empaquetado (PyInstaller) vs desarrollo
+if getattr(sys, "frozen", False):
+    RAIZ_ACTUAL = Path(sys.executable).resolve().parent
+    RAIZ_RECURSOS = Path(getattr(sys, "_MEIPASS", RAIZ_ACTUAL))
+else:
+    RAIZ_ACTUAL = Path(__file__).resolve().parent.parent
+    RAIZ_RECURSOS = RAIZ_ACTUAL
 
-# Semilla de arranque
-USUARIO_ADMIN = ("Administrador", "admin", "admin123", "ADMIN")
+if str(RAIZ_ACTUAL) not in sys.path:
+    sys.path.insert(0, str(RAIZ_ACTUAL))
+if str(RAIZ_RECURSOS) not in sys.path:
+    sys.path.insert(0, str(RAIZ_RECURSOS))
+
+from seguridad.autenticacion import (  # noqa: E402
+    hash_password,
+    verify_password,
+    crear_sesion,
+    usuario_de_token,
+    revocar_sesion,
+    revocar_sesiones_de_usuario,
+    purgar_sesiones_vencidas,
+)
+from seguridad.modelos import inicializar_usuarios  # noqa: E402
+
+# Esquema DDL: buscar en recursos empaquetados o en la carpeta database
+RUTA_ESQUEMA = RAIZ_RECURSOS / "database" / "esquema.sql"
+if not RUTA_ESQUEMA.exists():
+    RUTA_ESQUEMA = RAIZ_ACTUAL / "database" / "esquema.sql"
+
+# Base de datos SQLite: siempre junto al ejecutable/proyecto para que los datos persistan
+RUTA_DB = RAIZ_ACTUAL / "database" / "tienda_alexander.db"
+
 CATEGORIAS_INICIALES = ("Electrodomésticos", "Electrónica", "Alimentos")
-
-# Una sesión dura una jornada de trabajo.
-DURACION_SESION_HORAS = 8
-
 FORMATO_FECHA = "%Y-%m-%d %H:%M:%S"
 
 
 # ---------- Fechas ----------
 
 def ahora() -> str:
-    """Marca de tiempo local en el formato que usa SQLite.
-
-    Importante: CURRENT_TIMESTAMP de SQLite devuelve SIEMPRE UTC, mientras
-    que un local de Nicaragua va seis horas por detrás. Si una venta se
-    guardara con CURRENT_TIMESTAMP y los reportes calcularan su corte con
-    datetime.now(), las ventas de la tarde aparecerían como del día
-    siguiente. Por eso el servidor escribe siempre la hora local explícita
-    y nunca deja que SQLite la ponga por su cuenta.
-    """
+    """Marca de tiempo local en el formato estándar de SQLite."""
     return datetime.now().strftime(FORMATO_FECHA)
-
-
-# ---------- Contraseñas ----------
-
-def hash_password(clave: str) -> str:
-    """PBKDF2-SHA256 con sal aleatoria. Formato: pbkdf2$<sal>$<hash>."""
-    sal = os.urandom(16)
-    derivada = hashlib.pbkdf2_hmac("sha256", clave.encode(), sal, 200_000)
-    return f"pbkdf2${sal.hex()}${derivada.hex()}"
-
-
-def verify_password(clave: str, almacenado: str) -> bool:
-    """Compara la clave en texto plano contra un hash generado por hash_password."""
-    if not almacenado or not almacenado.startswith("pbkdf2$"):
-        return False
-    _, sal_hex, esperado_hex = almacenado.split("$", 2)
-    derivada = hashlib.pbkdf2_hmac(
-        "sha256", clave.encode(), bytes.fromhex(sal_hex), 200_000
-    )
-    return hmac.compare_digest(derivada.hex(), esperado_hex)
-
-
-# ---------- Sesiones ----------
-
-def crear_sesion(conn: sqlite3.Connection, usuario_id: int) -> str:
-    """Abre una sesión y devuelve el token opaco que se envía al cliente."""
-    token = secrets.token_urlsafe(32)
-    expira = datetime.now() + timedelta(hours=DURACION_SESION_HORAS)
-    conn.execute(
-        "INSERT INTO sesiones (token, usuario_id, creado_en, expira_en) "
-        "VALUES (?, ?, ?, ?)",
-        (token, usuario_id, ahora(), expira.strftime(FORMATO_FECHA)),
-    )
-    return token
-
-
-def usuario_de_token(conn: sqlite3.Connection, token: str):
-    """Fila del usuario si el token es válido y no ha vencido; si no, None."""
-    if not token:
-        return None
-    return conn.execute(
-        "SELECT u.id, u.nombre, u.usuario, u.rol FROM sesiones s "
-        "JOIN usuarios u ON u.id = s.usuario_id "
-        "WHERE s.token = ? AND s.expira_en > ?",
-        (token, ahora()),
-    ).fetchone()
-
-
-def revocar_sesion(conn: sqlite3.Connection, token: str) -> None:
-    conn.execute("DELETE FROM sesiones WHERE token = ?", (token,))
-
-
-def revocar_sesiones_de_usuario(conn: sqlite3.Connection, usuario_id: int) -> None:
-    """Cierra todas las sesiones abiertas de un usuario (tras cambiar la clave)."""
-    conn.execute("DELETE FROM sesiones WHERE usuario_id = ?", (usuario_id,))
-
-
-def purgar_sesiones_vencidas(conn: sqlite3.Connection) -> None:
-    conn.execute("DELETE FROM sesiones WHERE expira_en <= ?", (ahora(),))
-
-
-def purgar_todas_las_sesiones() -> None:
-    """Cierra todas las sesiones abiertas.
-
-    Se usa al restaurar un respaldo: los tokens estaban en la base que se
-    acaba de reemplazar, así que pueden apuntar a usuarios que ya no existen.
-    """
-    with conectar_db() as conn:
-        conn.execute("DELETE FROM sesiones")
 
 
 # ---------- Conexión ----------
 
 @contextmanager
 def conectar_db():
-    """Entrega una conexión con foreign_keys activo.
-
-    Confirma el bloque al salir sin excepción y lo revierte si algo falla,
-    de modo que quien lo usa no tiene que acordarse del commit.
-    """
+    """Entrega una conexión con foreign_keys activo."""
+    RUTA_DB.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(RUTA_DB)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
@@ -127,10 +73,19 @@ def conectar_db():
         conn.close()
 
 
+# ---------- Purga global de sesiones ----------
+
+def purgar_todas_las_sesiones() -> None:
+    """Cierra todas las sesiones abiertas."""
+    with conectar_db() as conn:
+        from seguridad.autenticacion import purgar_todas_las_sesiones as _purgar
+        _purgar(conn)
+
+
 # ---------- Inicialización ----------
 
 def inicializar_db():
-    """Crea el archivo y las tablas a partir de database/esquema.sql."""
+    """Crea el archivo y las tablas a partir de database/esquema.sql si no existen."""
     RUTA_DB.parent.mkdir(parents=True, exist_ok=True)
     sql = RUTA_ESQUEMA.read_text(encoding="utf-8")
 
@@ -139,6 +94,7 @@ def inicializar_db():
         conn.executescript(sql)
         conn.commit()
         _migrar_detalle_ventas(conn)
+        _migrar_usuarios_bloqueo(conn)
         conn.commit()
         _sembrar(conn)
         conn.commit()
@@ -146,23 +102,27 @@ def inicializar_db():
         conn.close()
 
 
+def _migrar_usuarios_bloqueo(conn: sqlite3.Connection) -> None:
+    """Añade columnas de control de intentos fallidos y bloqueo escalonado."""
+    columnas = {f[1] for f in conn.execute("PRAGMA table_info(usuarios)")}
+    if not columnas:
+        return
+    if "intentos_fallidos" not in columnas:
+        conn.execute("ALTER TABLE usuarios ADD COLUMN intentos_fallidos INTEGER NOT NULL DEFAULT 0")
+    if "bloqueado" not in columnas:
+        conn.execute("ALTER TABLE usuarios ADD COLUMN bloqueado INTEGER NOT NULL DEFAULT 0")
+    if "tiempo_bloqueo" not in columnas:
+        conn.execute("ALTER TABLE usuarios ADD COLUMN tiempo_bloqueo DATETIME DEFAULT NULL")
+    if "nivel_bloqueo" not in columnas:
+        conn.execute("ALTER TABLE usuarios ADD COLUMN nivel_bloqueo INTEGER NOT NULL DEFAULT 0")
+
+
 def _migrar_detalle_ventas(conn: sqlite3.Connection) -> None:
-    """Rehace detalle_ventas en las bases creadas antes del borrado en cascada.
-
-    CREATE TABLE IF NOT EXISTS no altera una tabla que ya existe, así que
-    una base vieja seguiría con producto_id NOT NULL y sin nombre copiado, y
-    el borrado de un producto ya vendido seguiría reventando el FK. SQLite no
-    puede cambiar una clave foránea con ALTER TABLE: hay que recrear la tabla
-    y copiar los datos.
-
-    Es idempotente: si la columna nueva ya está, no hace nada.
-    """
+    """Rehace detalle_ventas en bases viejas para borrado en cascada seguro."""
     columnas = {f[1] for f in conn.execute("PRAGMA table_info(detalle_ventas)")}
     if not columnas or "nombre_producto" in columnas:
         return
 
-    # Con las claves foráneas activas no se puede rehacer una tabla que otras
-    # referencian, así que se apagan solo mientras dura el cambio.
     conn.execute("PRAGMA foreign_keys = OFF")
     try:
         conn.executescript(
@@ -192,12 +152,6 @@ def _migrar_detalle_ventas(conn: sqlite3.Connection) -> None:
             CREATE INDEX IF NOT EXISTS idx_detalle_producto ON detalle_ventas (producto_id);
             """
         )
-        # El AUTOINCREMENT sigue con su secuencia propia: se le devuelve el
-        # valor más alto para que no reutilice ids de filas ya borradas.
-        # sqlite_sequence no tiene restricción UNIQUE sobre name, así que un
-        # INSERT ... ON CONFLICT(name) no vale: solo un UPDATE. Si la tabla
-        # nunca tuvo filas, no hay fila que actualizar y el contador arranca
-        # en 1, que es lo correcto.
         conn.execute(
             "UPDATE sqlite_sequence SET seq = "
             "(SELECT COALESCE(MAX(id), 0) FROM detalle_ventas) "
@@ -215,15 +169,9 @@ def _migrar_detalle_ventas(conn: sqlite3.Connection) -> None:
 
 
 def _sembrar(conn: sqlite3.Connection):
-    """Inserta los datos mínimos la primera vez, sin duplicarlos después."""
+    """Inserta el administrador por defecto y categorías mínimas."""
     cur = conn.cursor()
-
-    if cur.execute("SELECT COUNT(*) FROM usuarios").fetchone()[0] == 0:
-        nombre, usuario, clave, rol = USUARIO_ADMIN
-        cur.execute(
-            "INSERT INTO usuarios (nombre, usuario, password_hash, rol) VALUES (?, ?, ?, ?)",
-            (nombre, usuario, hash_password(clave), rol),
-        )
+    inicializar_usuarios(conn)
 
     if cur.execute("SELECT COUNT(*) FROM categorias").fetchone()[0] == 0:
         cur.executemany(

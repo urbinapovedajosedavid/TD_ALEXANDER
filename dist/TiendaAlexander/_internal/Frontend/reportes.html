@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes - Tienda Alexander</title>
+    <link rel="stylesheet" href="css/base.css">
+</head>
+
+<body>
+    <div class="dashboard-layout">
+
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <div class="pagina-admin">
+
+            <header class="barra-superior" id="barraSuperior"></header>
+
+            <main class="tab-content">
+
+                <section class="tarjeta">
+                    <h1 id="tituloVistaReporte">Reporte de Ventas del Día Actual</h1>
+
+                    <div id="contenedorTipoReporte">
+                        <div class="filtro-grupo">
+                            <label for="selectTipoReporte">Tipo de reporte</label>
+                            <select id="selectTipoReporte">
+                                <option value="">Seleccionar reporte</option>
+                                <option value="ventas_usuario">Reporte de Ventas por Usuario</option>
+                                <option value="inventario">Inventario Total</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="panelReporteVentasUsuario" class="oculto">
+                        <div class="filtro-grupo">
+                            <label for="selectUsuarioReporte">Usuario</label>
+                            <select id="selectUsuarioReporte">
+                                <option value="">Seleccionar usuario</option>
+                            </select>
+                        </div>
+
+                        <div class="filtro-grupo">
+                            <label for="filtroCategoriaReporte">Categoría</label>
+                            <select id="filtroCategoriaReporte">
+                                <option value="">Todas las categorías</option>
+                            </select>
+                        </div>
+
+                        <h3>Historial de ventas por usuario</h3>
+                        <div id="contenedorHistorialUsuario" class="contenedor-historial-reporte"></div>
+
+                        <div id="detalleReporteUsuario" class="oculto">
+                            <div class="acciones-inventario-pills">
+                                <button type="button" id="btnVistaFactura" class="btn-pill btn-pill-menta">
+                                    Facturas del Día
+                                </button>
+                                <button type="button" id="btnVistaInventario" class="btn-pill btn-pill-oscuro">
+                                    Inventario Total Vendido
+                                </button>
+                            </div>
+
+                            <div id="contenedorDetalleFacturas">
+                                <div class="tabla-panel tabla-scroll" id="contenedorTablaDetalleUsuario">
+                                    <table class="tabla">
+                                        <thead>
+                                            <tr>
+                                                <th>Fecha</th>
+                                                <th>ID Venta</th>
+                                                <th>Método de Pago</th>
+                                                <th>Total</th>
+                                                <th>Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tablaDetalleUsuario"></tbody>
+                                    </table>
+                                    <div id="mensajeSinDetalleUsuario" class="estado-vacio" style="display: none;">
+                                        No hay ventas registradas para esta fecha.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="contenedorDetalleInventario" class="oculto">
+                                <div class="kpi-grid">
+                                    <article class="kpi-card">
+                                        <h3>Inventario Total Vendido</h3>
+                                        <p class="kpi-valor" id="kpiInventarioTotal">$0.00</p>
+                                    </article>
+                                    <article class="kpi-card">
+                                        <h3>Unidades Vendidas</h3>
+                                        <p class="kpi-valor" id="kpiInventarioUnidades">0</p>
+                                    </article>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="panelReporteInventario" class="oculto">
+                        <div class="kpi-grid">
+                            <article class="kpi-card">
+                                <h3>Inventario Total</h3>
+                                <p class="kpi-valor" id="kpiInvValor">$0.00</p>
+                            </article>
+                            <article class="kpi-card">
+                                <h3>Productos en Stock</h3>
+                                <p class="kpi-valor" id="kpiInvProductos">0</p>
+                            </article>
+                            <article class="kpi-card">
+                                <h3>Agotados</h3>
+                                <p class="kpi-valor" id="kpiInvAgotados">0</p>
+                            </article>
+                        </div>
+                        <div class="tabla-panel tabla-scroll" id="contenedorTablaInventario">
+                            <table class="tabla">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Categoría</th>
+                                        <th>Precio</th>
+                                        <th>Stock</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaInventario"></tbody>
+                            </table>
+                            <div id="mensajeSinInventario" class="estado-vacio" style="display: none;">
+                                No se encontraron productos.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="filtro-fechas">
+                        <div class="filtro-fechas-campo">
+                            <label for="inputFechaInicio">Fecha de inicio</label>
+                            <input type="date" id="inputFechaInicio">
+                        </div>
+                        <div class="filtro-fechas-campo">
+                            <label for="inputFechaFin">Fecha de fin</label>
+                            <input type="date" id="inputFechaFin">
+                        </div>
+                        <div class="filtro-fechas-acciones">
+                            <button type="button" id="btnFiltrarFechas" class="btn-pill btn-pill-menta">
+                                Filtrar
+                            </button>
+                            <button type="button" id="btnLimpiarFiltro" class="btn-pill btn-pill-oscuro">
+                                Limpiar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="kpi-grid">
+                        <article class="kpi-card">
+                            <h3>Total Vendido</h3>
+                            <p class="kpi-valor" id="kpiVentasHoy">$0.00</p>
+                        </article>
+                        <article class="kpi-card">
+                            <h3>Transacciones</h3>
+                            <p class="kpi-valor" id="kpiCantidadVentasHoy">0</p>
+                        </article>
+                        <article class="kpi-card">
+                            <h3>Productos Vendidos</h3>
+                            <p class="kpi-valor" id="kpiProductosVendidosHoy">0</p>
+                        </article>
+                        <article class="kpi-card">
+                            <h3>Ticket Promedio</h3>
+                            <p class="kpi-valor" id="kpiTicketPromedio">$0.00</p>
+                        </article>
+                    </div>
+
+                    <div class="acciones-inventario-pills" style="margin-bottom: 11.2px;">
+                        <button type="button" id="btnReporteHoy" class="btn-pill btn-pill-menta">
+                            Ventas del Día
+                        </button>
+                        <button type="button" id="btnReporteSemanal" class="btn-pill btn-pill-oscuro">
+                            Últimos 7 Días
+                        </button>
+                        <button type="button" id="btnReporteMensual" class="btn-pill btn-pill-oscuro">
+                            Últimos 30 Días
+                        </button>
+                    </div>
+
+                    <div class="tabla-panel tabla-scroll" id="contenedorTablaReporte">
+                        <table class="tabla">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>ID Venta</th>
+                                    <th>Método de Pago</th>
+                                    <th>Total</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaVentasReporte"></tbody>
+                        </table>
+                        <div id="mensajeSinReportes" class="estado-vacio" style="display: none;">
+                            No se encontraron registros de ventas para este período.
+                        </div>
+                    </div>
+
+                    <div class="acciones-inventario-pills">
+<button type="button" id="btnExportarExcel" class="btn-pill btn-pill-menta">
+                            Exportar a Excel (CSV)
+                        </button>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <script src="js/core.js"></script>
+    <script src="js/demo.js"></script>
+
+    <script src="js/layout.js"></script>
+    <script src="js/pages/reportes.js"></script>
+</body>
+
+</html>

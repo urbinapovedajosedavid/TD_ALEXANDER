@@ -1,17 +1,3 @@
-/* Prueba del alta de cuentas sin servidor.
- *
- * Ejecuta core.js, demo.js, registro.js y login.js con los almacenes y un
- * DOM simulados, y recorre el camino completo: crear una cuenta desde la
- * pantalla de alta (a la que se entra sin sesión) y usarla para iniciar
- * sesión, tanto con el servidor caído como con el servidor encendido.
- *
- * Lo que se comprueba aquí es justamente lo que fallaba: la pantalla de
- * alta pedía sesión con App.auth.exigir() y el botón del login rebotaba
- * al login, así que el alta era imposible de completar.
- *
- * Uso:  node tests/test_registro.js
- */
-
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");

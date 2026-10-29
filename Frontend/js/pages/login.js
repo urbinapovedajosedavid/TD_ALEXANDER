@@ -1,38 +1,89 @@
-/* Pantalla de inicio de sesión.
+/* Pantalla de inicio de sesión - Tienda Alexander.
  *
- * Antes validaba contra localStorage con contraseña en texto plano
- * (Backend/login.js + validacionesUsuario.js). Ahora las cuentas están
- * en la base de datos y la validación ocurre en el servidor.
+ * Autenticación segura mediante el backend Flask y persistencia en SQLite.
+ * Cuenta regresiva automática para bloqueos temporales por intentos fallidos.
  */
 
 (function () {
     const $ = (id) => document.getElementById(id);
 
-    /* Abre una sesión de cuenta creada en este navegador. No hay token de
-     * servidor, así que se le avisa a la demo quién entra para que reconozca
-     * al usuario en las peticiones siguientes. */
-    function entrarConCuentaLocal(cuenta) {
-        App.auth.guardarLocal(cuenta);
-        if (window.App.demo) App.demo.iniciarSesion(cuenta);
-        window.location.href = "inicio.html";
-    }
-
-    
     document.addEventListener("DOMContentLoaded", () => {
         const form = $("formLogin");
+        const mensaje = $("mensajeLogin");
+        const btnSubmit = form.querySelector('button[type="submit"]');
+        const textoOriginalBtn = btnSubmit ? btnSubmit.textContent : "Iniciar sesión";
 
-        // Si ya hay una sesión abierta no tiene sentido quedarse en el login.
-        if (App.auth.actual() && App.auth.token()) {
+        let temporizadorBloqueo = null;
+
+        // Si ya hay una sesión activa en el servidor, ir directamente al inicio
+        if (App.auth.actual()) {
             window.location.replace("inicio.html");
             return;
         }
 
-        $("btnIrRegistro").addEventListener("click", () => {
-            // El alta es la única pantalla a la que se entra sin sesión:
-            // es justamente donde se crea la cuenta, así que pedir que ya
-            // haya iniciado sesión la dejaba en un callejón sin salida.
-            window.location.href = "agregar_usuario.html";
-        });
+        const btnIrRegistro = $("btnIrRegistro");
+        if (btnIrRegistro) {
+            btnIrRegistro.addEventListener("click", () => {
+                window.location.href = "agregar_usuario.html";
+            });
+        }
+
+        function detenerCuentaRegresiva() {
+            if (temporizadorBloqueo) {
+                clearInterval(temporizadorBloqueo);
+                temporizadorBloqueo = null;
+            }
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = textoOriginalBtn;
+            }
+        }
+
+        function formatearTiempo(segs) {
+            if (segs >= 60) {
+                const mins = Math.floor(segs / 60);
+                const resto = segs % 60;
+                return `${segs} segundos (${mins} min${resto > 0 ? " " + resto + " s" : ""})`;
+            }
+            return `${segs} segundo${segs === 1 ? "" : "s"}`;
+        }
+
+        function iniciarCuentaRegresiva(segundosTotales) {
+            detenerCuentaRegresiva();
+
+            const momentoFin = Date.now() + segundosTotales * 1000;
+
+            function actualizarSegundo() {
+                const ahora = Date.now();
+                const segundosRestantes = Math.max(0, Math.ceil((momentoFin - ahora) / 1000));
+
+                if (segundosRestantes > 0) {
+                    App.ui.mensaje(
+                        mensaje,
+                        `Cuenta bloqueada temporalmente por intentos fallidos. Intenta de nuevo en ${formatearTiempo(segundosRestantes)}.`,
+                        "error"
+                    );
+
+                    if (btnSubmit) {
+                        btnSubmit.disabled = true;
+                        btnSubmit.textContent = `Bloqueado (${segundosRestantes}s)`;
+                    }
+                } else {
+                    detenerCuentaRegresiva();
+                    App.ui.mensaje(
+                        mensaje,
+                        "El tiempo de bloqueo ha terminado. Ya puedes intentar iniciar sesión nuevamente.",
+                        "info"
+                    );
+                }
+            }
+
+            // Primer disparo instantáneo
+            actualizarSegundo();
+
+            // Actualización continua segundo a segundo en tiempo real
+            temporizadorBloqueo = setInterval(actualizarSegundo, 1000);
+        }
 
         form.addEventListener("submit", async (evento) => {
             evento.preventDefault();
@@ -41,39 +92,38 @@
             const clave = $("claveLogin").value;
 
             if (!usuario || !clave) {
-                App.ui.mensaje($("mensajeLogin"), "Completa ambos campos.", "error");
+                App.ui.mensaje(mensaje, "Completa ambos campos.", "error");
                 return;
             }
 
+            App.ui.mensaje(mensaje, "Verificando credenciales...", "info");
+
             try {
                 const respuesta = await App.api.login(usuario, clave);
-
-                /* Si la cuenta es de este navegador, la sesión tiene que
-                 * quedar marcada como local. La demo la acepta y devuelve un
-                 * token que ningún servidor reconoce: si el servidor se
-                 * levanta a media sesión, mandaría ese token y recibiría un
-                 * 401 que cerraría la sesión del usuario. */
-                const local = App.cuentas.buscar(respuesta.usuario.usuario);
-                if (local) {
-                    App.auth.guardarLocal(local);
-                    if (window.App.demo) App.demo.iniciarSesion(local);
-                } else {
-                    // El token es lo que el servidor valida en cada petición;
-                    // sin guardarlo la sesión no serviría de nada.
-                    App.auth.guardar(respuesta.token, respuesta.usuario);
-                }
-
+                detenerCuentaRegresiva();
+                App.auth.guardar(null, respuesta.usuario);
                 window.location.href = "inicio.html";
             } catch (err) {
-                // El servidor manda cuando conoce la cuenta. Si la rechaza,
-                // se mira si se creó en este navegador: así una cuenta del
-                // alta local sirve aunque el servidor esté encendido.
-                const cuenta = App.cuentas.verificar(usuario, clave);
-                if (cuenta) {
-                    entrarConCuentaLocal(cuenta);
-                    return;
+                const datos = err.datos || {};
+                let segundos = null;
+
+                if (typeof datos.segundos_restantes === "number" && datos.segundos_restantes > 0) {
+                    segundos = datos.segundos_restantes;
+                } else {
+                    // Si el backend envió segundos en el texto del mensaje
+                    const match = String(err.message || "").match(/(\d+)\s*segundos/i);
+                    if (match) {
+                        segundos = parseInt(match[1], 10);
+                    }
                 }
-                App.ui.mensaje($("mensajeLogin"), err.message, "error");
+
+                if (segundos && segundos > 0) {
+                    // Reproducir los segundos automáticamente hacia atrás
+                    iniciarCuentaRegresiva(segundos);
+                } else {
+                    detenerCuentaRegresiva();
+                    App.ui.mensaje(mensaje, err.message, "error");
+                }
             }
         });
     });

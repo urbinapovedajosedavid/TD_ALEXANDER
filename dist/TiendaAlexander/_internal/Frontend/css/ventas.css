@@ -1,0 +1,253 @@
+.layout-ventas {
+    display: grid;
+    grid-template-columns: 1fr 272px;
+    gap: 9.6px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+    .layout-ventas {
+        grid-template-columns: 1fr;
+        overflow-y: auto;
+    }
+}
+
+.panel-venta {
+    background: var(--fondo-panel);
+    border: 1px solid var(--borde);
+    border-radius: 9.6px;
+    padding: 8px 9.6px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.resumen-cobro {
+    margin-top: 2.4px;
+    background: var(--blanco);
+    border: 1px solid var(--borde);
+    border-radius: var(--border-radius, 12px);
+    padding: 6.4px 8px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2.4px;
+}
+
+.linea-resumen {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2.4px;
+    font-size: 0.68rem;
+    color: var(--texto);
+}
+
+.total-destacado {
+    font-size: 0.816rem;
+    font-weight: 700;
+    color: var(--azul-marino);
+    border-top: 2px solid var(--borde);
+    padding-top: 3.2px;
+    margin-top: 2.4px;
+}
+
+/* ==========================================
+   PAGO Y CÁLCULO DE VUELTO
+   ========================================== */
+
+.panel-pago {
+    margin-top: 2.4px;
+    padding: 4.8px 6.4px;
+    border: 1px solid var(--borde);
+    border-radius: 6.4px;
+    background: linear-gradient(160deg, #f2fdf9 0%, #eaf7f2 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 3.2px;
+    transition: opacity 0.2s ease;
+    flex-shrink: 0;
+}
+
+.panel-pago.oculto {
+    display: none;
+}
+
+.campo-pago label {
+    display: block;
+    font-size: 0.499rem;
+    font-weight: 700;
+    color: var(--azul-marino);
+    margin-bottom: 3.2px;
+}
+
+.input-dinero {
+    display: flex;
+    align-items: center;
+    background: var(--blanco);
+    border: 1px solid var(--borde);
+    border-radius: 7.04px;
+    overflow: hidden;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-dinero:focus-within {
+    border-color: var(--verde-menta);
+    box-shadow: 0 0 0 3px rgba(94, 231, 183, 0.25);
+}
+
+.simbolo-moneda {
+    padding: 0 1.92px 0 7.68px;
+    font-size: 0.608rem;
+    font-weight: 700;
+    color: var(--texto-suave);
+}
+
+.input-dinero input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 4.48px 5.76px 4.48px 3.2px;
+    font-size: 0.608rem;
+    font-weight: 700;
+    color: var(--azul-marino);
+    width: 100%;
+}
+
+.input-dinero input::placeholder {
+    color: #b9c8d6;
+    font-weight: 600;
+}
+
+.input-dinero input::-webkit-outer-spin-button,
+.input-dinero input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.input-dinero input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.montos-rapidos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4.8px;
+    margin-top: 5.6px;
+}
+
+.chip-monto {
+    border: 1px solid var(--borde);
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--azul-marino);
+    font-size: 0.56rem;
+    font-weight: 700;
+    padding: 3.2px 6.4px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
+}
+
+.chip-monto:hover {
+    background: var(--verde-menta);
+    border-color: var(--verde-menta);
+    transform: translateY(-1px);
+}
+
+.vuelto-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6.4px;
+    padding: 5.6px 8px;
+    border-radius: 7.2px;
+    background: var(--azul-marino);
+    color: var(--blanco);
+    transition: background 0.25s ease;
+}
+
+.vuelto-etiqueta {
+    font-size: 0.624rem;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.vuelto-valor {
+    font-size: 0.816rem;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.vuelto-panel.ok {
+    background: linear-gradient(135deg, var(--verde-menta-oscuro), #1f9e74);
+}
+
+.vuelto-panel.insuficiente {
+    background: linear-gradient(135deg, var(--error), #b9344a);
+}
+
+.alerta-pago {
+    margin: 4.8px 1.6px 0;
+    font-size: 0.608rem;
+    font-weight: 600;
+    color: var(--error);
+    min-height: 12.8px;
+    display: none;
+}
+
+.alerta-pago.visible {
+    display: block;
+}
+
+.metodo-pago {
+    margin-top: 4.8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.metodo-pago label {
+    font-size: 0.624rem;
+    font-weight: 700;
+    color: var(--azul-marino);
+}
+
+.metodo-pago select {
+    padding: 6.4px 8.8px;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    font-size: 0.68rem;
+    background: #fbfffe;
+    color: var(--texto);
+    outline: none;
+    width: 100%;
+}
+
+.metodo-pago select:focus {
+    outline: 2px solid rgba(94, 231, 183, 0.25);
+    border-color: var(--verde-menta);
+}
+
+.form-cobro-acciones {
+    margin-top: 2.4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2.4px;
+}
+
+/* ==========================================
+   COLUMNA DERECHA — DETALLE DE LA VENTA (compacta)
+   Reduce los espacios internos del panel para que el
+   encabezado, la tabla, el resumen de cobro, los
+   inputs de pago y el botón "Procesar y Cobrar" queden
+   completamente visibles sin scroll vertical.
+   ========================================== */
+
+.panel-venta:last-child {
+    padding-bottom: 6px;
+}

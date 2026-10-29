@@ -1,20 +1,17 @@
-
+/* Pantalla de alta de usuarios - Tienda Alexander.
+ *
+ * Crea cuentas directamente en la base de datos SQLite del servidor.
+ * Cero LocalStorage y cero SessionStorage.
+ */
 
 (function () {
     const $ = (id) => document.getElementById(id);
 
-    /* true solo con sesión de administrador de verdad: ni cuenta local ni
-     * modo demostración. */
-    function hayAdminReal() {
-        if (!App.auth.esAdmin()) return false;
-        if (App.auth.esLocal()) return false;
-        if (window.App.demo && App.demo.sinServidor()) return false;
-        return true;
-    }
-
     document.addEventListener("DOMContentLoaded", () => {
         const form = $("formUsuarioModal");
         const mensaje = $("mensajeModal");
+        const btnEntrarNuevo = $("btnEntrarNuevo");
+        const btnVolverLogin = $("btnVolverLogin");
 
         form.addEventListener("submit", async (evento) => {
             evento.preventDefault();
@@ -23,50 +20,56 @@
             const clave = $("claveModal").value;
 
             if (!usuario || !clave) {
-                App.ui.mensaje(mensaje, "Completa los campos.", "error");
+                App.ui.mensaje(mensaje, "Completa todos los campos obligatorios.", "error");
                 return;
             }
 
-            const enServidor = hayAdminReal();
-            let texto;
+            if (usuario.length < 3) {
+                App.ui.mensaje(mensaje, "El usuario debe tener al menos 3 caracteres.", "error");
+                return;
+            }
+
+            if (clave.length < 4) {
+                App.ui.mensaje(mensaje, "La contraseña debe tener al menos 4 caracteres.", "error");
+                return;
+            }
+
+            App.ui.mensaje(mensaje, "Creando usuario en la base de datos...", "info");
 
             try {
-                // Primero en el navegador: es lo que garantiza que la cuenta
-                // exista aunque el servidor no responda.
-                const cuenta = App.cuentas.crear({
+                // Si hay un admin logueado, usa el endpoint administrativo; si no, el registro público
+                const esAdmin = App.auth.esAdmin();
+                const peticion = esAdmin ? App.api.registro : App.api.registroPublico;
+
+                const res = await peticion({
                     usuario: usuario,
                     clave: clave,
-                    rol: enServidor ? "ADMIN" : "VENDEDOR",
+                    contrasena: clave,
+                    nombre: usuario,
                 });
 
-                if (enServidor) {
-                    try {
-                        await App.api.registro({ usuario: usuario, clave: clave });
-                        texto = `Usuario ${cuenta.usuario} creado. Entra con "${cuenta.usuario}".`;
-                    } catch (err) {
-                        // El servidor no lo aceptó, pero la cuenta local ya
-                        // está: se avisa sin dejar al usuario sin salida.
-                        texto = `Usuario ${cuenta.usuario} creado en este navegador. ` +
-                            `No se pudo crear en el servidor: ${err.message}`;
-                    }
-                } else {
-                    texto = `Usuario ${cuenta.usuario} creado. Ya puedes entrar con esa cuenta.`;
-                }
-
                 form.reset();
-                App.ui.mensaje(mensaje, texto, "exito");
-                $("btnEntrarNuevo").hidden = false;
+                App.ui.mensaje(
+                    mensaje,
+                    res.mensaje || `Usuario "${usuario}" creado con éxito. Ya puedes iniciar sesión.`,
+                    "exito"
+                );
+                if (btnEntrarNuevo) btnEntrarNuevo.hidden = false;
             } catch (err) {
                 App.ui.mensaje(mensaje, err.message, "error");
             }
         });
 
-        $("btnEntrarNuevo").addEventListener("click", () => {
-            window.location.href = "login.html";
-        });
+        if (btnEntrarNuevo) {
+            btnEntrarNuevo.addEventListener("click", () => {
+                window.location.href = "Login.html";
+            });
+        }
 
-        $("btnVolverLogin").addEventListener("click", () => {
-            window.location.href = "login.html";
-        });
+        if (btnVolverLogin) {
+            btnVolverLogin.addEventListener("click", () => {
+                window.location.href = "Login.html";
+            });
+        }
     });
 })();

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Copia de seguridad - Tienda Alexander</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/copia_de_seguridad.css">
+</head>
+
+<body>
+
+    <div class="dashboard-layout">
+
+        
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <div class="pagina-admin">
+
+            <header class="barra-superior" id="barraSuperior"></header>
+
+            <main class="tab-content">
+
+                <section class="seccion">
+                    <h2>Base de datos</h2>
+                    <p class="subtitulo">
+                        Guarda una copia antes de hacer cambios grandes, por ejemplo antes de
+                        restaurar otra más antigua.
+                    </p>
+
+                    <div class="datos-copia">
+                        <div class="dato-copia">
+                            <span>Última modificación</span>
+                            <strong id="fechaBase">—</strong>
+                        </div>
+                        <div class="dato-copia">
+                            <span>Tamaño</span>
+                            <strong id="tamanoBase">—</strong>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="seccion">
+                    <h2>Crear una copia</h2>
+                    <p class="subtitulo">
+                        Se descarga un archivo <code>.db</code> con todo: productos, ventas,
+                        proveedores y usuarios. Guárdalo donde quieras.
+                    </p>
+
+                    <div class="fila-botones">
+                        <button id="btnDescargar" class="btn-pill btn-pill-menta" type="button">
+                            Descargar copia ahora
+                        </button>
+                    </div>
+                </section>
+
+                <section class="seccion">
+                    <h2>Restaurar una copia</h2>
+                    <p class="subtitulo">
+                        Reemplaza los datos actuales por los del archivo que elijas. Se guarda
+                        una copia de lo que hay ahora por si necesitas volver atrás.
+                    </p>
+
+                    <div class="campo">
+                        <label for="archivoRespaldo">Archivo de respaldo (.db)</label>
+                        <input type="file" id="archivoRespaldo" accept=".db,.sqlite,.sqlite3">
+                    </div>
+
+                    <div class="fila-botones">
+                        <button id="btnRestaurar" class="btn-pill btn-pill-peligro" type="button">
+                            Restaurar desde este archivo
+                        </button>
+                    </div>
+
+                    <p class="mensaje" id="avisoRestaurar"></p>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <script src="js/core.js"></script>
+    <script src="js/demo.js"></script>
+
+    <script src="js/layout.js"></script>
+    <script src="js/pages/copia_de_seguridad.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proveedores - Tienda Alexander</title>
+    <link rel="stylesheet" href="css/base.css">
+</head>
+
+<body>
+
+    <div class="dashboard-layout">
+
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <div class="pagina-admin">
+
+            <header class="barra-superior" id="barraSuperior"></header>
+
+            <main class="tab-content">
+
+                <section class="tarjeta">
+                    <h1>Gestión de Proveedores</h1>
+
+                    
+                    <div class="search-bar-pill">
+                        <span class="icono-buscar">🔍</span>
+                        <input type="text" id="inputBuscarProveedor"
+                            placeholder="Buscar por nombre, cédula o departamento...">
+                    </div>
+
+                    <div class="tabla-panel tabla-scroll" id="contenedorTablaProveedores">
+                        <table class="tabla">
+                            <thead>
+                                <tr>
+                                    <th>Nombre del Proveedor</th>
+                                    <th>Teléfono</th>
+                                    <th>Cédula</th>
+                                    <th>Dirección</th>
+                                    <th>Departamento</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaProveedores"></tbody>
+                        </table>
+                        <div id="mensajeSinProveedores" class="estado-vacio" style="display: none;">
+                            No hay proveedores registrados.
+                        </div>
+                    </div>
+
+<div class="acciones-inventario-pills">
+                        <button type="button" id="btnAbrirModalProveedor" class="btn-pill btn-pill-menta">
+                            Añadir Proveedor
+                        </button>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal: registrar proveedor -->
+    <div id="modalProveedor" class="modal modal-oculto" aria-hidden="true">
+        <div class="modal-contenido">
+            <div class="modal-cabecera">
+                <h3>Añadir Nuevo Proveedor</h3>
+                <button id="cerrarModalProveedor" class="boton-cerrar" type="button"
+                    aria-label="Cerrar">&times;</button>
+            </div>
+
+            <form id="formProveedor" class="formulario">
+                <label for="nombreProveedor">Nombre del Proveedor</label>
+                <input id="nombreProveedor" name="nombreProveedor" type="text"
+                    placeholder="Ej. Distribuidora Central" required>
+
+                <label for="telefonoProveedor">Número de Teléfono</label>
+                <input id="telefonoProveedor" name="telefonoProveedor" type="tel"
+                    placeholder="Ej. 8888-8888" required>
+
+                <label for="cedulaProveedor">Cédula / RUC</label>
+                <input id="cedulaProveedor" name="cedulaProveedor" type="text"
+                    placeholder="Ej. 001-000000-0000A" required>
+
+                <label for="direccionProveedor">Dirección</label>
+                <input id="direccionProveedor" name="direccionProveedor" type="text"
+                    placeholder="Dirección exacta" required>
+
+                <label for="departamentoProveedor">Departamento</label>
+                <input id="departamentoProveedor" name="departamentoProveedor" type="text"
+                    placeholder="Ej. Managua, Masaya..." required>
+
+                <div class="modal-acciones">
+                    <button type="button" id="btnCancelarProveedor" class="btn-pill btn-pill-oscuro">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn-pill btn-pill-menta">Guardar Proveedor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<script src="js/core.js"></script>
+    <script src="js/demo.js"></script>
+
+    <script src="js/layout.js"></script>
+    <script src="js/pages/provedores.js"></script>
+</body>
+
+</html>

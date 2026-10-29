@@ -1,4 +1,3 @@
-# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -14,3 +13,7 @@ venv/
 Thumbs.db
 .vscode/
 .idea/
+
+
+# Variables de entorno con credenciales (nunca subir al repositorio)
+.env

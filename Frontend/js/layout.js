@@ -273,7 +273,7 @@ App.layout = (function () {
     function cargarConfigVisual() {
         try {
             const key = getConfigKey();
-            const raw = localStorage.getItem(key);
+            const raw = null; 
             if (!raw) return;
             const cfg = JSON.parse(raw);
             aplicarConfigVisual(cfg);
@@ -561,7 +561,7 @@ App.layout = (function () {
         if (!modal) return;
         const key = getConfigKey();
         try {
-            const raw = localStorage.getItem(key);
+            const raw = null; 
             if (raw) {
                 const cfg = JSON.parse(raw);
                 if (cfg.fondo) document.getElementById("cfgFondo").value = cfg.fondo;
@@ -608,7 +608,7 @@ App.layout = (function () {
             tamaño: parseInt(document.getElementById("cfgTamaño").value),
             radio: document.getElementById("cfgRadio").value,
         };
-        localStorage.setItem(getConfigKey(), JSON.stringify(cfg));
+        
         aplicarConfigVisual(cfg);
         document.getElementById("mensajeConfig").textContent =
             "Configuración guardada para este perfil.";
@@ -619,7 +619,7 @@ App.layout = (function () {
 
     function resetConfig() {
         const key = getConfigKey();
-        localStorage.removeItem(key);
+        
         document.documentElement.style.removeProperty("--fondo");
         document.documentElement.style.removeProperty("--fondo-app");
         document.documentElement.style.removeProperty("--texto");
