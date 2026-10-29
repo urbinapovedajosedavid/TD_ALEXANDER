@@ -44,7 +44,7 @@
         </div>
     </div>
 
-    <!-- Modal para Modificar / Recargar Stock Crítico -->
+    <!-- Modal para recargar stock (suma cantidad; si precio de entrada es más caro, actualiza precio + 5%) -->
     <div id="modalStock" class="modal modal-oculto" aria-hidden="true">
         <div class="modal-contenido">
             <div class="modal-cabecera">
@@ -61,8 +61,25 @@
                 </div>
 
                 <div class="form-row">
-                    <label for="stockProdCantidad">Nuevo Stock (Máx. 64) *</label>
-                    <input type="number" min="0" max="64" id="stockProdCantidad" required>
+                    <label for="stockProdActual">Stock actual</label>
+                    <input type="number" id="stockProdActual" readonly style="background-color: #e9ecef;">
+                </div>
+
+                <div class="form-row">
+                    <label for="stockProdPrecioActual">Precio de venta actual</label>
+                    <input type="number" id="stockProdPrecioActual" readonly step="0.01" style="background-color: #e9ecef;">
+                </div>
+
+                <div class="form-row">
+                    <label for="stockProdCantidad">Cantidad a agregar (Máx. total 64) *</label>
+                    <input type="number" min="1" max="64" id="stockProdCantidad" required placeholder="ingrese la cantidad">
+                </div>
+
+                <div class="form-row">
+                    <label for="stockProdPrecioEntrada">Precio de entrada del producto *</label>
+                    <input type="number" min="0" step="0.01" id="stockProdPrecioEntrada" required placeholder="ingrese el precio">
+                    <small style="color: #6c757d; display: block; margin-top: 4px;">
+                    </small>
                 </div>
 
                 <div class="modal-acciones">
