@@ -35,8 +35,12 @@
                         placeholder="admin" autocomplete="username" required>
 
                     <label for="claveLogin">Contraseña</label>
-                    <input id="claveLogin" name="claveLogin" type="password"
-                        placeholder="Contraseña" autocomplete="current-password" required>
+                    <div class="campo-password">
+                        <input id="claveLogin" name="claveLogin" type="password"
+                            placeholder="Contraseña" autocomplete="current-password" required>
+                        <button type="button" class="btn-ver-password" data-target="claveLogin"
+                            aria-label="Mostrar contraseña" title="Mostrar/ocultar contraseña">👁</button>
+                    </div>
 
                     <button type="submit" class="btn-pill btn-pill-oscuro">Iniciar sesión</button>
 

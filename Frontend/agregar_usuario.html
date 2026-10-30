@@ -24,22 +24,38 @@
                 </div>
             </div>
 
-            
+
             <div class="login-card">
                 <h2>Crear cuenta de vendedor</h2>
 
                 <form id="formUsuarioModal" class="formulario">
+                    <label for="nombreModal">Nombre</label>
+                    <input id="nombreModal" name="nombreModal" type="text"
+                        placeholder="Tu nombre" autocomplete="given-name" required>
+
+                    <label for="apellidoModal">Apellido</label>
+                    <input id="apellidoModal" name="apellidoModal" type="text"
+                        placeholder="Tu apellido" autocomplete="family-name" required>
+
+                    <label for="telefonoModal">Número de teléfono</label>
+                    <input id="telefonoModal" name="telefonoModal" type="tel"
+                        placeholder="Ej: 809-555-1234" autocomplete="tel" required>
+
                     <label for="usuarioModal">Nombre de usuario</label>
                     <input id="usuarioModal" name="usuarioModal" type="text"
-                        placeholder="Mínimo 3 caracteres" minlength="3"
+                        placeholder="Mínimo 6 caracteres" minlength="6"
                         autocomplete="username" required>
 
                     <label for="claveModal">Contraseña</label>
-                    <input id="claveModal" name="claveModal" type="password"
-                        placeholder="Mínimo 4 caracteres" minlength="4"
-                        autocomplete="new-password" required>
+                    <div class="campo-password">
+                        <input id="claveModal" name="claveModal" type="password"
+                            placeholder="Mínimo 4 caracteres" minlength="4"
+                            autocomplete="new-password" required>
+                        <button type="button" class="btn-ver-password" data-target="claveModal"
+                            aria-label="Mostrar contraseña" title="Mostrar/ocultar contraseña">👁</button>
+                    </div>
 
-<button type="submit" class="btn-pill btn-pill-oscuro">Guardar usuario</button>
+                    <button type="submit" class="btn-pill btn-pill-oscuro">Guardar usuario</button>
                     <button type="button" id="btnEntrarNuevo" class="btn-pill btn-pill-menta" hidden>
                         Ir a iniciar sesión
                     </button>
