@@ -166,7 +166,9 @@ def registrar_usuario():
 
     usuario = datos.get("usuario").strip()
     clave = datos.get("clave") or datos.get("contrasena")
-    nombre = (datos.get("nombre") or "").strip() or usuario
+    nombre = (datos.get("nombre") or "").strip()
+    apellido = (datos.get("apellido") or "").strip()
+    telefono = (datos.get("telefono") or "").strip()
     rol = "ADMIN" if str(datos.get("rol", "")).upper() == "ADMIN" else "VENDEDOR"
 
     with db.conectar_db() as conn:
@@ -177,9 +179,10 @@ def registrar_usuario():
             return _error("Ese usuario ya existe, ingrese otro usuario.", 400)
 
         cur = conn.execute(
-            "INSERT INTO usuarios (nombre, usuario, password_hash, rol, intentos_fallidos, bloqueado, nivel_bloqueo) "
-            "VALUES (?, ?, ?, ?, 0, 0, 0)",
-            (nombre, usuario, hash_password(clave), rol),
+            "INSERT INTO usuarios (nombre, apellido, telefono, usuario, password_hash, rol, "
+            "intentos_fallidos, bloqueado, nivel_bloqueo) "
+            "VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0)",
+            (nombre, apellido, telefono, usuario, hash_password(clave), rol),
         )
         nuevo_id = cur.lastrowid
 
@@ -200,7 +203,9 @@ def registrar_usuario_publico():
 
     usuario = datos.get("usuario").strip()
     clave = datos.get("clave") or datos.get("contrasena")
-    nombre = (datos.get("nombre") or "").strip() or usuario
+    nombre = (datos.get("nombre") or "").strip()
+    apellido = (datos.get("apellido") or "").strip()
+    telefono = (datos.get("telefono") or "").strip()
 
     with db.conectar_db() as conn:
         existe = conn.execute(
@@ -210,9 +215,10 @@ def registrar_usuario_publico():
             return _error("Ese usuario ya existe, ingrese otro usuario.", 400)
 
         cur = conn.execute(
-            "INSERT INTO usuarios (nombre, usuario, password_hash, rol, intentos_fallidos, bloqueado, nivel_bloqueo) "
-            "VALUES (?, ?, ?, 'VENDEDOR', 0, 0, 0)",
-            (nombre, usuario, hash_password(clave)),
+            "INSERT INTO usuarios (nombre, apellido, telefono, usuario, password_hash, rol, "
+            "intentos_fallidos, bloqueado, nivel_bloqueo) "
+            "VALUES (?, ?, ?, ?, ?, 'VENDEDOR', 0, 0, 0)",
+            (nombre, apellido, telefono, usuario, hash_password(clave)),
         )
         nuevo_id = cur.lastrowid
 
