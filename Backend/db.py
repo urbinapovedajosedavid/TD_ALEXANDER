@@ -103,7 +103,7 @@ def inicializar_db():
 
 
 def _migrar_usuarios_bloqueo(conn: sqlite3.Connection) -> None:
-    """Añade columnas de control de intentos fallidos y bloqueo escalonado."""
+    """Añade columnas de control de intentos fallidos, bloqueo y datos de perfil."""
     columnas = {f[1] for f in conn.execute("PRAGMA table_info(usuarios)")}
     if not columnas:
         return
@@ -115,6 +115,10 @@ def _migrar_usuarios_bloqueo(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE usuarios ADD COLUMN tiempo_bloqueo DATETIME DEFAULT NULL")
     if "nivel_bloqueo" not in columnas:
         conn.execute("ALTER TABLE usuarios ADD COLUMN nivel_bloqueo INTEGER NOT NULL DEFAULT 0")
+    if "apellido" not in columnas:
+        conn.execute("ALTER TABLE usuarios ADD COLUMN apellido TEXT NOT NULL DEFAULT ''")
+    if "telefono" not in columnas:
+        conn.execute("ALTER TABLE usuarios ADD COLUMN telefono TEXT NOT NULL DEFAULT ''")
 
 
 def _migrar_detalle_ventas(conn: sqlite3.Connection) -> None:
