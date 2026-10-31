@@ -1,9 +1,4 @@
-/* Módulo de proveedores.
- *
- * Antes leía y escribía en localStorage con sus propios helpers
- * (leerProveedores/guardarProveedores). Ahora usa la tabla `proveedores`
- * a través de la API, sin código de persistencia en el navegador.
- */
+/* Módulo de gestión de proveedores - Tienda Alexander. */
 
 (function () {
     const $ = (id) => document.getElementById(id);
@@ -12,7 +7,6 @@
 
     let proveedores = [];
 
-    /* La tabla muestra máximo 5 filas visibles (helper compartido). */
     function ajustarAlturaTabla() {
         App.ui.ajustarAlturaTabla(
             "contenedorTablaProveedores",
@@ -33,6 +27,7 @@
 
     function filtrar() {
         const texto = ($("inputBuscarProveedor").value || "").trim().toLowerCase();
+        const esAdmin = App.auth.esAdmin();
 
         const filtrados = texto
             ? proveedores.filter(
@@ -48,23 +43,55 @@
             "tablaProveedores",
             "mensajeSinProveedores",
             filtrados,
-            (p) => `
-                <td><strong>${App.fmt.texto(p.nombre)}</strong></td>
-                <td>${App.fmt.texto(p.telefono) || "N/A"}</td>
-                <td>${App.fmt.texto(p.cedula) || "N/A"}</td>
-                <td>${App.fmt.texto(p.direccion) || "N/A"}</td>
-                <td>${App.fmt.texto(p.departamento) || "N/A"}</td>
-                <td class="acciones-tabla">
-                    <button class="btn-accion eliminar" data-eliminar="${p.id}">Eliminar</button>
-                </td>`
+            (p) => {
+                const btnEliminar = esAdmin
+                    ? `<button class="btn-accion eliminar" data-eliminar="${p.id}">Eliminar</button>`
+                    : "";
+                return `
+                    <td><strong>${App.fmt.texto(p.nombre)}</strong></td>
+                    <td>${App.fmt.texto(p.telefono) || "N/A"}</td>
+                    <td>${App.fmt.texto(p.cedula) || "N/A"}</td>
+                    <td>${App.fmt.texto(p.direccion) || "N/A"}</td>
+                    <td>${App.fmt.texto(p.departamento) || "N/A"}</td>
+                    <td class="acciones-tabla">
+                        <button class="btn-accion" data-editar="${p.id}">Modificar</button>
+                        ${btnEliminar}
+                    </td>`;
+            }
         );
 
         ajustarAlturaTabla();
     }
 
+    function abrirModalNuevo() {
+        $("formProveedor").reset();
+        if ($("proveedorId")) $("proveedorId").value = "";
+        if ($("tituloModalProveedor")) {
+            $("tituloModalProveedor").textContent = "Añadir Nuevo Proveedor";
+        }
+        App.ui.abrir("modalProveedor");
+    }
+
+    function abrirModalEditar(id) {
+        const proveedor = proveedores.find((p) => p.id === id);
+        if (!proveedor) return;
+
+        if ($("proveedorId")) $("proveedorId").value = proveedor.id;
+        $("nombreProveedor").value = proveedor.nombre || "";
+        $("telefonoProveedor").value = proveedor.telefono || "";
+        $("cedulaProveedor").value = proveedor.cedula || "";
+        $("direccionProveedor").value = proveedor.direccion || "";
+        $("departamentoProveedor").value = proveedor.departamento || "";
+        if ($("tituloModalProveedor")) {
+            $("tituloModalProveedor").textContent = "Editar Proveedor";
+        }
+        App.ui.abrir("modalProveedor");
+    }
+
     async function guardar(evento) {
         evento.preventDefault();
 
+        const id = $("proveedorId") ? $("proveedorId").value : "";
         const cuerpo = {
             nombre: $("nombreProveedor").value.trim(),
             telefono: $("telefonoProveedor").value.trim(),
@@ -79,19 +106,20 @@
         }
 
         try {
-            await App.api.crearProveedor(cuerpo);
+            if (id) {
+                await App.api.actualizarProveedor(Number(id), cuerpo);
+            } else {
+                await App.api.crearProveedor(cuerpo);
+            }
             evento.target.reset();
             App.ui.cerrar("modalProveedor");
             await cargar();
-            App.ui.aviso("Proveedor registrado.");
+            App.ui.aviso(id ? "Proveedor actualizado." : "Proveedor registrado.");
         } catch (err) {
             App.ui.aviso(err.message);
         }
     }
 
-/* Borrar desde la tabla. El modal por nombre se quitó: pedía escribir el
-     * nombre exacto, lo que es más fácil de equivocar que el botón de la
-     * fila, y hacía lo mismo que este. */
     async function eliminar(id) {
         const proveedor = proveedores.find((p) => p.id === id);
         if (!proveedor) return;
@@ -108,15 +136,12 @@
     }
 
     document.addEventListener("DOMContentLoaded", async () => {
-        if (!App.auth.exigir()) return;
-        App.layout.montar();
+        if (!App.layout.montar()) return;
 
         $("inputBuscarProveedor").addEventListener("input", filtrar);
         $("formProveedor").addEventListener("submit", guardar);
 
-        $("btnAbrirModalProveedor").addEventListener("click", () =>
-            App.ui.abrir("modalProveedor")
-        );
+        $("btnAbrirModalProveedor").addEventListener("click", abrirModalNuevo);
 
         $("cerrarModalProveedor").addEventListener("click", () => App.ui.cerrar("modalProveedor"));
         $("btnCancelarProveedor").addEventListener("click", () => App.ui.cerrar("modalProveedor"));
@@ -124,8 +149,15 @@
         App.ui.cerrarAlTocarFondo("modalProveedor");
 
         $("tablaProveedores").addEventListener("click", (evento) => {
-            const boton = evento.target.closest("[data-eliminar]");
-            if (boton) eliminar(Number(boton.dataset.eliminar));
+            const btnEditar = evento.target.closest("[data-editar]");
+            if (btnEditar) {
+                abrirModalEditar(Number(btnEditar.dataset.editar));
+                return;
+            }
+            const btnEliminar = evento.target.closest("[data-eliminar]");
+            if (btnEliminar) {
+                eliminar(Number(btnEliminar.dataset.eliminar));
+            }
         });
 
         window.addEventListener("resize", ajustarAlturaTabla);

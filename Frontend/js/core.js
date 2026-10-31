@@ -1,8 +1,7 @@
 /* Núcleo compartido del frontend - Tienda Alexander.
  *
- * Arquitectura segura con persistencia exclusiva en SQLite y autenticación en servidor.
- * PROHIBIDO el uso de localStorage y sessionStorage para datos sensibles, credenciales o tokens.
- * La sesión se gestiona estrictamente en el backend mediante cookies HttpOnly cifradas.
+ * Persistencia en SQLite y sesiones de servidor mediante cookies HttpOnly
+ * respaldadas en la tabla `sesiones` de la base de datos.
  */
 
 window.App = window.App || {};
@@ -12,9 +11,11 @@ window.App = window.App || {};
    ========================================== */
 
 App.api = (function () {
-    const BASE = (window.location.protocol === "file:" || !window.location.port)
-        ? "http://127.0.0.1:5000/api"
-        : "/api";
+    const BASE =
+        window.location.protocol === "file:" ||
+        (window.location.port && window.location.port !== "5000")
+            ? "http://127.0.0.1:5000/api"
+            : "/api";
 
     let redirigiendo = false;
 
@@ -34,7 +35,7 @@ App.api = (function () {
         const config = {
             method: opciones.method || "GET",
             headers: {},
-            credentials: "include", // Envía automáticamente la cookie HttpOnly de sesión de Flask
+            credentials: "include",
         };
 
         if (!esFormulario) {
@@ -95,6 +96,10 @@ App.api = (function () {
         registroPublico: (datos) =>
             pedir("/auth/registro-publico", { method: "POST", body: datos }),
         usuarios: () => pedir("/usuarios"),
+        desbloquearUsuario: (id) =>
+            pedir(`/usuarios/${id}/desbloquear`, { method: "POST" }),
+        cambiarEstadoUsuario: (id, activo) =>
+            pedir(`/usuarios/${id}/estado`, { method: "POST", body: { activo } }),
 
         // ---------- Categorías ----------
         categorias: () => pedir("/categorias"),
@@ -109,31 +114,43 @@ App.api = (function () {
             pedir(`/productos/${id}`, { method: "PUT", body: datos }),
         eliminarProducto: (id) =>
             pedir(`/productos/${id}`, { method: "DELETE" }),
-        recargarStock: (id, cantidad) =>
-            pedir(`/productos/${id}/recargar`, { method: "POST", body: { cantidad } }),
+        recargarStock: (id, cantidad, precio_entrada) =>
+            pedir(`/productos/${id}/recargar`, {
+                method: "POST",
+                body: { cantidad, precio_entrada },
+            }),
         resumenInventario: () => pedir("/inventario/resumen"),
 
         // ---------- Ventas ----------
         registrarVenta: (datos) =>
             pedir("/ventas", { method: "POST", body: datos }),
         venta: (id) => pedir(`/ventas/${id}`),
+        anularVenta: (id) =>
+            pedir(`/ventas/${id}/anular`, { method: "POST" }),
 
         // ---------- Proveedores ----------
         proveedores: () => pedir("/proveedores"),
         crearProveedor: (datos) =>
             pedir("/proveedores", { method: "POST", body: datos }),
+        actualizarProveedor: (id, datos) =>
+            pedir(`/proveedores/${id}`, { method: "PUT", body: datos }),
         eliminarProveedor: (id) =>
             pedir(`/proveedores/${id}`, { method: "DELETE" }),
 
         // ---------- Reportes ----------
-        reportes: (periodo) => pedir(`/reportes?periodo=${periodo}`),
+        reportes: (periodo) => pedir(`/reportes?periodo=${encodeURIComponent(periodo)}`),
         reportesPorFechas: (inicio, fin) =>
             pedir(
                 `/reportes?fecha_inicio=${encodeURIComponent(inicio)}` +
                     `&fecha_fin=${encodeURIComponent(fin)}`
             ),
-        reportesPorUsuario: (usuarioId) =>
-            pedir(`/reportes/usuario/${usuarioId}`),
+        reportesPorUsuario: (usuarioId, inicio = "", fin = "") => {
+            const params = new URLSearchParams();
+            if (inicio) params.set("fecha_inicio", inicio);
+            if (fin) params.set("fecha_fin", fin);
+            const qs = params.toString();
+            return pedir(`/reportes/usuario/${usuarioId}${qs ? "?" + qs : ""}`);
+        },
 
         // ---------- Copias de seguridad ----------
         infoRespaldo: () => pedir("/respaldos/info"),
@@ -171,11 +188,7 @@ App.api = (function () {
 
 /* ==========================================
    AUTH — Sesión del usuario en el Servidor
-   ==========================================
-   CERO LocalStorage / CERO SessionStorage.
-   El estado del usuario se mantiene en memoria durante la navegación
-   y se valida directamente contra el servidor mediante cookies HttpOnly.
-*/
+   ========================================== */
 
 App.auth = (function () {
     let _usuarioActual = null;
@@ -185,7 +198,7 @@ App.auth = (function () {
         if (_sesionComprobada) return _usuarioActual;
         try {
             const xhr = new XMLHttpRequest();
-            xhr.open("GET", App.api.BASE + "/auth/yo", false); // síncrono para bloqueo inicial de render
+            xhr.open("GET", App.api.BASE + "/auth/yo", false);
             xhr.withCredentials = true;
             xhr.send(null);
             if (xhr.status === 200) {
@@ -221,12 +234,7 @@ App.auth = (function () {
         return _usuarioActual;
     }
 
-    function token() {
-        // Cero tokens almacenados en el cliente; autenticación por cookie de sesión
-        return "";
-    }
-
-    function guardar(tokenIgnorado, usuario) {
+    function guardar(_tokenIgnorado, usuario) {
         _usuarioActual = usuario;
         _sesionComprobada = true;
     }
@@ -249,12 +257,6 @@ App.auth = (function () {
         return Boolean(u && u.rol === "ADMIN");
     }
 
-    function esLocal() {
-        return false;
-    }
-
-    function guardarLocal() {}
-
     function exigir() {
         const u = actual();
         if (!u) {
@@ -267,13 +269,10 @@ App.auth = (function () {
 
     return {
         actual,
-        token,
         guardar,
         limpiar,
         cerrar,
         esAdmin,
-        esLocal,
-        guardarLocal,
         exigir,
         verificar,
     };
@@ -328,7 +327,7 @@ App.fmt = (function () {
 })();
 
 /* ==========================================
-   UI — modales, avisos y tablas
+   UI — modales, avisos, contraseñas y tablas
    ========================================== */
 
 App.ui = (function () {
@@ -451,6 +450,23 @@ App.ui = (function () {
     };
 })();
 
+/* Delegación global para botones de mostrar/ocultar contraseña (.btn-ver-password) */
+document.addEventListener("click", (evento) => {
+    const boton = evento.target.closest(".btn-ver-password");
+    if (!boton) return;
+    const idDestino = boton.getAttribute("data-target");
+    const input = idDestino ? document.getElementById(idDestino) : null;
+    if (!input) return;
+
+    const esPassword = input.type === "password";
+    input.type = esPassword ? "text" : "password";
+    boton.textContent = esPassword ? "🙈" : "👁";
+    boton.setAttribute(
+        "aria-label",
+        esPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+    );
+});
+
 /* ==========================================
    FACTURA — hoja imprimible de una venta
    ========================================== */
@@ -496,7 +512,7 @@ App.factura = (function () {
                 <td>Sin detalle de productos</td>
                 <td class="num">—</td>
                 <td class="num">—</td>
-                <td class="num">C${App.fmt.dinero(venta.total)}</td>
+                <td class="num">${App.fmt.dinero(venta.total)}</td>
             </tr>`;
     }
 
@@ -504,18 +520,33 @@ App.factura = (function () {
         return (venta.items || []).reduce((s, i) => s + Number(i.cantidad || 0), 0);
     }
 
+    function bloqueEfectivo(venta) {
+        if (venta.efectivo_recibido === null || venta.efectivo_recibido === undefined) {
+            return "";
+        }
+        return `
+            <div class="sub">
+                <span>Efectivo recibido</span>
+                <span>${App.fmt.dinero(venta.efectivo_recibido)}</span>
+            </div>
+            <div class="sub">
+                <span>Vuelto entregado</span>
+                <span>${App.fmt.dinero(venta.vuelto || 0)}</span>
+            </div>`;
+    }
+
     function plantilla(venta) {
         const total = venta.total !== undefined ? venta.total : venta.subtotal;
         const id = numero(venta);
+        const esAnulada = venta.estado === "ANULADA";
 
         return `<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<title>Factura ${App.fmt.entero(id)}</title>
+<title>Factura #${App.fmt.entero(id)}</title>
 <style>
     * { box-sizing: border-box; }
-
     body {
         margin: 0;
         padding: 24px;
@@ -523,7 +554,6 @@ App.factura = (function () {
         color: #1a1a1a;
         font: 13px/1.5 "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
-
     .hoja {
         max-width: 760px;
         margin: 0 auto;
@@ -531,7 +561,6 @@ App.factura = (function () {
         background: #fff;
         border: 1px solid #d9dee5;
     }
-
     .encabezado {
         display: flex;
         justify-content: space-between;
@@ -540,7 +569,6 @@ App.factura = (function () {
         padding-bottom: 18px;
         border-bottom: 2px solid #1a1a1a;
     }
-
     .negocio { font-size: 19px; font-weight: 700; letter-spacing: .2px; }
     .negocio small {
         display: block;
@@ -549,7 +577,6 @@ App.factura = (function () {
         font-weight: 400;
         color: #6b7280;
     }
-
     .doc { text-align: right; white-space: nowrap; }
     .doc .tipo {
         font-size: 11px;
@@ -558,7 +585,17 @@ App.factura = (function () {
         color: #6b7280;
     }
     .doc .folio { font-size: 23px; font-weight: 700; }
-
+    .sello-anulada {
+        display: inline-block;
+        margin-top: 4px;
+        padding: 2px 8px;
+        background: #fee2e2;
+        color: #b91c1c;
+        border: 1px solid #ef4444;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 700;
+    }
     .datos {
         display: flex;
         flex-wrap: wrap;
@@ -566,15 +603,9 @@ App.factura = (function () {
         padding: 16px 0 22px;
         font-size: 12px;
     }
-
     .datos p { margin: 0; }
-    .datos b {
-        margin-left: 6px;
-        font-weight: 600;
-    }
-
+    .datos b { margin-left: 6px; font-weight: 600; }
     table { width: 100%; border-collapse: collapse; }
-
     thead th {
         padding: 9px 10px;
         background: #f4f6f8;
@@ -586,37 +617,31 @@ App.factura = (function () {
         text-transform: uppercase;
         text-align: left;
     }
-
     tbody td {
         padding: 9px 10px;
         border-bottom: 1px solid #e3e7ec;
         vertical-align: top;
     }
-
     .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
     thead .num { text-align: right; }
     tbody td:nth-child(1),
-    tbody td:nth-child(3) { width: 1%; }
-    tbody td:nth-child(4), tbody td:nth-child(5) { width: 1%; }
-
+    tbody td:nth-child(3),
+    tbody td:nth-child(4),
+    tbody td:nth-child(5) { width: 1%; }
     .cierre {
         display: flex;
         justify-content: flex-end;
         margin-top: 22px;
     }
-
     .totales { width: 290px; }
-
     .totales div {
         display: flex;
         justify-content: space-between;
         gap: 20px;
         padding: 6px 10px;
     }
-
     .totales .sub { color: #4b5563; }
     .totales .iva { border-bottom: 1px solid #cbd2da; }
-
     .totales .gran {
         margin-top: 4px;
         padding: 11px 10px;
@@ -626,7 +651,6 @@ App.factura = (function () {
         font-size: 16px;
         font-weight: 700;
     }
-
     .acciones {
         max-width: 760px;
         margin: 0 auto 14px;
@@ -634,7 +658,6 @@ App.factura = (function () {
         justify-content: flex-end;
         gap: 8px;
     }
-
     .acciones button {
         padding: 8px 16px;
         font: inherit;
@@ -645,23 +668,16 @@ App.factura = (function () {
         color: #1a1a1a;
         cursor: pointer;
     }
-
     .acciones .primario {
         background: #1a1a1a;
         border-color: #1a1a1a;
         color: #fff;
     }
-
     @page { margin: 14mm; }
-
     @media print {
         body { padding: 0; background: #fff; }
         .acciones { display: none; }
-        .hoja {
-            max-width: none;
-            padding: 0;
-            border: 0;
-        }
+        .hoja { max-width: none; padding: 0; border: 0; }
         tr { page-break-inside: avoid; }
         thead { display: table-header-group; }
     }
@@ -681,7 +697,8 @@ App.factura = (function () {
         </div>
         <div class="doc">
             <div class="tipo">Factura</div>
-            <div class="folio">#C${App.fmt.entero(id)}</div>
+            <div class="folio">#${App.fmt.entero(id)}</div>
+            ${esAnulada ? '<div class="sello-anulada">ANULADA</div>' : ""}
         </div>
     </header>
 
@@ -719,6 +736,7 @@ App.factura = (function () {
                 <span>Total</span>
                 <span>${App.fmt.dinero(total)}</span>
             </div>
+            ${bloqueEfectivo(venta)}
         </div>
     </section>
 </main>

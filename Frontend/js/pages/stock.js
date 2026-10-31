@@ -1,41 +1,51 @@
 (function () {
-    const STOCK_MAXIMO = 64;
+    const UMBRAL_STOCK_BAJO = 5;
     const FILAS_VISIBLES = 5;
-    const MARGEN_PORCENTAJE = 0.05; // 5%
 
     const $ = (id) => document.getElementById(id);
 
     let productos = [];
-    let categorias = [];
+    let soloCriticos = true;
 
-    async function cargarCategorias() {
-        try {
-            categorias = await App.api.categorias();
-        } catch (err) {
-            App.ui.aviso(err.message);
-        }
-    }
-
-    async function cargarStockCritico() {
+    async function cargarProductosStock() {
         try {
             productos = await App.api.productos();
         } catch (err) {
             App.ui.aviso(err.message);
             return;
         }
+        renderizarTablaStock();
+    }
 
-        // Filtrar exclusivamente productos con stock de 0 a 5 (agotados y bajos)
-        const productosBajos = productos.filter((p) => p.stock <= 5);
+    function renderizarTablaStock() {
+        const inputBuscar = $("inputBuscarStock");
+        const texto = inputBuscar ? inputBuscar.value.trim().toLowerCase() : "";
+
+        let lista = productos;
+        if (soloCriticos && !texto) {
+            lista = lista.filter((p) => p.stock <= UMBRAL_STOCK_BAJO);
+        }
+
+        if (texto) {
+            lista = lista.filter(
+                (p) =>
+                    p.nombre.toLowerCase().includes(texto) ||
+                    (p.codigo || "").toLowerCase().includes(texto) ||
+                    (p.categoria_nombre || "").toLowerCase().includes(texto)
+            );
+        }
 
         App.ui.pintarTabla(
             "tablaStock",
             "mensajeSinStock",
-            productosBajos,
+            lista,
             (p) => {
-                const estado =
-                    p.stock > 0
-                        ? `<span class="badge" style="color: #fd7e14; font-weight: bold;">Bajo (${p.stock})</span>`
-                        : '<span class="badge agotado">Agotado (0)</span>';
+                let estado = '<span class="badge disponible">Disponible</span>';
+                if (p.stock === 0) {
+                    estado = '<span class="badge agotado">Agotado (0)</span>';
+                } else if (p.stock <= UMBRAL_STOCK_BAJO) {
+                    estado = `<span class="badge" style="color: #fd7e14; font-weight: bold;">Bajo (${p.stock})</span>`;
+                }
 
                 return `
                     <td>
@@ -44,7 +54,8 @@
                     </td>
                     <td>${App.fmt.texto(p.codigo) || "N/A"}</td>
                     <td>${App.fmt.dinero(p.precio)}</td>
-                    <td>${App.fmt.entero(p.stock)} / ${STOCK_MAXIMO}</td>
+                    <td>${App.fmt.dinero(p.costo_entrada || 0)}</td>
+                    <td>${App.fmt.entero(p.stock)}</td>
                     <td>${estado}</td>
                     <td class="acciones-tabla">
                         <button class="btn-accion" data-accion="recargar" data-id="${p.id}">Recargar</button>
@@ -53,6 +64,21 @@
         );
 
         App.ui.ajustarAlturaTabla("contenedorTablaStock", "tablaStock", FILAS_VISIBLES);
+    }
+
+    function cambiarModoFiltro(criticos) {
+        soloCriticos = criticos;
+        const btnCritico = $("btnFiltroCritico");
+        const btnTodos = $("btnFiltroTodosStock");
+        if (btnCritico) {
+            btnCritico.classList.toggle("btn-pill-menta", criticos);
+            btnCritico.classList.toggle("btn-pill-oscuro", !criticos);
+        }
+        if (btnTodos) {
+            btnTodos.classList.toggle("btn-pill-menta", !criticos);
+            btnTodos.classList.toggle("btn-pill-oscuro", criticos);
+        }
+        renderizarTablaStock();
     }
 
     function abrirModalRecarga(id) {
@@ -64,22 +90,17 @@
         $("stockProdActual").value = producto.stock;
         $("stockProdPrecioActual").value = producto.precio;
         $("stockProdCantidad").value = "";
-        $("stockProdPrecioEntrada").value = "";
+        $("stockProdPrecioEntrada").value = producto.costo_entrada > 0 ? producto.costo_entrada : "";
         $("tituloModalStock").textContent = `Recargar stock: ${producto.nombre}`;
 
         App.ui.abrir("modalStock");
         $("stockProdCantidad").focus();
     }
 
-    function redondearPrecio(valor) {
-        // Igual que el resto del sistema: 2 decimales, half-up
-        return Math.round((Number(valor) + Number.EPSILON) * 100) / 100;
-    }
-
     async function guardarRecarga(evento) {
         evento.preventDefault();
 
-        const id = $("stockProductoId").value;
+        const id = Number($("stockProductoId").value);
         const cantidadAgregar = parseInt($("stockProdCantidad").value, 10);
         const precioEntrada = parseFloat($("stockProdPrecioEntrada").value);
 
@@ -93,67 +114,32 @@
             return;
         }
 
-        const productoActual = productos.find((p) => p.id === Number(id));
-        if (!productoActual) return;
-
-        const nuevoStock = productoActual.stock + cantidadAgregar;
-
-        if (nuevoStock > STOCK_MAXIMO) {
-            App.ui.aviso(
-                `No se puede superar el máximo de ${STOCK_MAXIMO}. ` +
-                    `Stock actual: ${productoActual.stock}. ` +
-                    `Puedes agregar como máximo ${STOCK_MAXIMO - productoActual.stock}.`
-            );
-            return;
-        }
-
-        // Si el precio de entrada es más caro que el actual,
-        // el nuevo precio de venta = precio de entrada + 5%
-        let nuevoPrecio = productoActual.precio;
-        let precioActualizado = false;
-
-        if (precioEntrada > productoActual.precio) {
-            nuevoPrecio = redondearPrecio(precioEntrada * (1 + MARGEN_PORCENTAJE));
-            precioActualizado = true;
-        }
-
         try {
-            await App.api.actualizarProducto(id, {
-                nombre: productoActual.nombre,
-                codigo: productoActual.codigo,
-                precio: nuevoPrecio,
-                stock: nuevoStock,
-                categoria_id: productoActual.categoria_id,
-            });
-
+            const r = await App.api.recargarStock(id, cantidadAgregar, precioEntrada);
             App.ui.cerrar("modalStock");
-            await cargarStockCritico();
-
-            let mensaje =
-                `Stock actualizado: ${productoActual.stock} + ${cantidadAgregar} = ${nuevoStock}.`;
-            if (precioActualizado) {
-                mensaje +=
-                    ` Precio actualizado: ${App.fmt.dinero(productoActual.precio)} → ${App.fmt.dinero(nuevoPrecio)} (entrada + 5%).`;
-            } else {
-                mensaje += ` Precio sin cambios (${App.fmt.dinero(productoActual.precio)}).`;
-            }
-            App.ui.aviso(mensaje);
+            await cargarProductosStock();
+            App.ui.aviso(r.mensaje || "Stock recargado correctamente.");
         } catch (err) {
             App.ui.aviso(err.message);
         }
     }
 
     document.addEventListener("DOMContentLoaded", async () => {
-        if (!App.auth.exigir()) return;
-        App.layout.montar();
+        if (!App.layout.montar()) return;
 
         const btnCerrar = $("cerrarModalStock");
         const btnCancelar = $("btnCancelarStock");
         const form = $("formStock");
+        const inputBuscar = $("inputBuscarStock");
+        const btnCritico = $("btnFiltroCritico");
+        const btnTodos = $("btnFiltroTodosStock");
 
         if (btnCerrar) btnCerrar.addEventListener("click", () => App.ui.cerrar("modalStock"));
         if (btnCancelar) btnCancelar.addEventListener("click", () => App.ui.cerrar("modalStock"));
         if (form) form.addEventListener("submit", guardarRecarga);
+        if (inputBuscar) inputBuscar.addEventListener("input", renderizarTablaStock);
+        if (btnCritico) btnCritico.addEventListener("click", () => cambiarModoFiltro(true));
+        if (btnTodos) btnTodos.addEventListener("click", () => cambiarModoFiltro(false));
 
         App.ui.cerrarAlTocarFondo("modalStock");
 
@@ -167,7 +153,6 @@
             });
         }
 
-        await cargarCategorias();
-        await cargarStockCritico();
+        await cargarProductosStock();
     });
 })();

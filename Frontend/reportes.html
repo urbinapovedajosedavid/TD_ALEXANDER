@@ -26,7 +26,7 @@
                         <div class="filtro-grupo">
                             <label for="selectTipoReporte">Tipo de reporte</label>
                             <select id="selectTipoReporte">
-                                <option value="">Seleccionar reporte</option>
+                                <option value="">Reporte General de Ventas</option>
                                 <option value="ventas_usuario">Reporte de Ventas por Usuario</option>
                                 <option value="inventario">Inventario Total</option>
                             </select>
@@ -85,7 +85,7 @@
                                 <div class="kpi-grid">
                                     <article class="kpi-card">
                                         <h3>Inventario Total Vendido</h3>
-                                        <p class="kpi-valor" id="kpiInventarioTotal">$0.00</p>
+                                        <p class="kpi-valor" id="kpiInventarioTotal">C$0.00</p>
                                     </article>
                                     <article class="kpi-card">
                                         <h3>Unidades Vendidas</h3>
@@ -100,7 +100,7 @@
                         <div class="kpi-grid">
                             <article class="kpi-card">
                                 <h3>Inventario Total</h3>
-                                <p class="kpi-valor" id="kpiInvValor">$0.00</p>
+                                <p class="kpi-valor" id="kpiInvValor">C$0.00</p>
                             </article>
                             <article class="kpi-card">
                                 <h3>Productos en Stock</h3>
@@ -150,8 +150,8 @@
 
                     <div class="kpi-grid">
                         <article class="kpi-card">
-                            <h3>Total Vendido</h3>
-                            <p class="kpi-valor" id="kpiVentasHoy">$0.00</p>
+                            <h3>Total Vendido (c/IVA)</h3>
+                            <p class="kpi-valor" id="kpiVentasHoy">C$0.00</p>
                         </article>
                         <article class="kpi-card">
                             <h3>Transacciones</h3>
@@ -163,7 +163,7 @@
                         </article>
                         <article class="kpi-card">
                             <h3>Ticket Promedio</h3>
-                            <p class="kpi-valor" id="kpiTicketPromedio">$0.00</p>
+                            <p class="kpi-valor" id="kpiTicketPromedio">C$0.00</p>
                         </article>
                     </div>
 
@@ -186,7 +186,8 @@
                                     <th>Fecha</th>
                                     <th>ID Venta</th>
                                     <th>Método de Pago</th>
-                                    <th>Total</th>
+                                    <th>Subtotal (Neto)</th>
+                                    <th>Total (c/IVA)</th>
                                     <th>Acción</th>
                                 </tr>
                             </thead>
@@ -198,7 +199,7 @@
                     </div>
 
                     <div class="acciones-inventario-pills">
-<button type="button" id="btnExportarExcel" class="btn-pill btn-pill-menta">
+                        <button type="button" id="btnExportarExcel" class="btn-pill btn-pill-menta">
                             Exportar a Excel (CSV)
                         </button>
                     </div>
@@ -209,8 +210,6 @@
     </div>
 
     <script src="js/core.js"></script>
-    <script src="js/demo.js"></script>
-
     <script src="js/layout.js"></script>
     <script src="js/pages/reportes.js"></script>
 </body>

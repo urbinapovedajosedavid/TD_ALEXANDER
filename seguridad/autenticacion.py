@@ -1,7 +1,7 @@
 """seguridad.autenticacion
 ========================
-Hashing con werkzeug.security, sesiones de base de datos y
-protección contra fuerza bruta con bloqueo escalonado.
+Hashing con werkzeug.security, sesiones respaldadas en base de datos y
+protección contra fuerza bruta con bloqueo escalonado y decaimiento automático.
 """
 
 import secrets
@@ -10,13 +10,10 @@ from datetime import datetime, timedelta
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from config import FORMATO_FECHA, ahora
+
 DURACION_SESION_HORAS = 8
-FORMATO_FECHA = "%Y-%m-%d %H:%M:%S"
-
-
-def ahora() -> str:
-    """Marca de tiempo local en el formato estándar."""
-    return datetime.now().strftime(FORMATO_FECHA)
+VENTANA_ESCALADO_SEGUNDOS = 15 * 60  # Tras 15 min de vencido el bloqueo, el nivel decae a 0
 
 
 # ------------------------------------------------------------------ #
@@ -36,7 +33,6 @@ def verify_password(clave: str, almacenado: str) -> bool:
     if almacenado.startswith("pbkdf2:"):
         return check_password_hash(almacenado, clave)
 
-    # Compatibilidad con hashes previos pbkdf2$<sal>$<hash> si existieran
     if almacenado.startswith("pbkdf2$"):
         import hashlib
         import hmac as _hmac
@@ -57,20 +53,19 @@ def verify_password(clave: str, almacenado: str) -> bool:
 # ------------------------------------------------------------------ #
 
 def procesar_intento_login(conn: sqlite3.Connection, usuario_input: str, clave_input: str):
-    """Procesa un intento de login aplicando bloqueo escalonado.
+    """Procesa un intento de login aplicando bloqueo escalonado con decaimiento.
 
     Reglas de negocio:
     1. Si un usuario ingresa contraseña incorrecta 3 veces seguidas:
        Bloqueo automático por 1 minuto (Nivel 1).
-    2. Si vuelve a fallar inmediatamente tras terminar la penalización:
+    2. Si vuelve a fallar inmediatamente tras terminar la penalización (dentro de la ventana):
        El tiempo de bloqueo aumenta sumando 2 minutos más:
        Nivel 2: 1 + 2 = 3 minutos.
        Nivel 3: 3 + 2 = 5 minutos.
        Nivel k: 1 + 2*(k - 1) minutos.
-    3. Si el inicio de sesión es exitoso:
+    3. Si transcurrió la ventana de enfriamiento tras vencer el bloqueo, el nivel decae.
+    4. Si el inicio de sesión es exitoso:
        Reinicia intentos_fallidos, bloqueado, tiempo_bloqueo y nivel_bloqueo a cero.
-
-    Retorna: (exito: bool, datos_o_error: dict, codigo_http: int)
     """
     usuario_input = (usuario_input or "").strip()
     clave_input = clave_input or ""
@@ -79,7 +74,7 @@ def procesar_intento_login(conn: sqlite3.Connection, usuario_input: str, clave_i
         return False, {"mensaje": "Usuario y contraseña son obligatorios."}, 400
 
     fila = conn.execute(
-        "SELECT id, nombre, usuario, rol, password_hash, "
+        "SELECT id, nombre, usuario, rol, password_hash, COALESCE(activo, 1) AS activo, "
         "intentos_fallidos, bloqueado, tiempo_bloqueo, nivel_bloqueo "
         "FROM usuarios WHERE usuario = ? COLLATE NOCASE",
         (usuario_input,),
@@ -90,6 +85,13 @@ def procesar_intento_login(conn: sqlite3.Connection, usuario_input: str, clave_i
         check_password_hash("pbkdf2:sha256:1000000$dummy$dummy", clave_input)
         return False, {"mensaje": "Usuario o contraseña incorrectos."}, 401
 
+    if not fila["activo"]:
+        return (
+            False,
+            {"mensaje": "Esta cuenta se encuentra desactivada. Contacta al administrador."},
+            403,
+        )
+
     user_id = fila["id"]
     intentos = fila["intentos_fallidos"] or 0
     bloqueado = fila["bloqueado"] or 0
@@ -97,14 +99,14 @@ def procesar_intento_login(conn: sqlite3.Connection, usuario_input: str, clave_i
     nivel = fila["nivel_bloqueo"] or 0
     ahora_dt = datetime.now()
 
-    # 1. Comprobar si la cuenta está actualmente bloqueada
-    if bloqueado and tiempo_bloqueo_str:
+    # 1. Comprobar si la cuenta tiene un bloqueo temporal activo o vencido
+    if tiempo_bloqueo_str:
         try:
             tiempo_bloqueo = datetime.strptime(tiempo_bloqueo_str, FORMATO_FECHA)
         except ValueError:
             tiempo_bloqueo = ahora_dt
 
-        if ahora_dt < tiempo_bloqueo:
+        if bloqueado and ahora_dt < tiempo_bloqueo:
             segundos = max(1, int((tiempo_bloqueo - ahora_dt).total_seconds()))
             minutos = (segundos + 59) // 60
             return (
@@ -121,15 +123,29 @@ def procesar_intento_login(conn: sqlite3.Connection, usuario_input: str, clave_i
                 },
                 403,
             )
+
+        # La penalización ya venció: limpiar bandera de bloqueo en base de datos
+        segundos_desde_vencimiento = (ahora_dt - tiempo_bloqueo).total_seconds()
+        if segundos_desde_vencimiento > VENTANA_ESCALADO_SEGUNDOS:
+            # Si pasó suficiente tiempo desde el vencimiento, decae el nivel de bloqueo
+            nivel = 0
+            intentos = 0
+            conn.execute(
+                "UPDATE usuarios SET bloqueado = 0, tiempo_bloqueo = NULL, "
+                "nivel_bloqueo = 0, intentos_fallidos = 0 WHERE id = ?",
+                (user_id,),
+            )
         else:
-            # La penalización expiró para este nuevo intento
-            bloqueado = 0
+            conn.execute(
+                "UPDATE usuarios SET bloqueado = 0 WHERE id = ?",
+                (user_id,),
+            )
+        bloqueado = 0
 
     # 2. Verificar contraseña
     valida = verify_password(clave_input, fila["password_hash"])
 
     if valida:
-        # ÉXITO: reiniciar contadores a cero
         conn.execute(
             "UPDATE usuarios SET intentos_fallidos = 0, bloqueado = 0, "
             "tiempo_bloqueo = NULL, nivel_bloqueo = 0 WHERE id = ?",
@@ -146,11 +162,9 @@ def procesar_intento_login(conn: sqlite3.Connection, usuario_input: str, clave_i
             200,
         )
 
-    # 3. CONTRASEÑA INCORRECTA
+    # 3. Contraseña incorrecta
     if nivel > 0:
-        # Vuelve a fallar inmediatamente tras terminar la penalización
         nuevo_nivel = nivel + 1
-        # Nivel 1 = 1m; Nivel 2 = 1+2 = 3m; Nivel 3 = 3+2 = 5m...
         minutos = 1 + 2 * (nuevo_nivel - 1)
         segundos = minutos * 60
         tiempo_fin = (ahora_dt + timedelta(minutes=minutos)).strftime(FORMATO_FECHA)
@@ -174,47 +188,46 @@ def procesar_intento_login(conn: sqlite3.Connection, usuario_input: str, clave_i
             },
             403,
         )
-    else:
-        nuevos_intentos = intentos + 1
-        if nuevos_intentos >= 3:
-            # 3 intentos fallidos consecutivos: bloqueo automático por 1 minuto
-            minutos = 1
-            segundos = 60
-            tiempo_fin = (ahora_dt + timedelta(minutes=minutos)).strftime(FORMATO_FECHA)
-            conn.execute(
-                "UPDATE usuarios SET bloqueado = 1, nivel_bloqueo = 1, "
-                "tiempo_bloqueo = ?, intentos_fallidos = ? WHERE id = ?",
-                (tiempo_fin, nuevos_intentos, user_id),
-            )
-            return (
-                False,
-                {
-                    "mensaje": (
-                        "Contraseña incorrecta. 3 intentos fallidos consecutivos: "
-                        "cuenta bloqueada por 1 minuto. Intenta de nuevo en 60 segundos."
-                    ),
-                    "bloqueado": True,
-                    "nivel_bloqueo": 1,
-                    "minutos_bloqueo": 1,
-                    "segundos_restantes": 60,
-                },
-                403,
-            )
-        else:
-            conn.execute(
-                "UPDATE usuarios SET intentos_fallidos = ? WHERE id = ?",
-                (nuevos_intentos, user_id),
-            )
-            restantes = 3 - nuevos_intentos
-            return (
-                False,
-                {
-                    "mensaje": f"Usuario o contraseña incorrectos. Intentos restantes antes del bloqueo: {restantes}.",
-                    "bloqueado": False,
-                    "intentos_restantes": restantes,
-                },
-                401,
-            )
+
+    nuevos_intentos = intentos + 1
+    if nuevos_intentos >= 3:
+        minutos = 1
+        segundos = 60
+        tiempo_fin = (ahora_dt + timedelta(minutes=minutos)).strftime(FORMATO_FECHA)
+        conn.execute(
+            "UPDATE usuarios SET bloqueado = 1, nivel_bloqueo = 1, "
+            "tiempo_bloqueo = ?, intentos_fallidos = ? WHERE id = ?",
+            (tiempo_fin, nuevos_intentos, user_id),
+        )
+        return (
+            False,
+            {
+                "mensaje": (
+                    "Contraseña incorrecta. 3 intentos fallidos consecutivos: "
+                    "cuenta bloqueada por 1 minuto. Intenta de nuevo en 60 segundos."
+                ),
+                "bloqueado": True,
+                "nivel_bloqueo": 1,
+                "minutos_bloqueo": 1,
+                "segundos_restantes": 60,
+            },
+            403,
+        )
+
+    conn.execute(
+        "UPDATE usuarios SET intentos_fallidos = ? WHERE id = ?",
+        (nuevos_intentos, user_id),
+    )
+    restantes = 3 - nuevos_intentos
+    return (
+        False,
+        {
+            "mensaje": f"Usuario o contraseña incorrectos. Intentos restantes antes del bloqueo: {restantes}.",
+            "bloqueado": False,
+            "intentos_restantes": restantes,
+        },
+        401,
+    )
 
 
 # ------------------------------------------------------------------ #
@@ -222,7 +235,7 @@ def procesar_intento_login(conn: sqlite3.Connection, usuario_input: str, clave_i
 # ------------------------------------------------------------------ #
 
 def crear_sesion(conn: sqlite3.Connection, usuario_id: int) -> str:
-    """Abre una sesión en la BD y devuelve un token opaco."""
+    """Abre una sesión en la BD y devuelve un token criptográfico."""
     token = secrets.token_urlsafe(32)
     expira = datetime.now() + timedelta(hours=DURACION_SESION_HORAS)
     conn.execute(
@@ -234,19 +247,21 @@ def crear_sesion(conn: sqlite3.Connection, usuario_id: int) -> str:
 
 
 def usuario_de_token(conn: sqlite3.Connection, token: str):
-    """Busca al usuario si el token es válido y no ha expirado."""
+    """Busca al usuario si el token de sesión existe en BD, no ha expirado y la cuenta está activa."""
     if not token:
         return None
     return conn.execute(
-        "SELECT u.id, u.nombre, u.usuario, u.rol, u.bloqueado FROM sesiones s "
+        "SELECT u.id, u.nombre, u.usuario, u.rol, COALESCE(u.activo, 1) AS activo "
+        "FROM sesiones s "
         "JOIN usuarios u ON u.id = s.usuario_id "
-        "WHERE s.token = ? AND s.expira_en > ? AND u.bloqueado = 0",
+        "WHERE s.token = ? AND s.expira_en > ? AND COALESCE(u.activo, 1) = 1",
         (token, ahora()),
     ).fetchone()
 
 
 def revocar_sesion(conn: sqlite3.Connection, token: str) -> None:
-    conn.execute("DELETE FROM sesiones WHERE token = ?", (token,))
+    if token:
+        conn.execute("DELETE FROM sesiones WHERE token = ?", (token,))
 
 
 def revocar_sesiones_de_usuario(conn: sqlite3.Connection, usuario_id: int) -> None:

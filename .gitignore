@@ -3,10 +3,15 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
+build/
+dist/
 
-# Base de datos: se regenera sola al arrancar Backend/server.py
-# a partir de database/esquema.sql
+# Base de datos y archivos temporales de respaldo:
+# se generan automáticamente al arrancar app.py a partir de database/esquema.sql
 *.db
+*.descargando
+*.restaurando
+*.antes-de-restaurar
 
 # Sistema / editores
 .DS_Store
@@ -14,6 +19,5 @@ Thumbs.db
 .vscode/
 .idea/
 
-
-# Variables de entorno con credenciales (nunca subir al repositorio)
+# Variables de entorno y claves secretas autogeneradas (nunca subir al repositorio)
 .env

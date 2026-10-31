@@ -1,6 +1,6 @@
 """api.respaldos
 =============
-Generación, descarga y restauración de respaldos de SQLite.
+Generación, validación, descarga y restauración segura de respaldos de SQLite.
 """
 
 import io
@@ -8,15 +8,13 @@ import sqlite3
 from datetime import datetime
 from typing import Optional
 
-from flask import jsonify, request, send_file
+from flask import jsonify, request, send_file, session
 
 import db
 from api import api_bp
+from api.utils import error
+from config import FORMATO_FECHA
 from seguridad import requiere_rol
-
-
-def _error(mensaje, estado=400):
-    return jsonify({"exito": False, "mensaje": mensaje}), estado
 
 
 def _validar_archivo_respaldo(ruta) -> Optional[str]:
@@ -26,18 +24,13 @@ def _validar_archivo_respaldo(ruta) -> Optional[str]:
         return "El archivo no es una base de datos válida."
 
     try:
-        tabla = conexion.execute(
-            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'usuarios'"
-        ).fetchone()
-        if tabla is None:
-            return "El archivo no contiene las tablas de Tienda Alexander."
-
         for nombre in ("usuarios", "categorias", "productos", "ventas", "sesiones"):
             existe = conexion.execute(
-                "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?", (nombre,)
+                "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+                (nombre,),
             ).fetchone()
             if existe is None:
-                return f"Le falta la tabla '{nombre}'. El archivo no es de este sistema."
+                return f"Le falta la tabla '{nombre}'. El archivo no pertenece a Tienda Alexander."
 
         admins = conexion.execute(
             "SELECT COUNT(*) FROM usuarios WHERE rol = 'ADMIN'"
@@ -80,11 +73,11 @@ def descargar_respaldo():
 @requiere_rol("ADMIN")
 def restaurar_respaldo():
     if "archivo" not in request.files:
-        return _error("No se recibió ningún archivo.", 400)
+        return error("No se recibió ningún archivo.", 400)
 
     archivo = request.files["archivo"]
     if not archivo.filename:
-        return _error("El archivo no tiene nombre.", 400)
+        return error("El archivo no tiene nombre.", 400)
 
     temporal = db.RUTA_DB.with_suffix(".restaurando")
     archivo.save(temporal)
@@ -92,21 +85,32 @@ def restaurar_respaldo():
     problema = _validar_archivo_respaldo(temporal)
     if problema:
         temporal.unlink(missing_ok=True)
-        return _error(problema, 400)
+        return error(problema, 400)
 
     copia_seguridad = db.RUTA_DB.with_suffix(".antes-de-restaurar")
-    copia_seguridad.write_bytes(db.RUTA_DB.read_bytes())
+    if db.RUTA_DB.exists():
+        copia_seguridad.write_bytes(db.RUTA_DB.read_bytes())
 
-    conexion = sqlite3.connect(db.RUTA_DB)
-    conexion.close()
-    db.RUTA_DB.write_bytes(temporal.read_bytes())
-    temporal.unlink(missing_ok=True)
+    try:
+        origen = sqlite3.connect(temporal)
+        destino = sqlite3.connect(db.RUTA_DB)
+        try:
+            origen.backup(destino)
+        finally:
+            destino.close()
+            origen.close()
+    finally:
+        temporal.unlink(missing_ok=True)
 
+    # Ejecutar migraciones sobre la base restaurada (compatibilidad con respaldos antiguos)
+    db.inicializar_db()
+    # Revocar todas las sesiones en la base restaurada y limpiar la cookie actual
     db.purgar_todas_las_sesiones()
+    session.clear()
 
     return jsonify({
         "exito": True,
-        "mensaje": "Respaldo restaurado. Vuelve a iniciar sesión.",
+        "mensaje": "Respaldo restaurado y migrado correctamente. Vuelve a iniciar sesión.",
     })
 
 
@@ -114,10 +118,9 @@ def restaurar_respaldo():
 @requiere_rol("ADMIN")
 def informacion_respaldo():
     existe = db.RUTA_DB.exists()
-    datos = {
+    stat = db.RUTA_DB.stat() if existe else None
+    return jsonify({
         "existe": existe,
-        "tamano_bytes": db.RUTA_DB.stat().st_size if existe else 0,
-        "fecha": datetime.fromtimestamp(db.RUTA_DB.stat().st_mtime).strftime(db.FORMATO_FECHA) if existe else None,
-    }
-    return jsonify(datos)
-
+        "tamano_bytes": stat.st_size if stat else 0,
+        "fecha": datetime.fromtimestamp(stat.st_mtime).strftime(FORMATO_FECHA) if stat else None,
+    })

@@ -3,7 +3,6 @@ window.App = window.App || {};
 App.layout = (function () {
     const LOGO = "https://i.postimg.cc/XqZdZjvF/logo-TD.jpg";
 
-   
     const PAGINAS = [
         { clave: "inicio", ruta: "inicio.html", texto: "Inicio" },
         { clave: "ventas", ruta: "ventas.html", texto: "Ventas" },
@@ -20,7 +19,6 @@ App.layout = (function () {
         { clave: "proveedores", ruta: "provedores.html", texto: "Proveedores" },
     ];
 
-    /* Ícono de cada opción. El sidebar colapsado muestra solo estos. */
     const ICONOS = {
         inicio: "🏠",
         ventas: "💰",
@@ -31,7 +29,6 @@ App.layout = (function () {
         copia_de_seguridad: "💾",
     };
 
-    /* Subtítulo de la cabecera por página. */
     const SUBTITULOS = {
         inicio: "Panel de administración e inventario",
         almacen: "Módulo de gestión de productos",
@@ -42,7 +39,6 @@ App.layout = (function () {
         copia_de_seguridad: "Copia de seguridad",
     };
 
-    
     function paginaActual() {
         const archivo = window.location.pathname.split("/").pop() || "";
         const encontrada = PAGINAS.find((p) => {
@@ -61,7 +57,7 @@ App.layout = (function () {
         return archivo === "copia_de_seguridad.html" ? "copia_de_seguridad" : "";
     }
 
-    function plantillaSidebar(activa) {
+    function plantillaSidebar(activa, esAdmin) {
         const botones = PAGINAS.map((p) => {
             if (p.submenu) {
                 const tieneActivo = p.items.some((i) => i.clave === activa);
@@ -97,6 +93,17 @@ App.layout = (function () {
             </button>`;
         }).join("");
 
+        const bloqueCopia = esAdmin
+            ? `
+            <div class="sidebar-footer">
+                <button class="nav-item nav-item-secundario" type="button"
+                        id="btnCopiaSeguridad">
+                    <span class="nav-icono" aria-hidden="true">${ICONOS.copia_de_seguridad}</span>
+                    <span class="nav-texto">Copia de seguridad</span>
+                </button>
+            </div>`
+            : "";
+
         return `
             <div class="sidebar-brand">
                 <div class="logo-circulo">
@@ -112,13 +119,7 @@ App.layout = (function () {
                 ${botones}
             </nav>
 
-            <div class="sidebar-footer">
-                <button class="nav-item nav-item-secundario" type="button"
-                        id="btnCopiaSeguridad">
-                    <span class="nav-icono" aria-hidden="true">${ICONOS.copia_de_seguridad}</span>
-                    <span class="nav-texto">Copia de seguridad</span>
-                </button>
-            </div>`;
+            ${bloqueCopia}`;
     }
 
     function plantillaCabecera(subtitulo, usuario) {
@@ -133,7 +134,6 @@ App.layout = (function () {
                 </div>
             </div>
 
-            
             <div class="acciones-superior">
                 <div class="ajustes-wrapper">
                     <button id="botonAjustes" class="boton boton-secundario"
@@ -141,16 +141,14 @@ App.layout = (function () {
                         ⚙ Ajustes
                     </button>
                     <div id="menuAjustes" class="menu-ajustes oculto" role="menu">
-                        <button id="cerrarSesionAjustes" class="menu-ajuste-item"
-                                type="button" role="menuitem">Cerrar sesión</button>
-                        <button id="cambiarCuentaAjustes" class="menu-ajuste-item"
-                                type="button" role="menuitem">Cambiar de cuenta</button>
                         <button id="cambiarContrasenaAjustes" class="menu-ajuste-item"
                                 type="button" role="menuitem">Cambiar contraseña</button>
                         <button id="verPerfilesAjustes" class="menu-ajuste-item"
-                                type="button" role="menuitem">Ver perfiles</button>
+                                type="button" role="menuitem">Gestión de usuarios</button>
                         <button id="eliminarCuentaAjustes" class="menu-ajuste-item"
-                                type="button" role="menuitem">Eliminar cuenta</button>
+                                type="button" role="menuitem">Eliminar mi cuenta</button>
+                        <button id="cerrarSesionAjustes" class="menu-ajuste-item"
+                                type="button" role="menuitem">Cerrar sesión</button>
                     </div>
                 </div>
                 <span id="usuarioAdminValor" class="etiqueta-perfil">
@@ -159,8 +157,6 @@ App.layout = (function () {
             </div>`;
     }
 
-    /* ---------- Ajustes ----------
-     */
     function plantillasModales() {
         return `
         <div id="modalCambiarClave" class="modal modal-oculto" aria-hidden="true">
@@ -194,45 +190,8 @@ App.layout = (function () {
             </div>
         </div>
 
-
-        <div id="modalConfig" class="modal modal-oculto" aria-hidden="true">
-            <div class="modal-contenido">
-                <div class="modal-cabecera">
-                    <h3>Configuración visual (por perfil)</h3>
-                    <button id="cerrarModalConfig" class="boton-cerrar" type="button" aria-label="Cerrar">&times;</button>
-                </div>
-                <form id="formConfig" class="form-producto">
-                    <div class="form-row">
-                        <label for="cfgFondo">Color de fondo (hex)</label>
-                        <input type="color" id="cfgFondo" value="#f7fffc">
-                    </div>
-                    <div class="form-row">
-                        <label for="cfgTexto">Color de texto (hex)</label>
-                        <input type="color" id="cfgTexto" value="#1f3f4a">
-                    </div>
-                    <div class="form-row">
-                        <label for="cfgTamaño">Tamaño de letra base (%)</label>
-                        <input type="range" id="cfgTamaño" min="90" max="110" step="1" value="100">
-                        <small id="cfgTamañoVal">100%</small>
-                    </div>
-                    <div class="form-row">
-                        <label for="cfgRadio">Radio de bordes</label>
-                        <select id="cfgRadio">
-                            <option value="8">Suave (8px)</option>
-                            <option value="12" selected>Normal (12px)</option>
-                            <option value="16">Redondeado (16px)</option>
-                            <option value="20">Más redondeado (20px)</option>
-                        </select>
-                    </div>
-                    <p id="mensajeConfig" class="mensaje"></p>
-                    <div class="modal-acciones">
-                        <button type="button" id="btnResetConfig" class="btn-pill btn-pill-oscuro">Restaurar</button>
-                        <button type="submit" class="btn-pill btn-pill-menta">Guardar por perfil</button>
-                    </div>
-                </form>
-            </div>
-        </div>        <div id="modalUsuarios" class="modal modal-oculto" aria-hidden="true">
-            <div class="modal-contenido">
+        <div id="modalUsuarios" class="modal modal-oculto" aria-hidden="true">
+            <div class="modal-contenido" style="max-width: 680px;">
                 <div class="modal-cabecera">
                     <h3>Usuarios del sistema</h3>
                     <button id="cerrarModalUsuarios" class="boton-cerrar" type="button"
@@ -242,7 +201,14 @@ App.layout = (function () {
                 <div class="tabla-panel">
                     <table class="tabla">
                         <thead>
-                            <tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Creado</th></tr>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Usuario</th>
+                                <th>Teléfono</th>
+                                <th>Rol</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
                         </thead>
                         <tbody id="tablaUsuarios"></tbody>
                     </table>
@@ -250,6 +216,7 @@ App.layout = (function () {
                 </div>
 
                 <div class="modal-acciones">
+                    <button type="button" id="btnNuevoUsuarioModal" class="btn-pill btn-pill-menta">+ Crear usuario</button>
                     <button type="button" id="btnCerrarUsuarios" class="btn-pill btn-pill-oscuro">Cerrar</button>
                 </div>
             </div>
@@ -264,34 +231,6 @@ App.layout = (function () {
             document.body.appendChild(contenedor.firstChild);
         }
     }
-    function getConfigKey() {
-        const u = App.auth && App.auth.actual ? App.auth.actual() : null;
-        if (u && u.usuario) return "tdalex_config_" + u.usuario;
-        return "tdalex_config_global";
-    }
-
-    function cargarConfigVisual() {
-        try {
-            const key = getConfigKey();
-            const raw = null; 
-            if (!raw) return;
-            const cfg = JSON.parse(raw);
-            aplicarConfigVisual(cfg);
-        } catch (e) {}
-    }
-
-    function aplicarConfigVisual(cfg) {
-        if (!cfg) return;
-        const root = document.documentElement;
-        if (cfg.fondo) {
-            root.style.setProperty("--fondo", cfg.fondo);
-            root.style.setProperty("--fondo-app", cfg.fondo);
-        }
-        if (cfg.texto) root.style.setProperty("--texto", cfg.texto);
-        if (cfg.tamaño) root.style.setProperty("--font-size-base", cfg.tamaño + "%");
-        if (cfg.radio) root.style.setProperty("--border-radius", cfg.radio + "px");
-    }
-
 
     async function enviarCambioClave(evento) {
         evento.preventDefault();
@@ -320,28 +259,56 @@ App.layout = (function () {
         }
     }
 
+    async function cargarYRenderizarUsuarios() {
+        const actual = App.auth.actual();
+        const lista = await App.api.usuarios();
+
+        App.ui.pintarTabla(
+            "tablaUsuarios",
+            "mensajeSinUsuarios",
+            lista,
+            (u) => {
+                let estadoBadge = '<span class="badge disponible">Activo</span>';
+                if (!u.activo) {
+                    estadoBadge = '<span class="badge agotado">Inactivo</span>';
+                } else if (u.bloqueado) {
+                    estadoBadge = `<span class="badge agotado">Bloqueado (N${u.nivel_bloqueo})</span>`;
+                }
+
+                const botones = [];
+                if (u.bloqueado) {
+                    botones.push(
+                        `<button class="btn-accion" data-accion-usuario="desbloquear" data-id="${u.id}">Desbloquear</button>`
+                    );
+                }
+                if (!actual || u.id !== actual.id) {
+                    const textoToggle = u.activo ? "Desactivar" : "Activar";
+                    const claseExtra = u.activo ? "eliminar" : "";
+                    botones.push(
+                        `<button class="btn-accion ${claseExtra}" data-accion-usuario="estado" data-id="${u.id}" data-activo="${u.activo ? "0" : "1"}">${textoToggle}</button>`
+                    );
+                }
+
+                return `
+                    <td>${App.fmt.texto(u.nombre)}</td>
+                    <td><strong>${App.fmt.texto(u.usuario)}</strong></td>
+                    <td>${App.fmt.texto(u.telefono) || "—"}</td>
+                    <td>${App.fmt.texto(u.rol)}</td>
+                    <td>${estadoBadge}</td>
+                    <td class="acciones-tabla">${botones.join(" ") || "—"}</td>`;
+            }
+        );
+    }
+
     async function mostrarUsuarios() {
         try {
-            const lista = await App.api.usuarios();
-            App.ui.pintarTabla(
-                "tablaUsuarios",
-                "mensajeSinUsuarios",
-                lista,
-                (u) => `
-                    <tr>
-                        <td>${App.fmt.texto(u.nombre)}</td>
-                        <td>${App.fmt.texto(u.usuario)}</td>
-                        <td>${App.fmt.texto(u.rol)}</td>
-                        <td>${App.fmt.fechaHora(u.creado_en)}</td>
-                    </tr>`
-            );
+            await cargarYRenderizarUsuarios();
             App.ui.abrir("modalUsuarios");
         } catch (err) {
             App.ui.aviso(err.message);
         }
     }
 
-    /* Menú de ajustes: abrir/cerrar y cierre al pulsar fuera. */
     function conectarAjustes() {
         const boton = document.getElementById("botonAjustes");
         const menu = document.getElementById("menuAjustes");
@@ -366,10 +333,6 @@ App.layout = (function () {
             App.auth.cerrar();
         });
 
-        document.getElementById("cambiarCuentaAjustes").addEventListener("click", () => {
-            App.auth.cerrar();
-        });
-
         document.getElementById("cambiarContrasenaAjustes").addEventListener("click", () => {
             App.ui.abrir("modalCambiarClave");
         });
@@ -385,6 +348,36 @@ App.layout = (function () {
         document.getElementById("cerrarModalUsuarios").addEventListener("click", () => {
             App.ui.cerrar("modalUsuarios");
         });
+
+        const btnNuevoUsuario = document.getElementById("btnNuevoUsuarioModal");
+        if (btnNuevoUsuario) {
+            btnNuevoUsuario.addEventListener("click", () => {
+                window.location.href = "agregar_usuario.html";
+            });
+        }
+
+        const tablaUsuarios = document.getElementById("tablaUsuarios");
+        if (tablaUsuarios) {
+            tablaUsuarios.addEventListener("click", async (evento) => {
+                const btn = evento.target.closest("[data-accion-usuario]");
+                if (!btn) return;
+                const id = Number(btn.dataset.id);
+                const accion = btn.dataset.accionUsuario;
+                try {
+                    if (accion === "desbloquear") {
+                        const r = await App.api.desbloquearUsuario(id);
+                        App.ui.aviso(r.mensaje || "Usuario desbloqueado.");
+                    } else if (accion === "estado") {
+                        const nuevoActivo = btn.dataset.activo === "1";
+                        const r = await App.api.cambiarEstadoUsuario(id, nuevoActivo);
+                        App.ui.aviso(r.mensaje || "Estado actualizado.");
+                    }
+                    await cargarYRenderizarUsuarios();
+                } catch (err) {
+                    App.ui.aviso(err.message);
+                }
+            });
+        }
 
         if (!App.auth.esAdmin()) {
             const itemUsuarios = document.getElementById("verPerfilesAjustes");
@@ -434,7 +427,7 @@ App.layout = (function () {
         try {
             await App.api.eliminarCuenta();
             App.auth.limpiar();
-            window.location.href = "login.html";
+            window.location.href = "Login.html";
         } catch (err) {
             App.ui.aviso(err.message);
         }
@@ -475,42 +468,47 @@ App.layout = (function () {
             if (!evento.matches) desplegar(false);
         });
 
-        // Manejo de dropdowns
         sidebar.querySelectorAll("[data-dropdown]").forEach((boton) => {
             boton.addEventListener("click", (evento) => {
                 evento.stopPropagation();
                 const dropdown = boton.closest(".nav-dropdown");
                 if (!dropdown) return;
 
-                const estaAbierto = dropdown.classList.contains("nav-dropdown-abierto") || dropdown.classList.contains("active");
                 dropdown.classList.toggle("nav-dropdown-abierto");
                 dropdown.classList.toggle("active");
-                boton.setAttribute("aria-expanded", String(dropdown.classList.contains("nav-dropdown-abierto") || dropdown.classList.contains("active")));
+                boton.setAttribute(
+                    "aria-expanded",
+                    String(
+                        dropdown.classList.contains("nav-dropdown-abierto") ||
+                            dropdown.classList.contains("active")
+                    )
+                );
             });
         });
 
-        // Cerrar dropdowns al hacer clic fuera
         document.addEventListener("click", (evento) => {
             if (!sidebar.contains(evento.target)) {
-                sidebar.querySelectorAll(".nav-dropdown-abierto, .nav-dropdown.active").forEach((dropdown) => {
-                    dropdown.classList.remove("nav-dropdown-abierto");
-                    dropdown.classList.remove("active");
-                    const boton = dropdown.querySelector("[data-dropdown]");
-                    if (boton) boton.setAttribute("aria-expanded", "false");
-                });
+                sidebar
+                    .querySelectorAll(".nav-dropdown-abierto, .nav-dropdown.active")
+                    .forEach((dropdown) => {
+                        dropdown.classList.remove("nav-dropdown-abierto");
+                        dropdown.classList.remove("active");
+                        const boton = dropdown.querySelector("[data-dropdown]");
+                        if (boton) boton.setAttribute("aria-expanded", "false");
+                    });
             }
         });
     }
 
     function montar() {
-        cargarConfigVisual();
         if (!App.auth.exigir()) return false;
 
         const activa = paginaActual();
         const usuario = App.auth.actual();
+        const esAdmin = App.auth.esAdmin();
 
         const sidebar = document.getElementById("sidebar");
-        if (sidebar) sidebar.innerHTML = plantillaSidebar(activa);
+        if (sidebar) sidebar.innerHTML = plantillaSidebar(activa, esAdmin);
 
         const cabecera = document.getElementById("barraSuperior");
         if (cabecera) {
@@ -529,14 +527,6 @@ App.layout = (function () {
 
             sidebar.querySelectorAll(".nav-subitem[data-ruta]").forEach((boton) => {
                 boton.addEventListener("click", () => {
-                    if (boton.dataset.ruta === "#") {
-                        const txt = boton.querySelector(".nav-texto").textContent;
-                        if (txt.includes("Estilo") || txt.includes("Fondo")) App.layout.abrirConfig("estilo");
-                        else if (txt.includes("Tamaño")) App.layout.abrirConfig("fuente");
-                        else if (txt.includes("Contraste")) App.layout.abrirConfig("contraste");
-                        else App.layout.abrirConfig();
-                        return;
-                    }
                     window.location.href = boton.dataset.ruta;
                 });
             });
@@ -555,84 +545,5 @@ App.layout = (function () {
         return true;
     }
 
-    function abrirConfig(preferido) {
-        asegurarModales();
-        const modal = document.getElementById("modalConfig");
-        if (!modal) return;
-        const key = getConfigKey();
-        try {
-            const raw = null; 
-            if (raw) {
-                const cfg = JSON.parse(raw);
-                if (cfg.fondo) document.getElementById("cfgFondo").value = cfg.fondo;
-                if (cfg.texto) document.getElementById("cfgTexto").value = cfg.texto;
-                if (cfg.tamaño) {
-                    document.getElementById("cfgTamaño").value = cfg.tamaño;
-                    document.getElementById("cfgTamañoVal").textContent = cfg.tamaño + "%";
-                }
-                if (cfg.radio) document.getElementById("cfgRadio").value = cfg.radio;
-            }
-        } catch (e) {}
-        document.getElementById("mensajeConfig").textContent = "";
-        App.ui.abrir("modalConfig");
-
-        const foco = {
-            estilo: "cfgFondo",
-            fuente: "cfgTamaño",
-            contraste: "cfgTexto",
-        }[preferido];
-        if (foco) {
-            const campo = document.getElementById(foco);
-            if (campo) setTimeout(function () { campo.focus(); }, 120);
-        }
-
-        document.getElementById("formConfig").onsubmit = function (e) {
-            e.preventDefault();
-            guardarConfig();
-        };
-        document.getElementById("btnResetConfig").onclick = resetConfig;
-        document.getElementById("cfgTamaño").oninput = function () {
-            document.getElementById("cfgTamañoVal").textContent = this.value + "%";
-        };
-        const cerrar = document.getElementById("cerrarModalConfig");
-        if (cerrar) cerrar.onclick = function () {
-            App.ui.cerrar("modalConfig");
-        };
-        App.ui.cerrarAlTocarFondo("modalConfig");
-    }
-
-    function guardarConfig() {
-        const cfg = {
-            fondo: document.getElementById("cfgFondo").value,
-            texto: document.getElementById("cfgTexto").value,
-            tamaño: parseInt(document.getElementById("cfgTamaño").value),
-            radio: document.getElementById("cfgRadio").value,
-        };
-        
-        aplicarConfigVisual(cfg);
-        document.getElementById("mensajeConfig").textContent =
-            "Configuración guardada para este perfil.";
-        setTimeout(function () {
-            App.ui.cerrar("modalConfig");
-        }, 800);
-    }
-
-    function resetConfig() {
-        const key = getConfigKey();
-        
-        document.documentElement.style.removeProperty("--fondo");
-        document.documentElement.style.removeProperty("--fondo-app");
-        document.documentElement.style.removeProperty("--texto");
-        document.documentElement.style.removeProperty("--font-size-base");
-        document.documentElement.style.removeProperty("--border-radius");
-        document.getElementById("cfgFondo").value = "#f7fffc";
-        document.getElementById("cfgTexto").value = "#1f3f4a";
-        document.getElementById("cfgTamaño").value = "100";
-        document.getElementById("cfgTamañoVal").textContent = "100%";
-        document.getElementById("cfgRadio").value = "12";
-        document.getElementById("mensajeConfig").textContent =
-            "Restaurado a valores por defecto.";
-    }
-
-    return { montar, paginaActual, abrirConfig, cargarConfigVisual };
+    return { montar, paginaActual };
 })();

@@ -1,9 +1,4 @@
-/* Terminal de ventas.
- *
- * El archivo Backend/ventas.js estaba vacío aunque la página ya tenía
- * toda la interfaz. Este script la conecta con POST /api/ventas, que
- * descuenta el stock en el servidor dentro de una transacción.
- */
+/* Terminal de punto de venta (POS) - Tienda Alexander. */
 
 (function () {
     const $ = (id) => document.getElementById(id);
@@ -94,14 +89,11 @@
         renderCarrito();
     }
 
-    /* ---------- Pago en efectivo y vuelto ---------- */
-
     function efectivoRecibido() {
         const valor = Number($("inputEfectivoRecibido").value);
         return Number.isFinite(valor) && valor > 0 ? valor : 0;
     }
 
-    /* Recalcula el vuelto en vivo y colorea el panel según el monto. */
     function actualizarVuelto() {
         const recibido = efectivoRecibido();
         const vuelto = Math.round((recibido - totalActual) * 100) / 100;
@@ -125,7 +117,6 @@
         }
     }
 
-    /* El monto en efectivo solo aplica al método "efectivo". */
     function actualizarPanelPago() {
         const esEfectivo = $("selectMetodoPago").value === "efectivo";
         $("panelPagoEfectivo").classList.toggle("oculto", !esEfectivo);
@@ -169,11 +160,6 @@
         actualizarVuelto();
     }
 
-    /* ---------- Confirmación "¿Estás seguro?" con Sí / No ----------
-     * Se construye en JavaScript y reutiliza los estilos de modal y
-     * botones píldora que ya están en base.css. Devuelve una promesa
-     * que resuelve true (Sí) o false (No / cerrar / clic fuera).
-     */
     function pedirConfirmacion(mensaje) {
         let modal = $("modalConfirmarVenta");
 
@@ -224,8 +210,10 @@
         }
 
         const usuario = App.auth.actual();
+        const metodoPago = $("selectMetodoPago").value;
+        const recibido = efectivoRecibido();
 
-        if ($("selectMetodoPago").value === "efectivo" && efectivoRecibido() < totalActual) {
+        if (metodoPago === "efectivo" && recibido < totalActual) {
             App.ui.aviso("El efectivo recibido no alcanza para cubrir el total.");
             $("inputEfectivoRecibido").focus();
             return;
@@ -237,12 +225,12 @@
         if (!confirmado) return;
 
         const cuerpo = {
-            usuario_id: usuario ? usuario.id : null,
-            metodo_pago: $("selectMetodoPago").value,
+            metodo_pago: metodoPago,
+            efectivo_recibido: metodoPago === "efectivo" ? recibido : null,
             items: carrito.map((i) => ({ id: i.id, cantidad: i.cantidad })),
         };
 
-try {
+        try {
             const venta = await App.api.registrarVenta(cuerpo);
 
             $("subtotalVentaValor").textContent = App.fmt.dinero(venta.subtotal);
@@ -250,8 +238,6 @@ try {
             $("totalVentaValor").textContent = App.fmt.dinero(venta.total);
 
             App.ui.aviso(`Venta #${venta.venta_id} registrada por ${App.fmt.dinero(venta.total)}.`);
-            // La factura se arma con el detalle que devolvió el servidor, que
-            // es lo que quedó guardado: el carrito se vacía justo después.
             App.factura.imprimir({
                 venta_id: venta.venta_id,
                 fecha: venta.fecha,
@@ -260,6 +246,9 @@ try {
                 subtotal: venta.subtotal,
                 impuesto: venta.impuesto,
                 total: venta.total,
+                efectivo_recibido: venta.efectivo_recibido,
+                vuelto: venta.vuelto,
+                estado: venta.estado,
                 items: venta.items,
             });
 
@@ -273,7 +262,6 @@ try {
         }
     }
 
-    
     function cancelarVenta() {
         if (carrito.length === 0) return;
         if (!App.ui.confirmar("¿Vaciar el carrito y cancelar la venta?")) return;
@@ -283,8 +271,7 @@ try {
     }
 
     document.addEventListener("DOMContentLoaded", async () => {
-        if (!App.auth.exigir()) return;
-    App.layout.montar();
+        if (!App.layout.montar()) return;
 
         $("inputBuscarVentaProducto").addEventListener("input", filtrarProductos);
         $("btnCompletarVenta").addEventListener("click", completarVenta);
@@ -299,7 +286,6 @@ try {
             if (chip.dataset.exacto) {
                 input.value = totalActual > 0 ? totalActual.toFixed(2) : "";
             } else {
-                // Suma acumulativa: pulsar billetes seguidos cuenta el efectivo.
                 input.value = (efectivoRecibido() + Number(chip.dataset.monto)).toFixed(2);
             }
             actualizarVuelto();

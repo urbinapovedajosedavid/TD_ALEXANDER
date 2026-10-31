@@ -18,7 +18,23 @@
 
             <main class="tab-content">
                 <section class="tarjeta">
-                    <h1>Productos Agotados y Bajos</h1>
+                    <h1>Control y Recarga de Stock</h1>
+
+                    <div class="barra-filtros" style="margin-top: 8px;">
+                        <div class="search-bar-pill">
+                            <span class="icono-buscar">🔍</span>
+                            <input type="text" id="inputBuscarStock"
+                                placeholder="Buscar producto para recargar...">
+                        </div>
+                        <div class="acciones-inventario-pills" style="margin: 0;">
+                            <button type="button" id="btnFiltroCritico" class="btn-pill btn-pill-menta">
+                                Stock Crítico (≤ 5)
+                            </button>
+                            <button type="button" id="btnFiltroTodosStock" class="btn-pill btn-pill-oscuro">
+                                Todos los Productos
+                            </button>
+                        </div>
+                    </div>
 
                     <div class="tabla-panel tabla-scroll" id="contenedorTablaStock" style="margin-top: 11.2px;">
                         <table class="tabla">
@@ -26,7 +42,8 @@
                                 <tr>
                                     <th>Nombre del Producto</th>
                                     <th>Código</th>
-                                    <th>Precio</th>
+                                    <th>Precio Venta</th>
+                                    <th>Costo Entrada</th>
                                     <th>Stock</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
@@ -36,7 +53,7 @@
                         </table>
 
                         <div id="mensajeSinStock" class="estado-vacio" style="display: none;">
-                            No hay productos con stock agotado o bajo (0 a 5 unidades).
+                            No hay productos en esta vista.
                         </div>
                     </div>
                 </section>
@@ -44,7 +61,6 @@
         </div>
     </div>
 
-    <!-- Modal para recargar stock (suma cantidad; si precio de entrada es más caro, actualiza precio + 5%) -->
     <div id="modalStock" class="modal modal-oculto" aria-hidden="true">
         <div class="modal-contenido">
             <div class="modal-cabecera">
@@ -71,14 +87,15 @@
                 </div>
 
                 <div class="form-row">
-                    <label for="stockProdCantidad">Cantidad a agregar (Máx. total 64) *</label>
-                    <input type="number" min="1" max="64" id="stockProdCantidad" required placeholder="ingrese la cantidad">
+                    <label for="stockProdCantidad">Cantidad a agregar *</label>
+                    <input type="number" min="1" id="stockProdCantidad" required placeholder="Ingrese la cantidad a sumar">
                 </div>
 
                 <div class="form-row">
-                    <label for="stockProdPrecioEntrada">Precio de entrada del producto *</label>
-                    <input type="number" min="0" step="0.01" id="stockProdPrecioEntrada" required placeholder="ingrese el precio">
+                    <label for="stockProdPrecioEntrada">Precio de costo de entrada *</label>
+                    <input type="number" min="0" step="0.01" id="stockProdPrecioEntrada" required placeholder="Ingrese el costo unitario de entrada">
                     <small style="color: #6c757d; display: block; margin-top: 4px;">
+                        Si el costo supera el margen mínimo (+5%), el servidor ajustará automáticamente el precio de venta.
                     </small>
                 </div>
 
@@ -93,7 +110,6 @@
     </div>
 
     <script src="js/core.js"></script>
-    <script src="js/demo.js"></script>
     <script src="js/layout.js"></script>
     <script src="js/pages/stock.js"></script>
 </body>

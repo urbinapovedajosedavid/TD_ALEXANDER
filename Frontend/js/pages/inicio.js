@@ -1,10 +1,7 @@
-/* Panel de inicio.
- *
- * La página estaba vacía: solo el sidebar y la cabecera, sin contenido.
- * Ahora resume el estado del negocio con los endpoints existentes.
- */
+/* Panel principal de inicio - Tienda Alexander. */
 
 (function () {
+    const UMBRAL_STOCK_BAJO = 5;
     const $ = (id) => document.getElementById(id);
 
     async function cargarResumen() {
@@ -29,7 +26,7 @@
         }
 
         const bajos = productos
-            .filter((p) => p.stock <= 5)
+            .filter((p) => p.stock <= UMBRAL_STOCK_BAJO)
             .sort((a, b) => a.stock - b.stock)
             .slice(0, 8);
 
@@ -40,8 +37,8 @@
             (p) => {
                 const estado =
                     p.stock === 0
-                        ? '<span class="badge agotado">Agotado</span>'
-                        : '<span class="badge disponible">Bajo</span>';
+                        ? '<span class="badge agotado">Agotado (0)</span>'
+                        : `<span class="badge" style="color: #fd7e14; font-weight: bold;">Bajo (${p.stock})</span>`;
                 return `
                     <td><strong>${App.fmt.texto(p.nombre)}</strong></td>
                     <td>${App.fmt.texto(p.categoria_nombre)}</td>
@@ -51,11 +48,9 @@
             }
         );
     }
-    
 
     document.addEventListener("DOMContentLoaded", async () => {
-        if (!App.auth.exigir()) return;
-    App.layout.montar();
+        if (!App.layout.montar()) return;
 
         $("btnIrInventario").addEventListener("click", () => {
             window.location.href = "almacen.html";

@@ -1,63 +1,71 @@
+"""Prueba de sesión en servidor con cookie HttpOnly respaldada en la tabla `sesiones`."""
 
+import os
 import sys
+import tempfile
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ))
 
-from app import app
-import db
+_tmp_db = Path(tempfile.gettempdir()) / f"test_sesion_cookie_{os.getpid()}.db"
+os.environ["TIENDA_DB_PATH"] = str(_tmp_db)
 
-cliente = app.test_client()
+from app import app  # noqa: E402
+import db  # noqa: E402
 
-print("\n== PRUEBA DE SESIÓN EN SERVIDOR CON COOKIE (CERO LOCALSTORAGE) ==")
+try:
+    db.inicializar_db()
+    cliente = app.test_client()
 
-# 1. Servir Frontend
-r_root = cliente.get("/")
-assert r_root.status_code == 302, f"Redirección de raíz falló: {r_root.status_code}"
-print("  OK   GET / -> 302 redirige al login")
+    print("\n== PRUEBA DE SESIÓN EN SERVIDOR CON COOKIE Y TABLA `sesiones` ==")
 
-r_login_html = cliente.get("/Login.html")
-assert r_login_html.status_code == 200, f"Carga de Login.html falló: {r_login_html.status_code}"
-assert b"Iniciar" in r_login_html.data, "Login.html no contiene formulario"
-print("  OK   GET /Login.html -> 200 servido correctamente")
+    r_root = cliente.get("/")
+    assert r_root.status_code == 302
+    print("  OK   GET / -> 302 redirige al login")
 
-# 2. Intentar acceder a ruta protegida sin sesión ni cookie
-r_yo_anon = cliente.get("/api/auth/yo")
-assert r_yo_anon.status_code == 401, f"Sin sesión debió ser 401: {r_yo_anon.status_code}"
-print("  OK   GET /api/auth/yo sin sesión -> 401 no autorizado")
+    r_login_html = cliente.get("/Login.html")
+    assert r_login_html.status_code == 200
+    assert b"Iniciar" in r_login_html.data
+    print("  OK   GET /Login.html -> 200 servido correctamente")
 
-# 3. Login con admin por defecto
-r_login = cliente.post("/api/auth/login", json={"usuario": "admin", "clave": "admin123"})
-assert r_login.status_code == 200, f"Login falló: {r_login.get_json()}"
-set_cookie = r_login.headers.get("Set-Cookie", "")
-assert "alexander_session=" in set_cookie, f"Falta cookie de sesión: {set_cookie}"
-assert "HttpOnly" in set_cookie, f"Cookie debe ser HttpOnly: {set_cookie}"
-print("  OK   POST /api/auth/login -> 200 establece cookie alexander_session con HttpOnly")
+    r_yo_anon = cliente.get("/api/auth/yo")
+    assert r_yo_anon.status_code == 401
+    print("  OK   GET /api/auth/yo sin sesión -> 401 no autorizado")
 
-# 4. Acceder a /api/auth/yo SIN encabezado Authorization (utilizando únicamente la cookie de sesión)
-r_yo_autenticado = cliente.get("/api/auth/yo")
-assert r_yo_autenticado.status_code == 200, f"Acceso con cookie falló: {r_yo_autenticado.get_json()}"
-datos_yo = r_yo_autenticado.get_json()
-assert datos_yo["usuario"]["usuario"] == "admin"
-assert datos_yo["usuario"]["rol"] == "ADMIN"
-print("  OK   GET /api/auth/yo autenticado 100% por cookie de servidor (sin Bearer ni storage cliente)")
+    r_login = cliente.post("/api/auth/login", json={"usuario": "admin", "clave": "admin123"})
+    assert r_login.status_code == 200
+    set_cookie = r_login.headers.get("Set-Cookie", "")
+    assert "alexander_session=" in set_cookie
+    assert "HttpOnly" in set_cookie
+    print("  OK   POST /api/auth/login -> 200 establece cookie alexander_session con HttpOnly")
 
-# 5. Acceder a productos y categorías solo con cookie
-r_prods = cliente.get("/api/productos")
-assert r_prods.status_code == 200, f"Productos con cookie falló: {r_prods.status_code}"
-print("  OK   GET /api/productos -> 200 protegido y consumido solo con cookie")
+    r_yo_autenticado = cliente.get("/api/auth/yo")
+    assert r_yo_autenticado.status_code == 200
+    datos_yo = r_yo_autenticado.get_json()
+    assert datos_yo["usuario"]["usuario"] == "admin"
+    assert datos_yo["usuario"]["rol"] == "ADMIN"
+    print("  OK   GET /api/auth/yo autenticado por cookie respaldada en SQLite")
 
-# 6. Logout mediante cookie
-r_logout = cliente.post("/api/auth/logout")
-assert r_logout.status_code == 200, f"Logout falló: {r_logout.status_code}"
-print("  OK   POST /api/auth/logout -> 200 sesión cerrada en servidor")
+    r_prods = cliente.get("/api/productos")
+    assert r_prods.status_code == 200
+    print("  OK   GET /api/productos -> 200 protegido y consumido con cookie")
 
-# 7. Comprobar que tras logout la cookie ya no tiene acceso
-r_yo_tras_logout = cliente.get("/api/auth/yo")
-assert r_yo_tras_logout.status_code == 401, f"Tras logout debió ser 401: {r_yo_tras_logout.status_code}"
-print("  OK   GET /api/auth/yo tras logout -> 401 sesión revocada")
+    # Verificar que si se purgan las sesiones en BD, la cookie queda revocada inmediatamente
+    db.purgar_todas_las_sesiones()
+    r_yo_revocado = cliente.get("/api/auth/yo")
+    assert r_yo_revocado.status_code == 401
+    print("  OK   Revocación en tabla `sesiones` invalida inmediatamente la cookie activa")
 
-print("\n==============================================")
-print("TODAS LAS PRUEBAS DE COOKIE Y SERVIDOR PASARON EXITOSAMENTE")
+    # Nuevo login y logout normal
+    cliente.post("/api/auth/login", json={"usuario": "admin", "clave": "admin123"})
+    r_logout = cliente.post("/api/auth/logout")
+    assert r_logout.status_code == 200
+    r_yo_tras_logout = cliente.get("/api/auth/yo")
+    assert r_yo_tras_logout.status_code == 401
+    print("  OK   POST /api/auth/logout -> 200 sesión revocada en BD y cookie")
 
+    print("\n==============================================")
+    print("TODAS LAS PRUEBAS DE COOKIE Y SERVIDOR PASARON EXITOSAMENTE")
+finally:
+    _tmp_db.unlink(missing_ok=True)

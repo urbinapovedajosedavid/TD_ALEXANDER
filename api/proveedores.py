@@ -1,21 +1,14 @@
 """api.proveedores
 ===============
-Gestión de proveedores.
+Gestión y directorio de proveedores.
 """
 
-from flask import jsonify, request
+from flask import jsonify
 
 import db
 from api import api_bp
-from seguridad import requiere_login
-
-
-def _cuerpo_json():
-    return request.get_json(silent=True) or {}
-
-
-def _error(mensaje, estado=400):
-    return jsonify({"exito": False, "mensaje": mensaje}), estado
+from api.utils import cuerpo_json, error
+from seguridad import requiere_login, requiere_rol
 
 
 def _fila_proveedor(f):
@@ -29,6 +22,20 @@ def _fila_proveedor(f):
     }
 
 
+def _extraer_campos_proveedor(datos: dict):
+    nombre = (datos.get("nombre") or "").strip()
+    if not nombre:
+        return None, "El nombre del proveedor es obligatorio."
+
+    return {
+        "nombre": nombre,
+        "telefono": (datos.get("telefono") or "").strip(),
+        "cedula": (datos.get("cedula") or "").strip(),
+        "direccion": (datos.get("direccion") or "").strip(),
+        "departamento": (datos.get("departamento") or "").strip(),
+    }, None
+
+
 @api_bp.get("/proveedores")
 @requiere_login
 def obtener_proveedores():
@@ -40,18 +47,9 @@ def obtener_proveedores():
 @api_bp.post("/proveedores")
 @requiere_login
 def crear_proveedor():
-    datos = _cuerpo_json()
-    nombre = (datos.get("nombre") or "").strip()
-    if not nombre:
-        return _error("El nombre del proveedor es obligatorio.", 400)
-
-    campos = {
-        "nombre": nombre,
-        "telefono": (datos.get("telefono") or "").strip(),
-        "cedula": (datos.get("cedula") or "").strip(),
-        "direccion": (datos.get("direccion") or "").strip(),
-        "departamento": (datos.get("departamento") or "").strip(),
-    }
+    campos, problema = _extraer_campos_proveedor(cuerpo_json())
+    if problema:
+        return error(problema, 400)
 
     with db.conectar_db() as conn:
         cur = conn.execute(
@@ -68,13 +66,32 @@ def crear_proveedor():
     }), 201
 
 
-@api_bp.delete("/proveedores/<int:id_proveedor>")
+@api_bp.put("/proveedores/<int:id_proveedor>")
 @requiere_login
-def eliminar_proveedor(id_proveedor):
+def actualizar_proveedor(id_proveedor: int):
+    campos, problema = _extraer_campos_proveedor(cuerpo_json())
+    if problema:
+        return error(problema, 400)
+
+    with db.conectar_db() as conn:
+        cur = conn.execute(
+            "UPDATE proveedores SET nombre = :nombre, telefono = :telefono, "
+            "cedula = :cedula, direccion = :direccion, departamento = :departamento "
+            "WHERE id = :id",
+            {**campos, "id": id_proveedor},
+        )
+        if cur.rowcount == 0:
+            return error("Proveedor no encontrado.", 404)
+
+    return jsonify({"exito": True, "mensaje": "Proveedor actualizado."})
+
+
+@api_bp.delete("/proveedores/<int:id_proveedor>")
+@requiere_rol("ADMIN")
+def eliminar_proveedor(id_proveedor: int):
     with db.conectar_db() as conn:
         cur = conn.execute("DELETE FROM proveedores WHERE id = ?", (id_proveedor,))
         if cur.rowcount == 0:
-            return _error("Proveedor no encontrado.", 404)
+            return error("Proveedor no encontrado.", 404)
 
     return jsonify({"exito": True, "mensaje": "Proveedor eliminado."})
-

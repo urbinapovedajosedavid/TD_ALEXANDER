@@ -1,26 +1,18 @@
 """api.productos
 =============
-Gestión de inventario, productos, categorías y stock.
+Gestión de inventario, productos, categorías y recarga atómica de stock con control de costos.
 """
 
 import sqlite3
+from decimal import Decimal
 
-from flask import jsonify, request
+from flask import jsonify
 
 import db
 from api import api_bp
+from api.utils import MARGEN_RECARGA, cuerpo_json, dinero, error
 from schemas import validar_producto
-from seguridad import requiere_login
-
-STOCK_MAXIMO = 64
-
-
-def _cuerpo_json():
-    return request.get_json(silent=True) or {}
-
-
-def _error(mensaje, estado=400):
-    return jsonify({"exito": False, "mensaje": mensaje}), estado
+from seguridad import requiere_login, requiere_rol
 
 
 def _fila_producto(f):
@@ -29,9 +21,12 @@ def _fila_producto(f):
         "codigo": f["codigo_barra"],
         "nombre": f["nombre"],
         "precio": f["precio"],
+        "costo_entrada": f["costo_entrada"] if "costo_entrada" in f.keys() else 0.0,
         "stock": f["stock"],
         "categoria_id": f["categoria_id"],
         "categoria_nombre": f["categoria_nombre"] or "Sin Categoría",
+        "proveedor_id": f["proveedor_id"] if "proveedor_id" in f.keys() else None,
+        "proveedor_nombre": (f["proveedor_nombre"] if "proveedor_nombre" in f.keys() else None) or "",
     }
 
 
@@ -41,8 +36,6 @@ def _validar_producto_negocio(datos):
         return None, mensaje
 
     stock = int(datos.get("stock"))
-    if stock > STOCK_MAXIMO:
-        return None, f"El stock no puede superar las {STOCK_MAXIMO} unidades."
 
     categoria_id = datos.get("categoria_id")
     try:
@@ -50,13 +43,29 @@ def _validar_producto_negocio(datos):
     except (TypeError, ValueError):
         return None, "La categoría seleccionada no es válida."
 
+    proveedor_id = datos.get("proveedor_id")
+    try:
+        proveedor_id = int(proveedor_id) if proveedor_id else None
+    except (TypeError, ValueError):
+        return None, "El proveedor seleccionado no es válido."
+
+    costo_entrada = datos.get("costo_entrada", 0.0)
+    try:
+        costo_entrada = dinero(float(costo_entrada)) if costo_entrada not in (None, "") else 0.0
+        if costo_entrada < 0:
+            return None, "El costo de entrada no puede ser negativo."
+    except (TypeError, ValueError):
+        return None, "El costo de entrada debe ser un número válido."
+
     codigo = (datos.get("codigo") or datos.get("codigo_barra") or "").strip() or None
     return {
         "nombre": str(datos.get("nombre")).strip(),
         "codigo": codigo,
-        "precio": float(datos.get("precio")),
+        "precio": dinero(float(datos.get("precio"))),
+        "costo_entrada": costo_entrada,
         "stock": stock,
         "categoria_id": categoria_id,
+        "proveedor_id": proveedor_id,
     }, None
 
 
@@ -75,16 +84,16 @@ def obtener_categorias():
 @api_bp.post("/categorias")
 @requiere_login
 def crear_categoria():
-    nombre = (_cuerpo_json().get("nombre") or "").strip()
+    nombre = (cuerpo_json().get("nombre") or "").strip()
     if not nombre:
-        return _error("El nombre de la categoría es obligatorio.", 400)
+        return error("El nombre de la categoría es obligatorio.", 400)
 
     try:
         with db.conectar_db() as conn:
             cur = conn.execute("INSERT INTO categorias (nombre) VALUES (?)", (nombre,))
             nuevo_id = cur.lastrowid
     except sqlite3.IntegrityError:
-        return _error(f"La categoría '{nombre}' ya existe.", 409)
+        return error(f"La categoría '{nombre}' ya existe.", 409)
 
     return jsonify({"exito": True, "id": nuevo_id, "nombre": nombre}), 201
 
@@ -96,10 +105,13 @@ def crear_categoria():
 def obtener_productos():
     with db.conectar_db() as conn:
         filas = conn.execute("""
-            SELECT p.id, p.codigo_barra, p.nombre, p.precio, p.stock,
-                   p.categoria_id, c.nombre AS categoria_nombre
+            SELECT p.id, p.codigo_barra, p.nombre, p.precio,
+                   COALESCE(p.costo_entrada, 0.0) AS costo_entrada,
+                   p.stock, p.categoria_id, c.nombre AS categoria_nombre,
+                   p.proveedor_id, pr.nombre AS proveedor_nombre
             FROM productos p
             LEFT JOIN categorias c ON p.categoria_id = c.id
+            LEFT JOIN proveedores pr ON p.proveedor_id = pr.id
             ORDER BY p.nombre
         """).fetchall()
     return jsonify([_fila_producto(f) for f in filas])
@@ -108,20 +120,21 @@ def obtener_productos():
 @api_bp.post("/productos")
 @requiere_login
 def crear_producto():
-    datos, problema = _validar_producto_negocio(_cuerpo_json())
+    datos, problema = _validar_producto_negocio(cuerpo_json())
     if problema:
-        return _error(problema, 400)
+        return error(problema, 400)
 
     try:
         with db.conectar_db() as conn:
             cur = conn.execute(
-                "INSERT INTO productos (codigo_barra, nombre, precio, stock, categoria_id) "
-                "VALUES (:codigo, :nombre, :precio, :stock, :categoria_id)",
+                "INSERT INTO productos "
+                "(codigo_barra, nombre, precio, costo_entrada, stock, categoria_id, proveedor_id) "
+                "VALUES (:codigo, :nombre, :precio, :costo_entrada, :stock, :categoria_id, :proveedor_id)",
                 datos,
             )
             nuevo_id = cur.lastrowid
     except sqlite3.IntegrityError:
-        return _error("Ese código de barras ya está registrado en otro producto.", 409)
+        return error("Ese código de barras ya está registrado en otro producto.", 409)
 
     return jsonify({"exito": True, "mensaje": "Producto guardado.", "id": nuevo_id}), 201
 
@@ -129,39 +142,46 @@ def crear_producto():
 @api_bp.put("/productos/<int:id_producto>")
 @requiere_login
 def actualizar_producto(id_producto):
-    datos, problema = _validar_producto_negocio(_cuerpo_json())
+    datos, problema = _validar_producto_negocio(cuerpo_json())
     if problema:
-        return _error(problema, 400)
+        return error(problema, 400)
 
     try:
         with db.conectar_db() as conn:
             existe = conn.execute(
-                "SELECT 1 FROM productos WHERE id = ?", (id_producto,)
+                "SELECT costo_entrada, proveedor_id FROM productos WHERE id = ?",
+                (id_producto,),
             ).fetchone()
             if not existe:
-                return _error("Producto no encontrado.", 404)
+                return error("Producto no encontrado.", 404)
+
+            if "costo_entrada" not in cuerpo_json():
+                datos["costo_entrada"] = existe["costo_entrada"] or 0.0
+            if "proveedor_id" not in cuerpo_json():
+                datos["proveedor_id"] = existe["proveedor_id"]
 
             conn.execute(
                 "UPDATE productos SET codigo_barra = :codigo, nombre = :nombre, "
-                "precio = :precio, stock = :stock, categoria_id = :categoria_id "
+                "precio = :precio, costo_entrada = :costo_entrada, stock = :stock, "
+                "categoria_id = :categoria_id, proveedor_id = :proveedor_id "
                 "WHERE id = :id",
                 {**datos, "id": id_producto},
             )
     except sqlite3.IntegrityError:
-        return _error("Ese código de barras ya está registrado en otro producto.", 409)
+        return error("Ese código de barras ya está registrado en otro producto.", 409)
 
     return jsonify({"exito": True, "mensaje": "Producto actualizado correctamente."})
 
 
 @api_bp.delete("/productos/<int:id_producto>")
-@requiere_login
+@requiere_rol("ADMIN")
 def eliminar_producto(id_producto):
     with db.conectar_db() as conn:
         existe = conn.execute(
             "SELECT 1 FROM productos WHERE id = ?", (id_producto,)
         ).fetchone()
         if not existe:
-            return _error("Producto no encontrado.", 404)
+            return error("Producto no encontrado.", 404)
 
         conn.execute("DELETE FROM productos WHERE id = ?", (id_producto,))
 
@@ -171,36 +191,71 @@ def eliminar_producto(id_producto):
 @api_bp.post("/productos/<int:id_producto>/recargar")
 @requiere_login
 def recargar_stock_producto(id_producto):
-    datos = _cuerpo_json()
+    """Suma stock de forma atómica en el servidor y ajusta precio si el costo supera el margen."""
+    datos = cuerpo_json()
     try:
         cantidad = int(datos.get("cantidad", 0))
     except (TypeError, ValueError):
-        return _error("La cantidad debe ser un número entero.", 400)
+        return error("La cantidad debe ser un número entero.", 400)
 
     if cantidad <= 0:
-        return _error("La cantidad a recargar debe ser mayor a 0.", 400)
+        return error("La cantidad a recargar debe ser mayor a 0.", 400)
+
+    precio_entrada_raw = datos.get("precio_entrada")
+    precio_entrada = None
+    if precio_entrada_raw is not None and str(precio_entrada_raw).strip() != "":
+        try:
+            precio_entrada = float(precio_entrada_raw)
+            if precio_entrada < 0:
+                return error("El precio de entrada no puede ser negativo.", 400)
+        except (TypeError, ValueError):
+            return error("El precio de entrada debe ser un número válido.", 400)
 
     with db.conectar_db() as conn:
         producto = conn.execute(
-            "SELECT id, nombre, stock FROM productos WHERE id = ?", (id_producto,)
+            "SELECT id, nombre, stock, precio, COALESCE(costo_entrada, 0.0) AS costo_entrada "
+            "FROM productos WHERE id = ?",
+            (id_producto,),
         ).fetchone()
 
         if not producto:
-            return _error("Producto no encontrado.", 404)
+            return error("Producto no encontrado.", 404)
 
-        nuevo_stock = producto["stock"] + cantidad
-        if nuevo_stock > STOCK_MAXIMO:
-            return _error(f"El stock no puede superar el límite máximo de {STOCK_MAXIMO} unidades.", 400)
+        stock_anterior = int(producto["stock"])
+        nuevo_stock = stock_anterior + cantidad
+        precio_anterior = dinero(producto["precio"])
+        nuevo_precio = precio_anterior
+        nuevo_costo = dinero(producto["costo_entrada"])
+        precio_actualizado = False
+
+        if precio_entrada is not None:
+            nuevo_costo = dinero(precio_entrada)
+            # Regla de negocio en servidor: garantizar al menos 5% sobre el costo de entrada
+            precio_minimo = dinero(
+                Decimal(str(precio_entrada)) * (Decimal("1") + MARGEN_RECARGA)
+            )
+            if precio_entrada > precio_anterior or precio_minimo > precio_anterior:
+                nuevo_precio = precio_minimo
+                precio_actualizado = True
 
         conn.execute(
-            "UPDATE productos SET stock = ? WHERE id = ?",
-            (nuevo_stock, id_producto),
+            "UPDATE productos SET stock = ?, precio = ?, costo_entrada = ? WHERE id = ?",
+            (nuevo_stock, nuevo_precio, nuevo_costo, id_producto),
         )
+
+    mensaje = f"Stock actualizado: {stock_anterior} + {cantidad} = {nuevo_stock}."
+    if precio_actualizado:
+        mensaje += f" Precio ajustado de C${precio_anterior:.2f} a C${nuevo_precio:.2f} (costo + 5%)."
 
     return jsonify({
         "exito": True,
-        "mensaje": f"Stock recargado correctamente. Nuevo stock: {nuevo_stock}",
+        "mensaje": mensaje,
+        "stock_anterior": stock_anterior,
         "nuevo_stock": nuevo_stock,
+        "precio_anterior": precio_anterior,
+        "nuevo_precio": nuevo_precio,
+        "costo_entrada": nuevo_costo,
+        "precio_actualizado": precio_actualizado,
     })
 
 
@@ -213,13 +268,16 @@ def resumen_inventario():
         fila = conn.execute("""
             SELECT COUNT(*) AS total_productos,
                    COALESCE(SUM(precio * stock), 0) AS valor_inventario,
-                   COALESCE(SUM(CASE WHEN stock = 0 THEN 1 ELSE 0 END), 0) AS agotados
+                   COALESCE(SUM(COALESCE(costo_entrada, 0) * stock), 0) AS costo_inventario,
+                   COALESCE(SUM(CASE WHEN stock = 0 THEN 1 ELSE 0 END), 0) AS agotados,
+                   COALESCE(SUM(CASE WHEN stock > 0 AND stock <= 5 THEN 1 ELSE 0 END), 0) AS stock_bajo
             FROM productos
         """).fetchone()
 
     return jsonify({
         "total_productos": fila["total_productos"],
-        "valor_inventario": round(fila["valor_inventario"], 2),
+        "valor_inventario": dinero(fila["valor_inventario"]),
+        "costo_inventario": dinero(fila["costo_inventario"]),
         "productos_agotados": fila["agotados"],
+        "productos_stock_bajo": fila["stock_bajo"],
     })
-

@@ -1,5 +1,4 @@
 (function () {
-    if (!App.auth.exigir()) return;
     const $ = (id) => document.getElementById(id);
 
     function tamanoLegible(bytes) {
@@ -53,13 +52,10 @@
 
         try {
             await App.api.restaurarRespaldo(entrada);
-
-            // El servidor invalida todas las sesiones al restaurar, así que
-            // la sesión local ya no sirve: se borra antes de volver al login.
             App.auth.limpiar();
             aviso.textContent = "Respaldo restaurado. Vuelve a iniciar sesión.";
             $("archivoRespaldo").value = "";
-            setTimeout(() => window.location.replace("login.html"), 1200);
+            setTimeout(() => window.location.replace("Login.html"), 1200);
         } catch (err) {
             aviso.textContent = err.message;
             boton.disabled = false;
@@ -67,7 +63,13 @@
     }
 
     document.addEventListener("DOMContentLoaded", async () => {
-        App.layout.montar();
+        if (!App.layout.montar()) return;
+
+        if (!App.auth.esAdmin()) {
+            App.ui.aviso("Solo el administrador puede gestionar copias de seguridad.");
+            window.location.replace("inicio.html");
+            return;
+        }
 
         $("btnDescargar").addEventListener("click", descargar);
         $("btnRestaurar").addEventListener("click", restaurar);

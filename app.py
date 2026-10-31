@@ -1,7 +1,7 @@
 """app.py — Punto de entrada principal de Tienda Alexander
 =========================================================
-Inicia el servidor Flask, conecta la base de datos persistente SQLite,
-monta la API RESTful bajo /api y sirve el frontend seguro.
+Inicia el servidor Flask, conecta y migra la base de datos SQLite,
+monta la API RESTful bajo /api y sirve el frontend.
 
 Uso:
     python app.py
@@ -13,109 +13,93 @@ import threading
 import webbrowser
 from pathlib import Path
 
-# Detección de rutas según si corre como script o como binario .exe
-if getattr(sys, "frozen", False):
-    RAIZ = Path(sys.executable).resolve().parent
-    RAIZ_RECURSOS = Path(getattr(sys, "_MEIPASS", RAIZ))
-else:
-    RAIZ = Path(__file__).resolve().parent
-    RAIZ_RECURSOS = RAIZ
+RAIZ_BASE = Path(__file__).resolve().parent
+if str(RAIZ_BASE) not in sys.path:
+    sys.path.insert(0, str(RAIZ_BASE))
+if str(RAIZ_BASE / "Backend") not in sys.path:
+    sys.path.insert(0, str(RAIZ_BASE / "Backend"))
 
-if str(RAIZ) not in sys.path:
-    sys.path.insert(0, str(RAIZ))
-if str(RAIZ_RECURSOS) not in sys.path:
-    sys.path.insert(0, str(RAIZ_RECURSOS))
-if str(RAIZ / "Backend") not in sys.path:
-    sys.path.insert(0, str(RAIZ / "Backend"))
+try:
+    from flask import Flask, redirect, send_from_directory  # noqa: E402
+    from flask_cors import CORS  # noqa: E402
+except ModuleNotFoundError:
+    import subprocess
+    print("Instalando dependencias requeridas (Flask, Flask-Cors)...")
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "-r", str(RAIZ_BASE / "requirements.txt")]
+    )
+    from flask import Flask, redirect, send_from_directory  # noqa: E402
+    from flask_cors import CORS  # noqa: E402
 
-from flask import Flask, redirect, send_from_directory, session
-from flask_cors import CORS
+import db  # noqa: E402
+from api import api_bp  # noqa: E402
+from config import RAIZ_ACTUAL, RAIZ_RECURSOS, config  # noqa: E402
+from seguridad import obtener_token_actual, usuario_de_token  # noqa: E402
 
-import db
-from api import api_bp
-from config import config
-
-FRONTEND_DIR = os.path.join(RAIZ_RECURSOS, "Frontend")
+FRONTEND_DIR = str(RAIZ_RECURSOS / "Frontend")
 if not os.path.isdir(FRONTEND_DIR):
-    FRONTEND_DIR = os.path.join(RAIZ, "Frontend")
+    FRONTEND_DIR = str(RAIZ_ACTUAL / "Frontend")
 
-app = Flask(
-    __name__,
-    static_folder=FRONTEND_DIR,
-    static_url_path="",
-)
+# static_folder=None evita colisión con la ruta controlada servir_frontend
+app = Flask(__name__, static_folder=None)
 
-# Cargar configuración base
-entorno = os.environ.get("FLASK_ENV", "development")
-app.config.from_object(config.get(entorno, config["development"]))
+entorno = os.environ.get("FLASK_ENV", "production")
+app.config.from_object(config.get(entorno, config["default"]))
 
-# Configuración de sesiones seguras del servidor (Cero LocalStorage)
-app.secret_key = os.environ.get("SECRET_KEY") or "clave-secreta-tienda-alexander-segura-2026"
 app.config.update(
-    SESSION_COOKIE_HTTPONLY=True,   # Inaccesible desde JavaScript
-    SESSION_COOKIE_SAMESITE="Lax",  # Protección CSRF
-    SESSION_COOKIE_SECURE=False,    # True en producción con HTTPS
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.environ.get("SESSION_COOKIE_SECURE", "0") == "1",
     SESSION_COOKIE_NAME="alexander_session",
 )
 
-# CORS habilitado con soporte para cookies de sesión
+puerto_actual = int(os.environ.get("PORT", 5000))
 CORS(app, supports_credentials=True)
 
-# Registrar Blueprint de la API REST
 app.register_blueprint(api_bp)
 
-# Inicializar y verificar persistencia de base de datos SQLite
 db.inicializar_db()
 
+# Alias cortos que no coinciden directamente con el nombre del archivo .html
+ALIAS_PAGINAS = {
+    "login": "Login.html",
+    "login.html": "Login.html",
+    "proveedores": "provedores.html",
+    "copia_seguridad": "copia_de_seguridad.html",
+    "registro": "agregar_usuario.html",
+}
 
-# ============================================================== #
-#  Rutas del Frontend Seguro (servido directamente por Flask)     #
-# ============================================================== #
 
 @app.route("/")
 def index():
-    if session.get("usuario_id"):
-        return redirect("/inicio.html")
+    token = obtener_token_actual()
+    if token:
+        with db.conectar_db() as conn:
+            if usuario_de_token(conn, token):
+                return redirect("/inicio.html")
     return redirect("/Login.html")
 
 
 @app.route("/<path:nombre_archivo>")
-def servir_frontend(nombre_archivo):
-    # Si se pide una ruta directa existente
+def servir_frontend(nombre_archivo: str):
+    destino_alias = ALIAS_PAGINAS.get(nombre_archivo.lower())
+    if destino_alias and os.path.isfile(os.path.join(FRONTEND_DIR, destino_alias)):
+        return send_from_directory(FRONTEND_DIR, destino_alias)
+
     ruta_directa = os.path.join(FRONTEND_DIR, nombre_archivo)
     if os.path.isfile(ruta_directa):
         return send_from_directory(FRONTEND_DIR, nombre_archivo)
 
-    # Intentar con sufijo .html
-    ruta_html = os.path.join(FRONTEND_DIR, f"{nombre_archivo}.html")
-    if os.path.isfile(ruta_html):
-        return send_from_directory(FRONTEND_DIR, f"{nombre_archivo}.html")
-
-    # Mapeos especiales
-    mapeos = {
-        "login": "Login.html",
-        "login.html": "Login.html",
-        "inicio": "inicio.html",
-        "almacen": "almacen.html",
-        "ventas": "ventas.html",
-        "stock": "stock.html",
-        "reportes": "reportes.html",
-        "proveedores": "provedores.html",
-        "provedores": "provedores.html",
-        "copia_seguridad": "copia_de_seguridad.html",
-        "registro": "agregar_usuario.html",
-        "agregar_usuario": "agregar_usuario.html",
-    }
-    destino = mapeos.get(nombre_archivo.lower())
-    if destino and os.path.isfile(os.path.join(FRONTEND_DIR, destino)):
-        return send_from_directory(FRONTEND_DIR, destino)
+    nombre_html = f"{nombre_archivo}.html"
+    if os.path.isfile(os.path.join(FRONTEND_DIR, nombre_html)):
+        return send_from_directory(FRONTEND_DIR, nombre_html)
 
     return send_from_directory(FRONTEND_DIR, nombre_archivo)
 
 
 def _abrir_navegador(url: str):
     import time
-    time.sleep(1.2)
+    time.sleep(1.0)
     try:
         webbrowser.open(url)
     except Exception:
@@ -123,18 +107,20 @@ def _abrir_navegador(url: str):
 
 
 if __name__ == "__main__":
+    host = os.environ.get("HOST", "127.0.0.1")
     puerto = int(os.environ.get("PORT", 5000))
+    debug = bool(app.config.get("DEBUG", False))
     url = f"http://127.0.0.1:{puerto}/"
 
-    print("\n" + "=" * 65)
-    print("   TIENDA ALEXANDER — SISTEMA DE GESTIÓN Y VENTAS")
-    print("=" * 65)
-    print(f" * Base de datos SQLite : {db.RUTA_DB}")
-    print(" * Cero LocalStorage    : Sesiones cifradas nativas HttpOnly")
-    print(" * Fuerza Bruta         : Bloqueo escalonado (3 fallos -> 1m, +2m)")
-    print(f" * Servidor Web activo  : {url}")
-    print(" * Abriendo navegador automáticamente...")
-    print("=" * 65 + "\n")
+    if not debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        print("\n" + "=" * 65)
+        print("   TIENDA ALEXANDER — SISTEMA DE GESTIÓN Y VENTAS")
+        print("=" * 65)
+        print(f" * Base de datos SQLite : {db.RUTA_DB}")
+        print(" * Sesiones Seguras     : Cookies HttpOnly respaldadas en SQLite")
+        print(" * Fuerza Bruta         : Bloqueo escalonado (3 fallos -> 1m, +2m)")
+        print(f" * Servidor Web activo  : {url}")
+        print("=" * 65 + "\n")
+        threading.Thread(target=_abrir_navegador, args=(url,), daemon=True).start()
 
-    threading.Thread(target=_abrir_navegador, args=(url,), daemon=True).start()
-    app.run(host="0.0.0.0", port=puerto, debug=app.config.get("DEBUG", False))
+    app.run(host=host, port=puerto, debug=debug)

@@ -1,5 +1,4 @@
 (function () {
-    const STOCK_MAXIMO = 64;
     const FILAS_VISIBLES = 5;
 
     const $ = (id) => document.getElementById(id);
@@ -33,7 +32,6 @@
         poblarFiltroCategorias();
     }
 
-    /* Rellena el selector de categoría del panel de filtros. */
     function poblarFiltroCategorias() {
         const filtro = $("filtroCategoria");
         if (!filtro) return;
@@ -54,7 +52,6 @@
         filtroCategoria = filtro.value;
     }
 
-    /* Muestra u oculta el campo para crear una categoría nueva. */
     function manejarCambioCategoria() {
         const select = $("selectCategoria");
         const contenedor = $("contenedorOtraCategoria");
@@ -81,6 +78,7 @@
     function filtrarProductos() {
         const entrada = $("inputBuscarProducto");
         const texto = entrada ? entrada.value.trim().toLowerCase() : "";
+        const esAdmin = App.auth.esAdmin();
 
         let filtrados = productos.filter(
             (p) =>
@@ -112,6 +110,10 @@
                         ? '<span class="badge disponible">Disponible</span>'
                         : '<span class="badge agotado">Agotado</span>';
 
+                const btnEliminar = esAdmin
+                    ? `<button class="btn-accion eliminar" data-accion="eliminar" data-id="${p.id}">Eliminar</button>`
+                    : "";
+
                 return `
                     <td>
                         <strong>${App.fmt.texto(p.nombre)}</strong><br>
@@ -121,11 +123,11 @@
                     </td>
                     <td>${App.fmt.texto(p.codigo) || "N/A"}</td>
                     <td>${App.fmt.dinero(p.precio)}</td>
-                    <td>${App.fmt.entero(p.stock)} / ${STOCK_MAXIMO}</td>
+                    <td>${App.fmt.entero(p.stock)}</td>
                     <td>${estado}</td>
                     <td class="acciones-tabla">
                         <button class="btn-accion" data-accion="editar" data-id="${p.id}">Modificar</button>
-                        <button class="btn-accion eliminar" data-accion="eliminar" data-id="${p.id}">Eliminar</button>
+                        ${btnEliminar}
                     </td>`;
             }
         );
@@ -133,7 +135,6 @@
         ajustarAlturaTabla();
     }
 
-    /* La tabla muestra máximo 5 filas visibles (helper compartido). */
     function ajustarAlturaTabla() {
         App.ui.ajustarAlturaTabla(
             "contenedorTablaProductos",
@@ -141,8 +142,6 @@
             FILAS_VISIBLES
         );
     }
-
-    /* ---------- Panel de filtros ---------- */
 
     function alternarFiltros() {
         const panel = $("panelFiltros");
@@ -168,13 +167,10 @@
         });
     }
 
-    /* ---------- Modal ---------- */
-
     function abrirModalAgregar() {
         $("formProducto").reset();
         $("productoId").value = "";
         $("tituloModal").textContent = "Añadir Nuevo Producto";
-        $("prodStock").max = STOCK_MAXIMO;
         manejarCambioCategoria();
         App.ui.abrir("modalProducto");
     }
@@ -203,14 +199,9 @@
             App.ui.aviso("El stock debe ser un número entero igual o mayor a 0.");
             return;
         }
-        if (stock > STOCK_MAXIMO) {
-            App.ui.aviso(`El stock máximo permitido es de ${STOCK_MAXIMO} unidades.`);
-            return;
-        }
 
         let categoriaId = $("selectCategoria").value;
 
-        // "OTRO" crea la categoría antes de guardar el producto.
         if (categoriaId === "OTRO") {
             const nombre = $("inputOtraCategoria").value.trim();
             if (!nombre) {
@@ -263,11 +254,8 @@
         }
     }
 
-    /* ---------- Arranque ---------- */
-
     document.addEventListener("DOMContentLoaded", async () => {
-        if (!App.auth.exigir()) return;
-        App.layout.montar();
+        if (!App.layout.montar()) return;
 
         $("inputBuscarProducto").addEventListener("input", filtrarProductos);
         $("botonAgregarProducto").addEventListener("click", abrirModalAgregar);
@@ -278,7 +266,6 @@
         $("btnCancelarProducto").addEventListener("click", () => App.ui.cerrar("modalProducto"));
         App.ui.cerrarAlTocarFondo("modalProducto");
 
-        // Panel de filtros: categoría, orden por precio y limpieza.
         $("btnAbrirFiltros").addEventListener("click", alternarFiltros);
         $("filtroCategoria").addEventListener("change", () => {
             filtroCategoria = $("filtroCategoria").value;
@@ -300,7 +287,6 @@
             filtrarProductos();
         });
 
-        // Cierra el dropdown al hacer clic fuera o presionar Escape.
         document.addEventListener("click", (evento) => {
             if (!evento.target.closest(".filtros-wrapper")) cerrarFiltros();
         });
@@ -310,7 +296,6 @@
 
         window.addEventListener("resize", ajustarAlturaTabla);
 
-        // Delegación: las filas se regeneran en cada render.
         $("tablaProductos").addEventListener("click", (evento) => {
             const boton = evento.target.closest("[data-accion]");
             if (!boton) return;

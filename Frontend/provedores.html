@@ -23,7 +23,6 @@
                 <section class="tarjeta">
                     <h1>Gestión de Proveedores</h1>
 
-                    
                     <div class="search-bar-pill">
                         <span class="icono-buscar">🔍</span>
                         <input type="text" id="inputBuscarProveedor"
@@ -49,7 +48,7 @@
                         </div>
                     </div>
 
-<div class="acciones-inventario-pills">
+                    <div class="acciones-inventario-pills">
                         <button type="button" id="btnAbrirModalProveedor" class="btn-pill btn-pill-menta">
                             Añadir Proveedor
                         </button>
@@ -60,16 +59,17 @@
         </div>
     </div>
 
-    <!-- Modal: registrar proveedor -->
     <div id="modalProveedor" class="modal modal-oculto" aria-hidden="true">
         <div class="modal-contenido">
             <div class="modal-cabecera">
-                <h3>Añadir Nuevo Proveedor</h3>
+                <h3 id="tituloModalProveedor">Añadir Nuevo Proveedor</h3>
                 <button id="cerrarModalProveedor" class="boton-cerrar" type="button"
                     aria-label="Cerrar">&times;</button>
             </div>
 
             <form id="formProveedor" class="formulario">
+                <input type="hidden" id="proveedorId">
+
                 <label for="nombreProveedor">Nombre del Proveedor</label>
                 <input id="nombreProveedor" name="nombreProveedor" type="text"
                     placeholder="Ej. Distribuidora Central" required>
@@ -100,9 +100,7 @@
         </div>
     </div>
 
-<script src="js/core.js"></script>
-    <script src="js/demo.js"></script>
-
+    <script src="js/core.js"></script>
     <script src="js/layout.js"></script>
     <script src="js/pages/provedores.js"></script>
 </body>

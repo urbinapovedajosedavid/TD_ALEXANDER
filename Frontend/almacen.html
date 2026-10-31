@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Producto - Tienda Alexander</title>
+    <title>Gestión de Productos - Tienda Alexander</title>
     <link rel="stylesheet" href="css/base.css">
 </head>
 
@@ -25,7 +25,7 @@
 
                     <nav class="breadcrumb" aria-label="Ubicación actual">
                         <ol class="breadcrumb-list">
-                            <li class="breadcrumb-item"><a class="breadcrumb-link" href="index.html">Inicio</a></li>
+                            <li class="breadcrumb-item"><a class="breadcrumb-link" href="inicio.html">Inicio</a></li>
                             <li class="breadcrumb-item"><span class="breadcrumb-current" aria-current="page">Producto</span></li>
                         </ol>
                     </nav>
@@ -109,7 +109,6 @@
         </div>
     </div>
 
-    
     <div id="modalProducto" class="modal modal-oculto" aria-hidden="true">
         <div class="modal-contenido">
             <div class="modal-cabecera">
@@ -132,7 +131,7 @@
                 </div>
 
                 <div class="form-row">
-                    <label for="selectCategoria">Categoría *</label>
+                    <label for="selectCategoria">Categoría</label>
                     <select id="selectCategoria">
                         <option value="">Cargando categorías...</option>
                     </select>
@@ -150,7 +149,7 @@
 
                 <div class="form-row">
                     <label for="prodStock">Stock Inicial *</label>
-                    <input type="number" min="0" max="64" id="prodStock" required>
+                    <input type="number" min="0" id="prodStock" required>
                 </div>
 
                 <div class="modal-acciones">
@@ -164,8 +163,6 @@
     </div>
 
     <script src="js/core.js"></script>
-    <script src="js/demo.js"></script>
-
     <script src="js/layout.js"></script>
     <script src="js/pages/almacen.js"></script>
 </body>

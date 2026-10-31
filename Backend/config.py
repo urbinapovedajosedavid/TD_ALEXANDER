@@ -1,49 +1,115 @@
+"""Backend.config
+================
+Configuración centralizada del sistema, rutas de ejecución (desarrollo y .exe),
+variables de entorno (.env), marcas de tiempo y clave secreta autogenerada.
+"""
+
 import os
+import secrets
+import sys
+from datetime import datetime
 from pathlib import Path
 
-# Directorio base del proyecto (sube un nivel desde Backend/)
-BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+# Detección unificada de rutas según si corre como script o binario .exe (PyInstaller)
+if getattr(sys, "frozen", False):
+    RAIZ_ACTUAL = Path(sys.executable).resolve().parent
+    RAIZ_RECURSOS = Path(getattr(sys, "_MEIPASS", RAIZ_ACTUAL))
+else:
+    RAIZ_ACTUAL = Path(__file__).resolve().parent.parent
+    RAIZ_RECURSOS = RAIZ_ACTUAL
+
+BASE_DIR = str(RAIZ_ACTUAL)
+FORMATO_FECHA = "%Y-%m-%d %H:%M:%S"
+
+CLAVES_INSEGURAS_CONOCIDAS = {
+    "",
+    "clave-secreta-tienda-alexander-segura-2026",
+    "clave-secreta-cambiar-en-produccion",
+}
 
 
-def _cargar_env():
-    """Lee el .env de la raíz del proyecto y lo vuelca en os.environ."""
-    ruta = Path(BASE_DIR) / ".env"
-    if not ruta.exists():
-        return
-    with open(ruta, encoding="utf-8") as f:
-        for linea in f:
-            linea = linea.strip()
-            if not linea or linea.startswith("#") or "=" not in linea:
-                continue
-            clave, _, valor = linea.partition("=")
-            clave, valor = clave.strip(), valor.strip()
-            if clave and clave not in os.environ:
-                os.environ[clave] = valor
+def ahora() -> str:
+    """Marca de tiempo local en el formato estándar de SQLite."""
+    return datetime.now().strftime(FORMATO_FECHA)
 
 
-_cargar_env()
+def cargar_env() -> None:
+    """Lee el archivo .env de la raíz del proyecto y lo inyecta en os.environ."""
+    rutas = [RAIZ_ACTUAL / ".env"]
+    if RAIZ_RECURSOS != RAIZ_ACTUAL:
+        rutas.append(RAIZ_RECURSOS / ".env")
+
+    for ruta in rutas:
+        if not ruta.exists():
+            continue
+        try:
+            with open(ruta, encoding="utf-8") as f:
+                for linea in f:
+                    linea = linea.strip()
+                    if not linea or linea.startswith("#") or "=" not in linea:
+                        continue
+                    clave, _, valor = linea.partition("=")
+                    clave, valor = clave.strip(), valor.strip()
+                    if clave and clave not in os.environ:
+                        os.environ[clave] = valor
+        except OSError:
+            pass
+
+
+def _obtener_o_crear_secret_key() -> str:
+    """Obtiene SECRET_KEY del entorno o genera y persiste una aleatoria segura."""
+    cargar_env()
+    clave = os.environ.get("SECRET_KEY", "").strip()
+    if clave not in CLAVES_INSEGURAS_CONOCIDAS:
+        return clave
+
+    nueva_clave = secrets.token_hex(32)
+    os.environ["SECRET_KEY"] = nueva_clave
+
+    ruta_env = RAIZ_ACTUAL / ".env"
+    try:
+        lineas = []
+        reemplazada = False
+        if ruta_env.exists():
+            for linea in ruta_env.read_text(encoding="utf-8").splitlines():
+                if linea.strip().startswith("SECRET_KEY="):
+                    lineas.append(f"SECRET_KEY={nueva_clave}")
+                    reemplazada = True
+                else:
+                    lineas.append(linea)
+        if not reemplazada:
+            lineas.append(f"SECRET_KEY={nueva_clave}")
+        ruta_env.write_text("\n".join(lineas) + "\n", encoding="utf-8")
+    except OSError:
+        pass
+
+    return nueva_clave
+
+
+SECRET_KEY_ACTIVA = _obtener_o_crear_secret_key()
 
 
 class Config:
     """Configuración base para la aplicación Flask."""
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'clave-secreta-cambiar-en-produccion'
+    SECRET_KEY = SECRET_KEY_ACTIVA
     DEBUG = False
     TESTING = False
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # Límite de 16 MB para subida de respaldos
+    DATABASE_PATH = str(RAIZ_ACTUAL / "database" / "tienda_alexander.db")
 
-    # Ruta absoluta hacia la base de datos SQLite
-    DATABASE_PATH = os.path.join(BASE_DIR, 'database', 'tienda_alexander.db')
 
 class DevelopmentConfig(Config):
-    """Configuración para entorno de desarrollo."""
-    DEBUG = True
+    """Configuración para entorno local (DEBUG desactivado salvo FLASK_DEBUG=1)."""
+    DEBUG = os.environ.get("FLASK_DEBUG", "0") == "1"
+
 
 class ProductionConfig(Config):
     """Configuración para entorno de producción."""
     DEBUG = False
 
-# Diccionario selector de configuraciones
+
 config = {
-    'development': DevelopmentConfig,
-    'production': ProductionConfig,
-    'default': DevelopmentConfig
+    "development": DevelopmentConfig,
+    "production": ProductionConfig,
+    "default": ProductionConfig,
 }
