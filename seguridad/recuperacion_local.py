@@ -262,6 +262,7 @@ def _menu() -> int:
                     print(f"  {paso}")
             elif opcion == "3":
                 destino = crear_respaldo(
+                    
                     RUTA_DB,
                     RAIZ_PROYECTO / "database" / "copias_seguridad",
                 )
