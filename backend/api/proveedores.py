@@ -5,9 +5,9 @@ Gestión y directorio de proveedores.
 
 from flask import jsonify
 
-import db
-from api import api_bp
-from api.utils import cuerpo_json, error
+import backend.db as db
+from backend.api import api_bp
+from backend.api.utils import cuerpo_json, error
 from seguridad import requiere_login, requiere_rol
 
 

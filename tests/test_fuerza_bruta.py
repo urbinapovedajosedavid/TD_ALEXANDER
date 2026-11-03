@@ -17,12 +17,19 @@ _tmp_db = Path(tempfile.gettempdir()) / f"test_fuerza_bruta_{os.getpid()}.db"
 os.environ["TIENDA_DB_PATH"] = str(_tmp_db)
 
 from app import app  # noqa: E402
-import db  # noqa: E402
+import backend.db as db  # noqa: E402
 from seguridad import hash_password  # noqa: E402
 
 try:
     db.inicializar_db()
     cliente = app.test_client()
+
+    with db.conectar_db() as conn:
+        admin_inicial = conn.execute(
+            "SELECT debe_cambiar_clave FROM usuarios WHERE rol = 'ADMIN' LIMIT 1"
+        ).fetchone()
+    assert admin_inicial is not None
+    assert admin_inicial["debe_cambiar_clave"] == 1
 
     print("\n== INICIANDO PRUEBAS DE BLOQUEO ESCALONADO (DB AISLADA) ==")
 

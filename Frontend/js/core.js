@@ -85,10 +85,10 @@ App.api = (function () {
             pedir("/auth/login", { method: "POST", body: { usuario, clave } }),
         yo: () => pedir("/auth/yo"),
         logout: () => pedir("/auth/logout", { method: "POST" }),
-        cambiarClave: (actual, nueva) =>
+        cambiarClave: (actual, nueva, confirmacion) =>
             pedir("/auth/cambiar-clave", {
                 method: "POST",
-                body: { actual, nueva },
+                body: { actual, nueva, confirmacion },
             }),
         eliminarCuenta: () => pedir("/auth/cuenta", { method: "DELETE" }),
         registro: (datos) =>
@@ -96,10 +96,18 @@ App.api = (function () {
         registroPublico: (datos) =>
             pedir("/auth/registro-publico", { method: "POST", body: datos }),
         usuarios: () => pedir("/usuarios"),
+        usuario: (id) => pedir(`/usuarios/${id}`),
         desbloquearUsuario: (id) =>
             pedir(`/usuarios/${id}/desbloquear`, { method: "POST" }),
         cambiarEstadoUsuario: (id, activo) =>
-            pedir(`/usuarios/${id}/estado`, { method: "POST", body: { activo } }),
+            pedir(`/usuarios/${id}/estado`, { method: "PUT", body: { activo } }),
+        eliminarUsuario: (id) =>
+            pedir(`/usuarios/${id}`, { method: "DELETE" }),
+        restablecerClaveUsuario: (id, clave_admin) =>
+            pedir(`/usuarios/${id}/restablecer-clave`, {
+                method: "POST",
+                body: { clave_admin },
+            }),
 
         // ---------- Categorías ----------
         categorias: () => pedir("/categorias"),
@@ -352,7 +360,9 @@ App.ui = (function () {
         const modal = document.getElementById(idModal);
         if (!modal) return;
         modal.addEventListener("click", (evento) => {
-            if (evento.target === modal) cerrar(idModal);
+            if (evento.target === modal && modal.dataset.obligatorio !== "true") {
+                cerrar(idModal);
+            }
         });
     }
 

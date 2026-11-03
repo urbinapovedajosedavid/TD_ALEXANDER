@@ -14,6 +14,15 @@
         const btnVolverLogin = $("btnVolverLogin");
 
         const sesionActiva = App.auth.actual();
+        const esAdmin = App.auth.esAdmin();
+        const confirmacionAdmin = $("confirmacionAdmin");
+        const claveAdminInput = $("claveAdminModal");
+        if (confirmacionAdmin) {
+            confirmacionAdmin.hidden = !esAdmin;
+        }
+        if (claveAdminInput) {
+            claveAdminInput.required = esAdmin;
+        }
         if (sesionActiva && btnVolverLogin) {
             btnVolverLogin.textContent = "Volver al panel principal";
         }
@@ -26,6 +35,7 @@
             const telefono = ($("telefonoModal") ? $("telefonoModal").value : "").trim();
             const usuario = ($("usuarioModal") ? $("usuarioModal").value : "").trim();
             const clave = $("claveModal") ? $("claveModal").value : "";
+            const claveAdmin = claveAdminInput ? claveAdminInput.value : "";
 
             if (!nombre || !apellido || !telefono || !usuario || !clave) {
                 App.ui.mensaje(mensaje, "Completa todos los campos obligatorios.", "error");
@@ -47,20 +57,27 @@
                 App.ui.mensaje(mensaje, "La contraseña debe tener al menos 4 caracteres.", "error");
                 return;
             }
+            if (esAdmin && !claveAdmin) {
+                App.ui.mensaje(mensaje, "Confirma la creación con tu contraseña de administrador.", "error");
+                return;
+            }
 
             App.ui.mensaje(mensaje, "Creando usuario en la base de datos...", "info");
 
             try {
-                const esAdmin = App.auth.esAdmin();
                 const peticion = esAdmin ? App.api.registro : App.api.registroPublico;
 
-                const res = await peticion({
+                const datos = {
                     nombre,
                     apellido,
                     telefono,
                     usuario,
                     clave,
-                });
+                };
+                if (esAdmin) {
+                    datos.clave_admin = claveAdmin;
+                }
+                const res = await peticion(datos);
 
                 form.reset();
                 App.ui.mensaje(

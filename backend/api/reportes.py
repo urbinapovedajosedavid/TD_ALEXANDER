@@ -1,23 +1,27 @@
-"""api.reportes
-=============
-Reportes financieros de ventas, KPIs desglosados (subtotal, IVA, total) y
-rendimiento por vendedor sin consultas N+1.
-"""
-
 from collections import defaultdict
 from datetime import datetime, timedelta
 from decimal import Decimal
+from typing import TypedDict
 
-from flask import g, jsonify, request
+from flask import Response, g, jsonify, request
 
-import db
-from api import api_bp
-from api.utils import dinero, error
-from config import FORMATO_FECHA
+import backend.db as db
+from backend.api import api_bp
+from backend.api.utils import dinero, error
+from backend.config import FORMATO_FECHA
 from seguridad import requiere_login, requiere_rol
 
 
-def _rango_periodo(periodo: str):
+class ItemVenta(TypedDict):
+    id: int | None
+    nombre: str
+    categoria_id: int | None
+    cantidad: int
+    precio_unitario: float
+    subtotal: float
+
+
+def _rango_periodo(periodo: str) -> datetime:
     """Calcula el inicio del período alineado a las 00:00:00 del día calendario
     (exactamente igual que el selector de fechas del frontend)."""
     hoy_inicio = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
@@ -28,7 +32,7 @@ def _rango_periodo(periodo: str):
     return hoy_inicio
 
 
-def _rango_fechas():
+def _rango_fechas() -> tuple[str | None, str | None]:
     inicio = (request.args.get("fecha_inicio") or "").strip()
     fin = (request.args.get("fecha_fin") or "").strip()
     if not inicio and not fin:
@@ -51,7 +55,7 @@ def _rango_fechas():
 
 @api_bp.get("/reportes")
 @requiere_login
-def obtener_reportes():
+def obtener_reportes() -> Response | tuple[Response, int]:
     try:
         desde_txt, hasta_txt = _rango_fechas()
     except ValueError:
@@ -65,7 +69,7 @@ def obtener_reportes():
         periodo = "rango"
 
     condiciones = ["COALESCE(v.estado, 'COMPLETADA') = 'COMPLETADA'"]
-    parametros = []
+    parametros: list[str | int] = []
 
     # Los vendedores solo consultan sus propias ventas; el administrador ve toda la tienda
     if g.usuario.get("rol") != "ADMIN":
@@ -136,7 +140,7 @@ def obtener_reportes():
 
 @api_bp.get("/reportes/usuario/<int:usuario_id>")
 @requiere_rol("ADMIN")
-def reporte_ventas_de_usuario(usuario_id):
+def reporte_ventas_de_usuario(usuario_id: int) -> Response | tuple[Response, int]:
     try:
         desde_txt, hasta_txt = _rango_fechas()
     except ValueError:
@@ -155,7 +159,7 @@ def reporte_ventas_de_usuario(usuario_id):
             "v.usuario_id = ?",
             "COALESCE(v.estado, 'COMPLETADA') = 'COMPLETADA'",
         ]
-        parametros = [usuario_id]
+        parametros: list[str | int] = [usuario_id]
         if desde_txt:
             condiciones.append("v.fecha >= ?")
             parametros.append(desde_txt)
@@ -173,7 +177,7 @@ def reporte_ventas_de_usuario(usuario_id):
         ).fetchall()
 
         # Una sola consulta SQL para todos los detalles (elimina el problema N+1)
-        items_por_venta = defaultdict(list)
+        items_por_venta: defaultdict[int, list[ItemVenta]] = defaultdict(list)
         if filas_ventas:
             filas_items = conn.execute(
                 "SELECT d.venta_id, d.producto_id, d.cantidad, d.precio_unitario, "
@@ -195,10 +199,10 @@ def reporte_ventas_de_usuario(usuario_id):
                     "subtotal": dinero(Decimal(str(item["precio_unitario"])) * item["cantidad"]),
                 })
 
-    ventas = []
+    ventas: list[dict[str, object]] = []
     unidades_vendidas = 0
-    totales = []
-    subtotales = []
+    totales: list[Decimal] = []
+    subtotales: list[Decimal] = []
 
     for fila in filas_ventas:
         lineas = items_por_venta.get(fila["id"], [])

@@ -1,28 +1,31 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import os
+
+FRONTEND_SOURCE = 'frontend' if os.path.isdir('frontend') else 'Frontend'
 
 a = Analysis(
     ['app.py'],
-    pathex=['.', 'Backend'],
+    pathex=['.'],
     binaries=[],
-    datas=[('Frontend', 'Frontend'), ('database/esquema.sql', 'database')],
+    datas=[(FRONTEND_SOURCE, 'frontend'), ('database/esquema.sql', 'database')],
     hiddenimports=[
         'werkzeug',
         'werkzeug.security',
         'sqlite3',
         'flask_cors',
-        'config',
-        'db',
-        'schemas',
-        'api',
-        'api.utils',
-        'api.auth',
-        'api.usuarios',
-        'api.productos',
-        'api.ventas',
-        'api.proveedores',
-        'api.reportes',
-        'api.respaldos',
+        'backend.config',
+        'backend.db',
+        'backend.schemas',
+        'backend.api',
+        'backend.api.utils',
+        'backend.api.auth',
+        'backend.api.usuarios',
+        'backend.api.productos',
+        'backend.api.ventas',
+        'backend.api.proveedores',
+        'backend.api.reportes',
+        'backend.api.respaldos',
         'seguridad',
         'seguridad.autenticacion',
         'seguridad.decoradores',

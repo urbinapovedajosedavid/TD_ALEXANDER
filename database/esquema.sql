@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     bloqueado         INTEGER NOT NULL DEFAULT 0,
     tiempo_bloqueo    DATETIME DEFAULT NULL,
     nivel_bloqueo     INTEGER NOT NULL DEFAULT 0,
-    creado_en         DATETIME DEFAULT CURRENT_TIMESTAMP
+    creado_en         DATETIME DEFAULT CURRENT_TIMESTAMP,
+    debe_cambiar_clave INTEGER NOT NULL DEFAULT 0 CHECK (debe_cambiar_clave IN (0, 1))
 );
 
 -- 2. Categorías de productos

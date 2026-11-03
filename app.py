@@ -1,11 +1,3 @@
-"""app.py — Punto de entrada principal de Tienda Alexander
-=========================================================
-Inicia el servidor Flask, conecta y migra la base de datos SQLite,
-monta la API RESTful bajo /api y sirve el frontend.
-
-Uso:
-    python app.py
-"""
 
 import os
 import sys
@@ -13,15 +5,14 @@ import threading
 import webbrowser
 from pathlib import Path
 
-RAIZ_BASE = Path(__file__).resolve().parent
+RAIZ_BASE: Path = Path(__file__).resolve().parent
 if str(RAIZ_BASE) not in sys.path:
     sys.path.insert(0, str(RAIZ_BASE))
-if str(RAIZ_BASE / "Backend") not in sys.path:
-    sys.path.insert(0, str(RAIZ_BASE / "Backend"))
 
 try:
     from flask import Flask, redirect, send_from_directory  # noqa: E402
     from flask_cors import CORS  # noqa: E402
+    from werkzeug.wrappers import Response  # noqa: E402
 except ModuleNotFoundError:
     import subprocess
     print("Instalando dependencias requeridas (Flask, Flask-Cors)...")
@@ -30,30 +21,39 @@ except ModuleNotFoundError:
     )
     from flask import Flask, redirect, send_from_directory  # noqa: E402
     from flask_cors import CORS  # noqa: E402
+    from werkzeug.wrappers import Response  # noqa: E402
 
-import db  # noqa: E402
-from api import api_bp  # noqa: E402
-from config import RAIZ_ACTUAL, RAIZ_RECURSOS, config  # noqa: E402
+import backend.db as db  # noqa: E402
+from backend.api import api_bp  # noqa: E402
+from backend.config import RAIZ_ACTUAL, RAIZ_RECURSOS, config  # noqa: E402
 from seguridad import obtener_token_actual, usuario_de_token  # noqa: E402
 
-FRONTEND_DIR = str(RAIZ_RECURSOS / "Frontend")
-if not os.path.isdir(FRONTEND_DIR):
-    FRONTEND_DIR = str(RAIZ_ACTUAL / "Frontend")
-
-# static_folder=None evita colisión con la ruta controlada servir_frontend
-app = Flask(__name__, static_folder=None)
-
-entorno = os.environ.get("FLASK_ENV", "production")
-app.config.from_object(config.get(entorno, config["default"]))
-
-app.config.update(
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_SECURE=os.environ.get("SESSION_COOKIE_SECURE", "0") == "1",
-    SESSION_COOKIE_NAME="alexander_session",
+FRONTEND_DIR: str = next(
+    (
+        str(ruta)
+        for ruta in (
+            RAIZ_RECURSOS / "frontend",
+            RAIZ_RECURSOS / "Frontend",
+            RAIZ_ACTUAL / "frontend",
+            RAIZ_ACTUAL / "Frontend",
+        )
+        if ruta.is_dir()
+    ),
+    str(RAIZ_ACTUAL / "frontend"),
 )
 
-puerto_actual = int(os.environ.get("PORT", 5000))
+# static_folder=None evita colisión con la ruta controlada servir_frontend
+app: Flask = Flask(__name__, static_folder=None)
+
+entorno: str = os.environ.get("FLASK_ENV", "production")
+app.config.from_object(config.get(entorno, config["default"]))
+
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE", "0") == "1"
+app.config["SESSION_COOKIE_NAME"] = "alexander_session"
+
+puerto_actual: int = int(os.environ.get("PORT", 5000))
 CORS(app, supports_credentials=True)
 
 app.register_blueprint(api_bp)
@@ -61,7 +61,7 @@ app.register_blueprint(api_bp)
 db.inicializar_db()
 
 # Alias cortos que no coinciden directamente con el nombre del archivo .html
-ALIAS_PAGINAS = {
+ALIAS_PAGINAS: dict[str, str] = {
     "login": "Login.html",
     "login.html": "Login.html",
     "proveedores": "provedores.html",
@@ -71,7 +71,7 @@ ALIAS_PAGINAS = {
 
 
 @app.route("/")
-def index():
+def index() -> Response | tuple[Response, int]:
     token = obtener_token_actual()
     if token:
         with db.conectar_db() as conn:
@@ -81,7 +81,7 @@ def index():
 
 
 @app.route("/<path:nombre_archivo>")
-def servir_frontend(nombre_archivo: str):
+def servir_frontend(nombre_archivo: str) -> Response | tuple[Response, int]:
     destino_alias = ALIAS_PAGINAS.get(nombre_archivo.lower())
     if destino_alias and os.path.isfile(os.path.join(FRONTEND_DIR, destino_alias)):
         return send_from_directory(FRONTEND_DIR, destino_alias)
@@ -97,7 +97,7 @@ def servir_frontend(nombre_archivo: str):
     return send_from_directory(FRONTEND_DIR, nombre_archivo)
 
 
-def _abrir_navegador(url: str):
+def _abrir_navegador(url: str) -> None:
     import time
     time.sleep(1.0)
     try:
@@ -107,10 +107,10 @@ def _abrir_navegador(url: str):
 
 
 if __name__ == "__main__":
-    host = os.environ.get("HOST", "127.0.0.1")
-    puerto = int(os.environ.get("PORT", 5000))
-    debug = bool(app.config.get("DEBUG", False))
-    url = f"http://127.0.0.1:{puerto}/"
+    host: str = os.environ.get("HOST", "127.0.0.1")
+    puerto: int = int(os.environ.get("PORT", 5000))
+    debug: bool = app.debug
+    url: str = f"http://127.0.0.1:{puerto}/"
 
     if not debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         print("\n" + "=" * 65)

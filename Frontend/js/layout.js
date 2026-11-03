@@ -167,6 +167,9 @@ App.layout = (function () {
                             aria-label="Cerrar">&times;</button>
                 </div>
 
+                <p id="avisoCambioObligatorio" class="aviso-seguridad" hidden>
+                    Tu administrador restableció esta contraseña. Debes cambiarla antes de continuar.
+                </p>
                 <form id="formCambiarClave" class="form-producto">
                     <div class="form-row">
                         <label for="claveActual">Contraseña actual</label>
@@ -191,7 +194,7 @@ App.layout = (function () {
         </div>
 
         <div id="modalUsuarios" class="modal modal-oculto" aria-hidden="true">
-            <div class="modal-contenido" style="max-width: 680px;">
+            <div class="modal-contenido" style="max-width: 960px;">
                 <div class="modal-cabecera">
                     <h3>Usuarios del sistema</h3>
                     <button id="cerrarModalUsuarios" class="boton-cerrar" type="button"
@@ -219,6 +222,54 @@ App.layout = (function () {
                     <button type="button" id="btnNuevoUsuarioModal" class="btn-pill btn-pill-menta">+ Crear usuario</button>
                     <button type="button" id="btnCerrarUsuarios" class="btn-pill btn-pill-oscuro">Cerrar</button>
                 </div>
+            </div>
+        </div>
+
+        <div id="modalDetalleUsuario" class="modal modal-oculto" aria-hidden="true">
+            <div class="modal-contenido">
+                <div class="modal-cabecera">
+                    <h3>Detalles del usuario</h3>
+                    <button id="cerrarDetalleUsuario" class="boton-cerrar" type="button"
+                            aria-label="Cerrar">&times;</button>
+                </div>
+                <dl id="datosDetalleUsuario" class="datos-perfil"></dl>
+                <p id="mensajeDetalleUsuario" class="mensaje"></p>
+                <div class="modal-acciones">
+                    <button id="btnRestablecerClaveUsuario" type="button"
+                            class="btn-pill btn-pill-menta">Restablecer contraseña</button>
+                    <button id="btnCerrarDetalleUsuario" type="button"
+                            class="btn-pill btn-pill-oscuro">Cerrar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="modalRestablecerClave" class="modal modal-oculto" aria-hidden="true">
+            <div class="modal-contenido">
+                <div class="modal-cabecera">
+                    <h3>Restablecer contraseña</h3>
+                    <button id="cerrarRestablecerClave" class="boton-cerrar" type="button"
+                            aria-label="Cerrar">&times;</button>
+                </div>
+                <form id="formRestablecerClave" class="form-producto">
+                    <p>Confirma tu contraseña actual de administrador. Se generará una clave temporal que solo se mostrará una vez y que el usuario deberá cambiar al iniciar sesión.</p>
+                    <div class="form-row">
+                        <label for="claveAdminActual">Tu contraseña actual</label>
+                        <input id="claveAdminActual" type="password"
+                               autocomplete="current-password" required>
+                    </div>
+                    <p id="mensajeRestablecerClave" class="mensaje"></p>
+                    <div id="resultadoClaveTemporal" class="resultado-clave oculto">
+                        <strong>Clave temporal (solo se muestra esta vez):</strong>
+                        <code id="claveTemporalUsuario"></code>
+                        <p>Entrégala al usuario por un canal seguro. No la guardes ni la compartas públicamente.</p>
+                    </div>
+                    <div class="modal-acciones">
+                        <button id="btnCancelarRestablecerClave" type="button"
+                                class="btn-pill btn-pill-oscuro">Cancelar</button>
+                        <button id="btnConfirmarRestablecerClave" type="submit"
+                                class="btn-pill btn-pill-menta">Generar clave temporal</button>
+                    </div>
+                </form>
             </div>
         </div>`;
     }
@@ -250,13 +301,77 @@ App.layout = (function () {
         }
 
         try {
-            const r = await App.api.cambiarClave(actual, nueva);
+            const r = await App.api.cambiarClave(actual, nueva, repetida);
             App.ui.mensaje(mensaje, r.mensaje || "Contraseña actualizada.", "exito");
             evento.target.reset();
+            const usuario = App.auth.actual();
+            if (usuario) usuario.debe_cambiar_clave = false;
+            const modal = document.getElementById("modalCambiarClave");
+            modal.dataset.obligatorio = "false";
+            document.getElementById("cerrarModalCambiarClave").hidden = false;
+            document.getElementById("btnCancelarCambiarClave").hidden = false;
+            document.getElementById("avisoCambioObligatorio").hidden = true;
             setTimeout(() => App.ui.cerrar("modalCambiarClave"), 1200);
         } catch (err) {
             App.ui.mensaje(mensaje, err.message, "error");
         }
+    }
+
+    async function mostrarDetalleUsuario(id) {
+        try {
+            const usuario = await App.api.usuario(id);
+            const usuarioActual = App.auth.actual();
+            const estado = usuario.activo
+                ? (usuario.bloqueado ? `Activo (bloqueado, nivel ${usuario.nivel_bloqueo})` : "Activo")
+                : "Inactivo";
+            document.getElementById("datosDetalleUsuario").innerHTML = `
+                <dt>Nombre completo</dt><dd>${App.fmt.texto(usuario.nombre) || "—"}</dd>
+                <dt>Nombre de usuario</dt><dd>${App.fmt.texto(usuario.usuario)}</dd>
+                <dt>Teléfono</dt><dd>${App.fmt.texto(usuario.telefono) || "—"}</dd>
+                <dt>Rol</dt><dd>${App.fmt.texto(usuario.rol)}</dd>
+                <dt>Fecha de registro</dt><dd>${App.fmt.texto(App.fmt.fechaHora(usuario.creado_en)) || "—"}</dd>
+                <dt>Estado</dt><dd>${App.fmt.texto(estado)}</dd>`;
+            const botonRestablecer = document.getElementById("btnRestablecerClaveUsuario");
+            botonRestablecer.dataset.id = String(id);
+            botonRestablecer.hidden = Boolean(usuarioActual && usuarioActual.id === id);
+            App.ui.mensaje(document.getElementById("mensajeDetalleUsuario"), "");
+            App.ui.abrir("modalDetalleUsuario");
+        } catch (err) {
+            App.ui.aviso(err.message);
+        }
+    }
+
+    async function enviarRestablecimientoClave(evento) {
+        evento.preventDefault();
+        const boton = document.getElementById("btnRestablecerClaveUsuario");
+        const id = Number(boton.dataset.id);
+        const claveAdmin = document.getElementById("claveAdminActual").value;
+        const mensaje = document.getElementById("mensajeRestablecerClave");
+        if (!id || !claveAdmin) {
+            App.ui.mensaje(mensaje, "Confirma tu contraseña actual.", "error");
+            return;
+        }
+
+        try {
+            const respuesta = await App.api.restablecerClaveUsuario(id, claveAdmin);
+            document.getElementById("claveAdminActual").value = "";
+            document.getElementById("claveTemporalUsuario").textContent =
+                respuesta.clave_temporal;
+            document.getElementById("resultadoClaveTemporal").classList.remove("oculto");
+            document.getElementById("btnConfirmarRestablecerClave").hidden = true;
+            App.ui.mensaje(mensaje, respuesta.mensaje, "exito");
+        } catch (err) {
+            App.ui.mensaje(mensaje, err.message, "error");
+        }
+    }
+
+    function abrirRestablecerClave() {
+        document.getElementById("formRestablecerClave").reset();
+        document.getElementById("resultadoClaveTemporal").classList.add("oculto");
+        document.getElementById("claveTemporalUsuario").textContent = "";
+        document.getElementById("btnConfirmarRestablecerClave").hidden = false;
+        App.ui.mensaje(document.getElementById("mensajeRestablecerClave"), "");
+        App.ui.abrir("modalRestablecerClave");
     }
 
     async function cargarYRenderizarUsuarios() {
@@ -287,11 +402,14 @@ App.layout = (function () {
                     botones.push(
                         `<button class="btn-accion ${claseExtra}" data-accion-usuario="estado" data-id="${u.id}" data-activo="${u.activo ? "0" : "1"}">${textoToggle}</button>`
                     );
+                    botones.push(
+                        `<button class="btn-accion eliminar" data-accion-usuario="eliminar" data-id="${u.id}">Eliminar</button>`
+                    );
                 }
 
                 return `
-                    <td>${App.fmt.texto(u.nombre)}</td>
-                    <td><strong>${App.fmt.texto(u.usuario)}</strong></td>
+                    <td><button class="enlace-usuario" type="button" data-detalle-usuario="${u.id}">${App.fmt.texto(u.nombre)}</button></td>
+                    <td><button class="enlace-usuario" type="button" data-detalle-usuario="${u.id}"><strong>${App.fmt.texto(u.usuario)}</strong></button></td>
                     <td>${App.fmt.texto(u.telefono) || "—"}</td>
                     <td>${App.fmt.texto(u.rol)}</td>
                     <td>${estadoBadge}</td>
@@ -340,6 +458,17 @@ App.layout = (function () {
         document.getElementById("verPerfilesAjustes").addEventListener("click", mostrarUsuarios);
 
         document.getElementById("cerrarModalCambiarClave").addEventListener("click", () => {
+            if (document.getElementById("modalCambiarClave").dataset.obligatorio === "true") {
+                return;
+            }
+            document.getElementById("formCambiarClave").reset();
+            App.ui.mensaje(document.getElementById("mensajeCambiarClave"), "");
+            App.ui.cerrar("modalCambiarClave");
+        });
+        document.getElementById("btnCancelarCambiarClave").addEventListener("click", () => {
+            if (document.getElementById("modalCambiarClave").dataset.obligatorio === "true") {
+                return;
+            }
             document.getElementById("formCambiarClave").reset();
             App.ui.mensaje(document.getElementById("mensajeCambiarClave"), "");
             App.ui.cerrar("modalCambiarClave");
@@ -348,6 +477,25 @@ App.layout = (function () {
         document.getElementById("cerrarModalUsuarios").addEventListener("click", () => {
             App.ui.cerrar("modalUsuarios");
         });
+        document.getElementById("cerrarDetalleUsuario").addEventListener("click", () => {
+            App.ui.cerrar("modalDetalleUsuario");
+        });
+        document.getElementById("btnCerrarDetalleUsuario").addEventListener("click", () => {
+            App.ui.cerrar("modalDetalleUsuario");
+        });
+        document.getElementById("btnRestablecerClaveUsuario").addEventListener("click", () => {
+            abrirRestablecerClave();
+        });
+        document.getElementById("cerrarRestablecerClave").addEventListener("click", () => {
+            App.ui.cerrar("modalRestablecerClave");
+        });
+        document.getElementById("btnCancelarRestablecerClave").addEventListener("click", () => {
+            App.ui.cerrar("modalRestablecerClave");
+        });
+        document.getElementById("formRestablecerClave").addEventListener(
+            "submit",
+            enviarRestablecimientoClave
+        );
 
         const btnNuevoUsuario = document.getElementById("btnNuevoUsuarioModal");
         if (btnNuevoUsuario) {
@@ -359,6 +507,11 @@ App.layout = (function () {
         const tablaUsuarios = document.getElementById("tablaUsuarios");
         if (tablaUsuarios) {
             tablaUsuarios.addEventListener("click", async (evento) => {
+                const enlaceDetalle = evento.target.closest("[data-detalle-usuario]");
+                if (enlaceDetalle) {
+                    await mostrarDetalleUsuario(Number(enlaceDetalle.dataset.detalleUsuario));
+                    return;
+                }
                 const btn = evento.target.closest("[data-accion-usuario]");
                 if (!btn) return;
                 const id = Number(btn.dataset.id);
@@ -371,6 +524,14 @@ App.layout = (function () {
                         const nuevoActivo = btn.dataset.activo === "1";
                         const r = await App.api.cambiarEstadoUsuario(id, nuevoActivo);
                         App.ui.aviso(r.mensaje || "Estado actualizado.");
+                    } else if (accion === "eliminar") {
+                        const confirmado = App.ui.confirmar(
+                            "¿Eliminar esta cuenta de forma permanente? " +
+                            "Las cuentas con ventas registradas no se pueden eliminar."
+                        );
+                        if (!confirmado) return;
+                        const r = await App.api.eliminarUsuario(id);
+                        App.ui.aviso(r.mensaje || "Usuario eliminado.");
                     }
                     await cargarYRenderizarUsuarios();
                 } catch (err) {
@@ -388,18 +549,24 @@ App.layout = (function () {
             .getElementById("formCambiarClave")
             .addEventListener("submit", enviarCambioClave);
 
-        document.getElementById("btnCancelarCambiarClave").addEventListener("click", () => {
-            document.getElementById("formCambiarClave").reset();
-            App.ui.mensaje(document.getElementById("mensajeCambiarClave"), "");
-            App.ui.cerrar("modalCambiarClave");
-        });
-
         document.getElementById("btnCerrarUsuarios").addEventListener("click", () => {
             App.ui.cerrar("modalUsuarios");
         });
 
         App.ui.cerrarAlTocarFondo("modalCambiarClave");
         App.ui.cerrarAlTocarFondo("modalUsuarios");
+        App.ui.cerrarAlTocarFondo("modalDetalleUsuario");
+        App.ui.cerrarAlTocarFondo("modalRestablecerClave");
+
+        const usuarioActual = App.auth.actual();
+        if (usuarioActual && usuarioActual.debe_cambiar_clave) {
+            const modalClave = document.getElementById("modalCambiarClave");
+            modalClave.dataset.obligatorio = "true";
+            document.getElementById("cerrarModalCambiarClave").hidden = true;
+            document.getElementById("btnCancelarCambiarClave").hidden = true;
+            document.getElementById("avisoCambioObligatorio").hidden = false;
+            App.ui.abrir("modalCambiarClave");
+        }
 
         document
             .getElementById("eliminarCuentaAjustes")

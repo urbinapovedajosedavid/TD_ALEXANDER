@@ -19,9 +19,10 @@ sys.path.insert(0, str(RAIZ))
 
 _tmp_db = Path(tempfile.gettempdir()) / f"test_api_{os.getpid()}.db"
 os.environ["TIENDA_DB_PATH"] = str(_tmp_db)
+os.environ["ADMIN_CLAVE"] = "admin123"
 
 from app import app  # noqa: E402
-import db  # noqa: E402
+import backend.db as db  # noqa: E402
 
 try:
     db.inicializar_db()
@@ -47,7 +48,134 @@ try:
 
     # 2. Login de admin y vendedor
     assert admin_client.post("/api/auth/login", json={"usuario": "admin", "clave": "admin123"}).status_code == 200
+    assert admin_client.get("/api/productos").status_code == 403
+    r_confirmacion_invalida = admin_client.post(
+        "/api/auth/cambiar-clave",
+        json={
+            "actual": "admin123",
+            "nueva": "admin_cambiada_123",
+            "confirmacion": "no_coincide",
+        },
+    )
+    assert r_confirmacion_invalida.status_code == 400
+    r_cambio_inicial = admin_client.post(
+        "/api/auth/cambiar-clave",
+        json={
+            "actual": "admin123",
+            "nueva": "admin_cambiada_123",
+            "confirmacion": "admin_cambiada_123",
+        },
+    )
+    assert r_cambio_inicial.status_code == 200
     assert vendedor_client.post("/api/auth/login", json={"usuario": "carlosm", "clave": "clave123"}).status_code == 200
+
+    assert admin_client.post(
+        "/api/auth/registro",
+        json={
+            "nombre": "No autorizado",
+            "apellido": "Temporal",
+            "telefono": "8888-2222",
+            "usuario": "sin_confirmacion",
+            "clave": "clave123",
+            "rol": "VENDEDOR",
+        },
+    ).status_code == 400
+    assert admin_client.post(
+        "/api/auth/registro",
+        json={
+            "nombre": "No autorizado",
+            "apellido": "Temporal",
+            "telefono": "8888-2222",
+            "usuario": "sin_confirmacion",
+            "clave": "clave123",
+            "clave_admin": "incorrecta",
+            "rol": "VENDEDOR",
+        },
+    ).status_code == 401
+
+    r_usuario_admin = admin_client.post(
+        "/api/auth/registro",
+        json={
+            "nombre": "Operador",
+            "apellido": "Temporal",
+            "telefono": "8888-1111",
+            "usuario": "operador_temporal",
+            "clave": "clave123",
+            "clave_admin": "admin_cambiada_123",
+            "rol": "VENDEDOR",
+        },
+    )
+    assert r_usuario_admin.status_code == 201
+    usuario_admin_id = r_usuario_admin.get_json()["id"]
+    ops_client = app.test_client()
+    assert ops_client.post(
+        "/api/auth/login",
+        json={"usuario": "operador_temporal", "clave": "clave123"},
+    ).status_code == 200
+
+    r_detalle = admin_client.get(f"/api/usuarios/{usuario_admin_id}")
+    assert r_detalle.status_code == 200
+    detalle = r_detalle.get_json()
+    assert detalle["nombre"] == "Operador Temporal"
+    assert detalle["telefono"] == "8888-1111"
+    assert detalle["rol"] == "VENDEDOR"
+    assert detalle["creado_en"]
+    assert "password_hash" not in detalle
+    assert vendedor_client.get(f"/api/usuarios/{usuario_admin_id}").status_code == 403
+    assert vendedor_client.put(
+        f"/api/usuarios/{usuario_admin_id}/estado", json={"activo": False}
+    ).status_code == 403
+    assert vendedor_client.delete(f"/api/usuarios/{usuario_admin_id}").status_code == 403
+    print("  OK   Detalle completo de usuario y autorización ADMIN en las rutas de gestión")
+
+    assert admin_client.put(
+        f"/api/usuarios/{usuario_admin_id}/estado", json={"activo": "false"}
+    ).status_code == 400
+    assert admin_client.put(
+        f"/api/usuarios/{usuario_admin_id}/estado", json={"activo": False}
+    ).status_code == 200
+    assert ops_client.get("/api/auth/yo").status_code == 401
+    assert admin_client.put(
+        f"/api/usuarios/{usuario_admin_id}/estado", json={"activo": True}
+    ).status_code == 200
+    print("  OK   Activación/desactivación valida el tipo y revoca sesiones al desactivar")
+
+    assert ops_client.post(
+        "/api/auth/login",
+        json={"usuario": "operador_temporal", "clave": "clave123"},
+    ).status_code == 200
+    assert admin_client.post(
+        f"/api/usuarios/{usuario_admin_id}/restablecer-clave",
+        json={"clave_admin": "incorrecta"},
+    ).status_code == 401
+    r_reset = admin_client.post(
+        f"/api/usuarios/{usuario_admin_id}/restablecer-clave",
+        json={"clave_admin": "admin_cambiada_123"},
+    )
+    assert r_reset.status_code == 200
+    clave_temporal = r_reset.get_json()["clave_temporal"]
+    assert clave_temporal
+    assert ops_client.get("/api/auth/yo").status_code == 401
+
+    r_login_temporal = ops_client.post(
+        "/api/auth/login",
+        json={"usuario": "operador_temporal", "clave": clave_temporal},
+    )
+    assert r_login_temporal.status_code == 200
+    assert r_login_temporal.get_json()["usuario"]["debe_cambiar_clave"] is True
+    assert ops_client.get("/api/productos").status_code == 403
+    assert ops_client.post(
+        "/api/auth/cambiar-clave",
+        json={
+            "actual": clave_temporal,
+            "nueva": "nueva_clave_123",
+            "confirmacion": "nueva_clave_123",
+        },
+    ).status_code == 200
+    assert ops_client.get("/api/productos").status_code == 200
+    assert ops_client.get("/api/auth/yo").get_json()["usuario"]["debe_cambiar_clave"] is False
+    assert admin_client.delete(f"/api/usuarios/{usuario_admin_id}").status_code == 200
+    print("  OK   Restablecimiento protegido emite clave temporal y exige cambiarla antes de usar la API")
 
     # 3. Crear producto con stock > 64 (sin el límite artificial antiguo)
     r_prod = admin_client.post(
@@ -120,6 +248,8 @@ try:
     prod_actual = next(p for p in prods_actuales if p["id"] == prod_id)
     assert prod_actual["stock"] == 200
     print("  OK   7. Anulación de venta restituye las 3 unidades al stock (200 unidades)")
+    assert admin_client.delete(f"/api/usuarios/{vendedor_id}").status_code == 409
+    print("  OK   8. El servidor conserva las cuentas con ventas para proteger el historial")
 
     print("\n==============================================")
     print("TODAS LAS PRUEBAS DE API Y NEGOCIO PASARON EXITOSAMENTE")

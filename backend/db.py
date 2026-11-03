@@ -6,23 +6,18 @@ Compatible con entornos de desarrollo, pruebas aisladas y ejecutables (.exe).
 
 import os
 import sqlite3
-import sys
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 
-RAIZ_PROYECTO = Path(__file__).resolve().parent.parent
-if str(RAIZ_PROYECTO) not in sys.path:
-    sys.path.insert(0, str(RAIZ_PROYECTO))
-if str(RAIZ_PROYECTO / "Backend") not in sys.path:
-    sys.path.insert(0, str(RAIZ_PROYECTO / "Backend"))
-
-from config import FORMATO_FECHA, RAIZ_ACTUAL, RAIZ_RECURSOS, ahora  # noqa: E402
+from backend.config import RAIZ_ACTUAL, RAIZ_RECURSOS
 from seguridad.modelos import inicializar_usuarios  # noqa: E402
 
 # Esquema DDL: buscar en recursos empaquetados o en la carpeta database
-RUTA_ESQUEMA = RAIZ_RECURSOS / "database" / "esquema.sql"
-if not RUTA_ESQUEMA.exists():
-    RUTA_ESQUEMA = RAIZ_ACTUAL / "database" / "esquema.sql"
+ruta_esquema = RAIZ_RECURSOS / "database" / "esquema.sql"
+if not ruta_esquema.exists():
+    ruta_esquema = RAIZ_ACTUAL / "database" / "esquema.sql"
+RUTA_ESQUEMA = ruta_esquema
 
 # Base de datos SQLite (permite override mediante TIENDA_DB_PATH para tests aislados)
 RUTA_DB = Path(
@@ -34,7 +29,7 @@ CATEGORIAS_INICIALES = ("Electrodomésticos", "Electrónica", "Alimentos")
 
 
 @contextmanager
-def conectar_db():
+def conectar_db() -> Generator[sqlite3.Connection, None, None]:
     """Entrega una conexión SQLite transaccional con foreign_keys activo."""
     RUTA_DB.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(RUTA_DB)
@@ -57,7 +52,7 @@ def purgar_todas_las_sesiones() -> None:
         _purgar(conn)
 
 
-def inicializar_db():
+def inicializar_db() -> None:
     """Crea la base de datos, aplica migraciones de esquema y siembra datos iniciales."""
     RUTA_DB.parent.mkdir(parents=True, exist_ok=True)
     sql = RUTA_ESQUEMA.read_text(encoding="utf-8")
@@ -101,6 +96,10 @@ def _migrar_usuarios(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE usuarios ADD COLUMN telefono TEXT NOT NULL DEFAULT ''")
     if "activo" not in columnas:
         conn.execute("ALTER TABLE usuarios ADD COLUMN activo INTEGER NOT NULL DEFAULT 1")
+    if "debe_cambiar_clave" not in columnas:
+        conn.execute(
+            "ALTER TABLE usuarios ADD COLUMN debe_cambiar_clave INTEGER NOT NULL DEFAULT 0"
+        )
 
 
 def _migrar_productos(conn: sqlite3.Connection) -> None:
@@ -247,7 +246,7 @@ def _migrar_detalle_ventas(conn: sqlite3.Connection) -> None:
         conn.execute("PRAGMA foreign_keys = ON")
 
 
-def _sembrar(conn: sqlite3.Connection):
+def _sembrar(conn: sqlite3.Connection) -> None:
     """Inserta el administrador por defecto y categorías mínimas."""
     cur = conn.cursor()
     inicializar_usuarios(conn)

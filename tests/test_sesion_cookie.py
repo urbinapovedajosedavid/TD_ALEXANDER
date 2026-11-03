@@ -10,9 +10,10 @@ sys.path.insert(0, str(RAIZ))
 
 _tmp_db = Path(tempfile.gettempdir()) / f"test_sesion_cookie_{os.getpid()}.db"
 os.environ["TIENDA_DB_PATH"] = str(_tmp_db)
+os.environ["ADMIN_CLAVE"] = "admin123"
 
 from app import app  # noqa: E402
-import db  # noqa: E402
+import backend.db as db  # noqa: E402
 
 try:
     db.inicializar_db()
@@ -40,6 +41,16 @@ try:
     assert "HttpOnly" in set_cookie
     print("  OK   POST /api/auth/login -> 200 establece cookie alexander_session con HttpOnly")
 
+    r_cambio_inicial = cliente.post(
+        "/api/auth/cambiar-clave",
+        json={
+            "actual": "admin123",
+            "nueva": "admin_cookie_123",
+            "confirmacion": "admin_cookie_123",
+        },
+    )
+    assert r_cambio_inicial.status_code == 200
+
     r_yo_autenticado = cliente.get("/api/auth/yo")
     assert r_yo_autenticado.status_code == 200
     datos_yo = r_yo_autenticado.get_json()
@@ -58,7 +69,7 @@ try:
     print("  OK   Revocación en tabla `sesiones` invalida inmediatamente la cookie activa")
 
     # Nuevo login y logout normal
-    cliente.post("/api/auth/login", json={"usuario": "admin", "clave": "admin123"})
+    cliente.post("/api/auth/login", json={"usuario": "admin", "clave": "admin_cookie_123"})
     r_logout = cliente.post("/api/auth/logout")
     assert r_logout.status_code == 200
     r_yo_tras_logout = cliente.get("/api/auth/yo")

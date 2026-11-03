@@ -1,16 +1,11 @@
-"""seguridad.autenticacion
-========================
-Hashing con werkzeug.security, sesiones respaldadas en base de datos y
-protección contra fuerza bruta con bloqueo escalonado y decaimiento automático.
-"""
-
 import secrets
 import sqlite3
 from datetime import datetime, timedelta
+from typing import Any
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from config import FORMATO_FECHA, ahora
+from backend.config import FORMATO_FECHA, ahora
 
 DURACION_SESION_HORAS = 8
 VENTANA_ESCALADO_SEGUNDOS = 15 * 60  # Tras 15 min de vencido el bloqueo, el nivel decae a 0
@@ -52,7 +47,11 @@ def verify_password(clave: str, almacenado: str) -> bool:
 #  Protección contra fuerza bruta (Bloqueo Escalonado)                #
 # ------------------------------------------------------------------ #
 
-def procesar_intento_login(conn: sqlite3.Connection, usuario_input: str, clave_input: str):
+def procesar_intento_login(
+    conn: sqlite3.Connection,
+    usuario_input: str,
+    clave_input: str,
+) -> tuple[bool, dict[str, Any], int]:
     """Procesa un intento de login aplicando bloqueo escalonado con decaimiento.
 
     Reglas de negocio:
@@ -75,7 +74,8 @@ def procesar_intento_login(conn: sqlite3.Connection, usuario_input: str, clave_i
 
     fila = conn.execute(
         "SELECT id, nombre, usuario, rol, password_hash, COALESCE(activo, 1) AS activo, "
-        "intentos_fallidos, bloqueado, tiempo_bloqueo, nivel_bloqueo "
+        "intentos_fallidos, bloqueado, tiempo_bloqueo, nivel_bloqueo, "
+        "debe_cambiar_clave "
         "FROM usuarios WHERE usuario = ? COLLATE NOCASE",
         (usuario_input,),
     ).fetchone()
@@ -158,6 +158,7 @@ def procesar_intento_login(conn: sqlite3.Connection, usuario_input: str, clave_i
                 "nombre": fila["nombre"],
                 "usuario": fila["usuario"],
                 "rol": fila["rol"],
+                "debe_cambiar_clave": bool(fila["debe_cambiar_clave"]),
             },
             200,
         )
@@ -222,7 +223,7 @@ def procesar_intento_login(conn: sqlite3.Connection, usuario_input: str, clave_i
     return (
         False,
         {
-            "mensaje": f"Usuario o contraseña incorrectos. Intentos restantes antes del bloqueo: {restantes}.",
+            "mensaje": f"Usuario o contraseña incorrectos. Intentos restantes : {restantes}.",
             "bloqueado": False,
             "intentos_restantes": restantes,
         },
@@ -246,12 +247,13 @@ def crear_sesion(conn: sqlite3.Connection, usuario_id: int) -> str:
     return token
 
 
-def usuario_de_token(conn: sqlite3.Connection, token: str):
+def usuario_de_token(conn: sqlite3.Connection, token: str) -> sqlite3.Row | None:
     """Busca al usuario si el token de sesión existe en BD, no ha expirado y la cuenta está activa."""
     if not token:
         return None
     return conn.execute(
-        "SELECT u.id, u.nombre, u.usuario, u.rol, COALESCE(u.activo, 1) AS activo "
+        "SELECT u.id, u.nombre, u.usuario, u.rol, COALESCE(u.activo, 1) AS activo, "
+        "u.debe_cambiar_clave "
         "FROM sesiones s "
         "JOIN usuarios u ON u.id = s.usuario_id "
         "WHERE s.token = ? AND s.expira_en > ? AND COALESCE(u.activo, 1) = 1",

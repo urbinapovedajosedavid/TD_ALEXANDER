@@ -7,10 +7,10 @@ from decimal import Decimal
 
 from flask import g, jsonify
 
-import db
-from api import api_bp
-from api.utils import IVA, cuerpo_json, dinero, error
-from config import ahora
+import backend.db as db
+from backend.api import api_bp
+from backend.api.utils import IVA, cuerpo_json, dinero, error
+from backend.config import ahora
 from seguridad import requiere_login, requiere_rol
 
 METODOS_PAGO = ("efectivo", "tarjeta", "transferencia")

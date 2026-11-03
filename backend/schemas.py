@@ -1,9 +1,14 @@
-def validar_producto(data):
-    """Valida los datos de entrada para un producto del almacén.
+from typing import TypeGuard, cast
 
-    Retorna (True, None) si es válido, o (False, mensaje_error) si falla.
-    """
+
+def _es_objeto_json(data: object) -> TypeGuard[dict[str, object]]:
     if not isinstance(data, dict):
+        return False
+    return all(isinstance(clave, str) for clave in cast(dict[object, object], data))
+
+
+def validar_producto(data: object) -> tuple[bool, str | None]:
+    if not _es_objeto_json(data):
         return False, "Los datos enviados no tienen el formato JSON correcto."
 
     campos_requeridos = ['nombre', 'precio', 'stock']
@@ -12,8 +17,15 @@ def validar_producto(data):
             return False, f"El campo obligatorio '{campo}' está ausente o vacío."
 
     try:
-        precio = float(data['precio'])
-        stock = int(data['stock'])
+        precio_valor = data['precio']
+        stock_valor = data['stock']
+        if not isinstance(precio_valor, (str, int, float)) or not isinstance(
+            stock_valor, (str, int, float)
+        ):
+            raise TypeError
+
+        precio = float(precio_valor)
+        stock = int(stock_valor)
 
         if precio < 0:
             return False, "El precio no puede ser negativo."
@@ -26,12 +38,12 @@ def validar_producto(data):
     return True, None
 
 
-def validar_usuario(data):
+def validar_usuario(data: object) -> tuple[bool, str | None]:
     """Valida los datos de entrada para el registro de usuarios.
 
     Campos: nombre, apellido, telefono, usuario, clave (o contrasena).
     """
-    if not isinstance(data, dict):
+    if not _es_objeto_json(data):
         return False, "Los datos enviados no tienen el formato JSON correcto."
 
     nombre = data.get("nombre")

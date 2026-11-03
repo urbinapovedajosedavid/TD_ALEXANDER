@@ -10,10 +10,10 @@ from typing import Optional
 
 from flask import jsonify, request, send_file, session
 
-import db
-from api import api_bp
-from api.utils import error
-from config import FORMATO_FECHA
+import backend.db as db
+from backend.api import api_bp
+from backend.api.utils import error
+from backend.config import FORMATO_FECHA
 from seguridad import requiere_rol
 
 

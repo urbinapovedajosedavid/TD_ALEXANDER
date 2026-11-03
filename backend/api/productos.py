@@ -8,10 +8,10 @@ from decimal import Decimal
 
 from flask import jsonify
 
-import db
-from api import api_bp
-from api.utils import MARGEN_RECARGA, cuerpo_json, dinero, error
-from schemas import validar_producto
+import backend.db as db
+from backend.api import api_bp
+from backend.api.utils import MARGEN_RECARGA, cuerpo_json, dinero, error
+from backend.schemas import validar_producto
 from seguridad import requiere_login, requiere_rol
 
 

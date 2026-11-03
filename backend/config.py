@@ -1,9 +1,3 @@
-"""Backend.config
-================
-Configuración centralizada del sistema, rutas de ejecución (desarrollo y .exe),
-variables de entorno (.env), marcas de tiempo y clave secreta autogenerada.
-"""
-
 import os
 import secrets
 import sys
@@ -12,11 +6,14 @@ from pathlib import Path
 
 # Detección unificada de rutas según si corre como script o binario .exe (PyInstaller)
 if getattr(sys, "frozen", False):
-    RAIZ_ACTUAL = Path(sys.executable).resolve().parent
-    RAIZ_RECURSOS = Path(getattr(sys, "_MEIPASS", RAIZ_ACTUAL))
+    raiz_actual = Path(sys.executable).resolve().parent
+    raiz_recursos = Path(getattr(sys, "_MEIPASS", raiz_actual))
 else:
-    RAIZ_ACTUAL = Path(__file__).resolve().parent.parent
-    RAIZ_RECURSOS = RAIZ_ACTUAL
+    raiz_actual = Path(__file__).resolve().parent.parent
+    raiz_recursos = raiz_actual
+
+RAIZ_ACTUAL = raiz_actual
+RAIZ_RECURSOS = raiz_recursos
 
 BASE_DIR = str(RAIZ_ACTUAL)
 FORMATO_FECHA = "%Y-%m-%d %H:%M:%S"
@@ -68,7 +65,7 @@ def _obtener_o_crear_secret_key() -> str:
 
     ruta_env = RAIZ_ACTUAL / ".env"
     try:
-        lineas = []
+        lineas: list[str] = []
         reemplazada = False
         if ruta_env.exists():
             for linea in ruta_env.read_text(encoding="utf-8").splitlines():
@@ -108,7 +105,7 @@ class ProductionConfig(Config):
     DEBUG = False
 
 
-config = {
+config: dict[str, type[Config]] = {
     "development": DevelopmentConfig,
     "production": ProductionConfig,
     "default": ProductionConfig,
