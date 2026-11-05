@@ -21,3 +21,6 @@ Thumbs.db
 
 # Variables de entorno y claves secretas autogeneradas (nunca subir al repositorio)
 .env
+
+database/*.db
+database/*.bak
