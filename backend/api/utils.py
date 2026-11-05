@@ -1,22 +1,25 @@
-from decimal import ROUND_HALF_UP, Decimal
-
 from flask import jsonify, request
 
-IVA = Decimal("0.15")
-MARGEN_RECARGA = Decimal("0.05")
+IVA = 0.15
+MARGEN_RECARGA = 0.05
 
 
-def cuerpo_json() -> dict:
+def cuerpo_json():
     """Devuelve el cuerpo JSON de la petición como diccionario."""
     datos = request.get_json(silent=True)
-    return datos if isinstance(datos, dict) else {}
+    if isinstance(datos, dict):
+        return datos
+    return {}
 
 
-def error(mensaje: str, estado: int = 400):
-    """Construye una respuesta JSON uniforme de error."""
+def error(mensaje, estado=400):
+    """Construye una respuesta JSON de error."""
     return jsonify({"exito": False, "mensaje": mensaje}), estado
 
 
-def dinero(valor) -> float:
-    """Redondea un valor monetario a 2 decimales."""
-    return float(Decimal(str(valor or 0)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+def dinero(valor):
+    """Redondea un monto numérico a 2 decimales."""
+    try:
+        return round(float(valor or 0), 2)
+    except (TypeError, ValueError):
+        return 0.0

@@ -1,9 +1,4 @@
-"""api.ventas
-==========
-Procesamiento transaccional de ventas, emisión de facturas y anulación con devolución de stock.
-"""
-
-from decimal import Decimal
+# Rutas de ventas: registro de facturas, consulta y anulación con devolución de stock.
 
 from flask import g, jsonify
 
@@ -28,11 +23,10 @@ def registrar_venta():
     if not items or not isinstance(items, list):
         return error("El carrito de ventas está vacío.", 400)
 
-    # Consolidar cantidades por producto para evitar fallos cuando un producto viene repetido
     cantidades_por_producto = {}
     for item in items:
         if not isinstance(item, dict):
-            return error("Formato inválido en los ítems del carrito.", 400)
+            return error("Formato inválido en los productos del carrito.", 400)
         try:
             prod_id = int(item.get("id"))
             cantidad = int(item.get("cantidad"))
@@ -45,7 +39,7 @@ def registrar_venta():
     usuario_id = g.usuario["id"]
 
     with db.conectar_db() as conn:
-        subtotal_acum = Decimal("0")
+        subtotal_acum = 0.0
         detalle = []
 
         for prod_id, cantidad in cantidades_por_producto.items():
@@ -62,31 +56,31 @@ def registrar_venta():
                     400,
                 )
 
-            precio = Decimal(str(producto["precio"]))
+            precio = dinero(producto["precio"])
             subtotal_linea = dinero(precio * cantidad)
-            subtotal_acum += Decimal(str(subtotal_linea))
+            subtotal_acum += subtotal_linea
 
             detalle.append({
                 "id": producto["id"],
                 "nombre": producto["nombre"],
                 "cantidad": cantidad,
-                "precio_unitario": dinero(precio),
+                "precio_unitario": precio,
                 "subtotal": subtotal_linea,
             })
 
         subtotal_valor = dinero(subtotal_acum)
-        impuesto_valor = dinero(Decimal(str(subtotal_valor)) * IVA)
-        total_valor = dinero(Decimal(str(subtotal_valor)) + Decimal(str(impuesto_valor)))
+        impuesto_valor = dinero(subtotal_valor * IVA)
+        total_valor = dinero(subtotal_valor + impuesto_valor)
 
         efectivo_recibido = None
         vuelto_valor = None
         if metodo_pago == "efectivo" and datos.get("efectivo_recibido") is not None:
             try:
-                recibido_num = dinero(float(datos.get("efectivo_recibido")))
+                recibido_num = dinero(datos.get("efectivo_recibido"))
                 if recibido_num < total_valor:
                     return error("El efectivo recibido no alcanza para cubrir el total.", 400)
                 efectivo_recibido = recibido_num
-                vuelto_valor = dinero(Decimal(str(recibido_num)) - Decimal(str(total_valor)))
+                vuelto_valor = dinero(recibido_num - total_valor)
             except (TypeError, ValueError):
                 pass
 
@@ -109,17 +103,10 @@ def registrar_venta():
         venta_id = cur.lastrowid
 
         for linea in detalle:
-            upd = conn.execute(
-                "UPDATE productos SET stock = stock - ? WHERE id = ? AND stock >= ?",
-                (linea["cantidad"], linea["id"], linea["cantidad"]),
+            conn.execute(
+                "UPDATE productos SET stock = stock - ? WHERE id = ?",
+                (linea["cantidad"], linea["id"]),
             )
-            if upd.rowcount == 0:
-                conn.rollback()
-                return error(
-                    f"El stock de '{linea['nombre']}' cambió durante el cobro. Intenta nuevamente.",
-                    409,
-                )
-
             conn.execute(
                 "INSERT INTO detalle_ventas "
                 "(venta_id, producto_id, nombre_producto, cantidad, precio_unitario) "
@@ -155,8 +142,7 @@ def obtener_venta(venta_id):
     with db.conectar_db() as conn:
         venta = conn.execute(
             "SELECT v.id, v.fecha, v.subtotal, v.impuesto, v.total, v.metodo_pago, "
-            "v.efectivo_recibido, v.vuelto, COALESCE(v.estado, 'COMPLETADA') AS estado, "
-            "u.nombre AS vendedor "
+            "v.efectivo_recibido, v.vuelto, v.estado, u.nombre AS vendedor "
             "FROM ventas v JOIN usuarios u ON u.id = v.usuario_id "
             "WHERE v.id = ?",
             (venta_id,),
@@ -171,47 +157,37 @@ def obtener_venta(venta_id):
             (venta_id,),
         ).fetchall()
 
-    detalle = [
-        {
+    detalle = []
+    for f in filas:
+        detalle.append({
             "id": f["producto_id"],
             "nombre": f["nombre_producto"],
             "cantidad": f["cantidad"],
             "precio_unitario": dinero(f["precio_unitario"]),
-            "subtotal": dinero(Decimal(str(f["precio_unitario"])) * f["cantidad"]),
-        }
-        for f in filas
-    ]
-
-    subtotal_guardado = dinero(venta["subtotal"] or 0)
-    impuesto_guardado = dinero(venta["impuesto"] or 0)
-    if subtotal_guardado == 0 and detalle:
-        subtotal_guardado = dinero(
-            sum((Decimal(str(f["precio_unitario"])) * f["cantidad"] for f in filas), Decimal("0"))
-        )
-        impuesto_guardado = dinero(Decimal(str(venta["total"])) - Decimal(str(subtotal_guardado)))
+            "subtotal": dinero(f["precio_unitario"] * f["cantidad"]),
+        })
 
     return jsonify({
         "id": venta["id"],
         "fecha": venta["fecha"],
         "metodo_pago": venta["metodo_pago"],
         "vendedor": venta["vendedor"],
-        "subtotal": subtotal_guardado,
-        "impuesto": impuesto_guardado,
+        "subtotal": dinero(venta["subtotal"]),
+        "impuesto": dinero(venta["impuesto"]),
         "total": dinero(venta["total"]),
         "efectivo_recibido": venta["efectivo_recibido"],
         "vuelto": venta["vuelto"],
-        "estado": venta["estado"],
+        "estado": venta["estado"] or "COMPLETADA",
         "items": detalle,
     })
 
 
 @api_bp.post("/ventas/<int:venta_id>/anular")
 @requiere_rol("ADMIN")
-def anular_venta(venta_id: int):
-    """Anula una venta registrada y restituye las unidades vendidas al inventario."""
+def anular_venta(venta_id):
     with db.conectar_db() as conn:
         venta = conn.execute(
-            "SELECT id, COALESCE(estado, 'COMPLETADA') AS estado FROM ventas WHERE id = ?",
+            "SELECT id, estado FROM ventas WHERE id = ?",
             (venta_id,),
         ).fetchone()
 

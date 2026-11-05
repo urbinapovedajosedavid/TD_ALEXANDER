@@ -1,12 +1,8 @@
-"""api.respaldos
-=============
-Generación, validación, descarga y restauración segura de respaldos de SQLite.
-"""
+# Rutas de respaldo y restauración de la base de datos SQLite.
 
 import io
 import sqlite3
 from datetime import datetime
-from typing import Optional
 
 from flask import jsonify, request, send_file, session
 
@@ -17,9 +13,9 @@ from backend.config import FORMATO_FECHA
 from seguridad import requiere_rol
 
 
-def _validar_archivo_respaldo(ruta) -> Optional[str]:
+def _validar_archivo_respaldo(ruta):
     try:
-        conexion = sqlite3.connect(f"file:{ruta}?mode=ro", uri=True)
+        conexion = sqlite3.connect(ruta)
     except sqlite3.Error:
         return "El archivo no es una base de datos válida."
 
@@ -36,7 +32,7 @@ def _validar_archivo_respaldo(ruta) -> Optional[str]:
             "SELECT COUNT(*) FROM usuarios WHERE rol = 'ADMIN'"
         ).fetchone()[0]
         if admins == 0:
-            return "El archivo no tiene ningún administrador: restaurarlo dejaría el sistema cerrado."
+            return "El archivo no tiene ningún administrador."
     except sqlite3.Error:
         return "No se pudo leer el archivo: puede estar dañado."
     finally:
@@ -87,10 +83,6 @@ def restaurar_respaldo():
         temporal.unlink(missing_ok=True)
         return error(problema, 400)
 
-    copia_seguridad = db.RUTA_DB.with_suffix(".antes-de-restaurar")
-    if db.RUTA_DB.exists():
-        copia_seguridad.write_bytes(db.RUTA_DB.read_bytes())
-
     try:
         origen = sqlite3.connect(temporal)
         destino = sqlite3.connect(db.RUTA_DB)
@@ -102,15 +94,13 @@ def restaurar_respaldo():
     finally:
         temporal.unlink(missing_ok=True)
 
-    # Ejecutar migraciones sobre la base restaurada (compatibilidad con respaldos antiguos)
     db.inicializar_db()
-    # Revocar todas las sesiones en la base restaurada y limpiar la cookie actual
     db.purgar_todas_las_sesiones()
     session.clear()
 
     return jsonify({
         "exito": True,
-        "mensaje": "Respaldo restaurado y migrado correctamente. Vuelve a iniciar sesión.",
+        "mensaje": "Respaldo restaurado correctamente. Vuelve a iniciar sesión.",
     })
 
 

@@ -1,7 +1,8 @@
-import secrets
-from typing import Any
+# Rutas de administración de usuarios para el rol ADMIN.
 
-from flask import Response, g, jsonify
+import secrets
+
+from flask import g, jsonify
 
 import backend.db as db
 from backend.api import api_bp
@@ -15,56 +16,56 @@ from seguridad import (
 )
 
 
+def _formatear_usuario(f, marca_actual):
+    nombre = (f["nombre"] or "").strip()
+    apellido = (f["apellido"] or "").strip()
+    nombre_completo = f"{nombre} {apellido}".strip() if apellido else nombre
+
+    bloqueo_vigente = bool(
+        f["bloqueado"]
+        and f["tiempo_bloqueo"]
+        and str(f["tiempo_bloqueo"]) > marca_actual
+    )
+
+    return {
+        "id": f["id"],
+        "nombre": nombre_completo or f["nombre"],
+        "nombre_pila": nombre,
+        "apellido": apellido,
+        "telefono": (f["telefono"] or "").strip(),
+        "usuario": f["usuario"],
+        "rol": f["rol"],
+        "activo": bool(f["activo"]),
+        "bloqueado": bloqueo_vigente,
+        "nivel_bloqueo": f["nivel_bloqueo"],
+        "creado_en": f["creado_en"],
+        "debe_cambiar_clave": bool(f["debe_cambiar_clave"]),
+    }
+
+
 @api_bp.get("/usuarios")
 @requiere_rol("ADMIN")
-def listar_usuarios() -> Response:
+def listar_usuarios():
     marca_actual = ahora()
     with db.conectar_db() as conn:
         filas = conn.execute(
             "SELECT id, nombre, apellido, telefono, usuario, rol, "
-            "COALESCE(activo, 1) AS activo, bloqueado, tiempo_bloqueo, "
-            "nivel_bloqueo, creado_en, debe_cambiar_clave "
+            "activo, bloqueado, tiempo_bloqueo, nivel_bloqueo, "
+            "creado_en, debe_cambiar_clave "
             "FROM usuarios ORDER BY id"
         ).fetchall()
 
-    resultado: list[dict[str, Any]] = []
-    for f in filas:
-        apellido = (f["apellido"] or "").strip()
-        telefono = (f["telefono"] or "").strip()
-        nombre_base = (f["nombre"] or "").strip()
-        nombre_completo = f"{nombre_base} {apellido}".strip() if apellido else nombre_base
-
-        bloqueo_vigente = bool(
-            f["bloqueado"]
-            and f["tiempo_bloqueo"]
-            and str(f["tiempo_bloqueo"]) > marca_actual
-        )
-
-        resultado.append({
-            "id": f["id"],
-            "nombre": nombre_completo or f["nombre"],
-            "nombre_pila": nombre_base,
-            "apellido": apellido,
-            "telefono": telefono,
-            "usuario": f["usuario"],
-            "rol": f["rol"],
-            "activo": bool(f["activo"]),
-            "bloqueado": bloqueo_vigente,
-            "nivel_bloqueo": f["nivel_bloqueo"],
-            "creado_en": f["creado_en"],
-            "debe_cambiar_clave": bool(f["debe_cambiar_clave"]),
-        })
-    return jsonify(resultado)
+    return jsonify([_formatear_usuario(f, marca_actual) for f in filas])
 
 
 @api_bp.get("/usuarios/<int:id_usuario>")
 @requiere_rol("ADMIN")
-def obtener_usuario(id_usuario: int) -> Response | tuple[Response, int]:
+def obtener_usuario(id_usuario):
     with db.conectar_db() as conn:
         fila = conn.execute(
             "SELECT id, nombre, apellido, telefono, usuario, rol, "
-            "COALESCE(activo, 1) AS activo, bloqueado, tiempo_bloqueo, "
-            "nivel_bloqueo, creado_en, debe_cambiar_clave "
+            "activo, bloqueado, tiempo_bloqueo, nivel_bloqueo, "
+            "creado_en, debe_cambiar_clave "
             "FROM usuarios WHERE id = ?",
             (id_usuario,),
         ).fetchone()
@@ -72,34 +73,12 @@ def obtener_usuario(id_usuario: int) -> Response | tuple[Response, int]:
     if not fila:
         return error("Usuario no encontrado.", 404)
 
-    nombre = (fila["nombre"] or "").strip()
-    apellido = (fila["apellido"] or "").strip()
-    marca_actual = ahora()
-    bloqueo_vigente = bool(
-        fila["bloqueado"]
-        and fila["tiempo_bloqueo"]
-        and str(fila["tiempo_bloqueo"]) > marca_actual
-    )
-    return jsonify({
-        "id": fila["id"],
-        "nombre": f"{nombre} {apellido}".strip(),
-        "nombre_pila": nombre,
-        "apellido": apellido,
-        "telefono": (fila["telefono"] or "").strip(),
-        "usuario": fila["usuario"],
-        "rol": fila["rol"],
-        "activo": bool(fila["activo"]),
-        "bloqueado": bloqueo_vigente,
-        "nivel_bloqueo": fila["nivel_bloqueo"],
-        "creado_en": fila["creado_en"],
-        "debe_cambiar_clave": bool(fila["debe_cambiar_clave"]),
-    })
+    return jsonify(_formatear_usuario(fila, ahora()))
 
 
 @api_bp.post("/usuarios/<int:id_usuario>/desbloquear")
 @requiere_rol("ADMIN")
-def desbloquear_usuario(id_usuario: int) -> Response | tuple[Response, int]:
-    """Limpia el bloqueo por fuerza bruta y reactiva la cuenta del usuario."""
+def desbloquear_usuario(id_usuario):
     with db.conectar_db() as conn:
         existe = conn.execute(
             "SELECT id, usuario FROM usuarios WHERE id = ?", (id_usuario,)
@@ -122,8 +101,7 @@ def desbloquear_usuario(id_usuario: int) -> Response | tuple[Response, int]:
 @api_bp.put("/usuarios/<int:id_usuario>/estado")
 @api_bp.post("/usuarios/<int:id_usuario>/estado")
 @requiere_rol("ADMIN")
-def cambiar_estado_usuario(id_usuario: int) -> Response | tuple[Response, int]:
-    """Activa o desactiva una cuenta de usuario (revocando sus sesiones si se desactiva)."""
+def cambiar_estado_usuario(id_usuario):
     if id_usuario == g.usuario["id"]:
         return error("No puedes desactivar tu propia cuenta en sesión.", 400)
 
@@ -142,7 +120,7 @@ def cambiar_estado_usuario(id_usuario: int) -> Response | tuple[Response, int]:
 
         if nuevo_activo == 0 and fila["rol"] == "ADMIN":
             otro_admin = conn.execute(
-                "SELECT 1 FROM usuarios WHERE rol = 'ADMIN' AND COALESCE(activo, 1) = 1 AND id <> ? LIMIT 1",
+                "SELECT 1 FROM usuarios WHERE rol = 'ADMIN' AND activo = 1 AND id <> ? LIMIT 1",
                 (id_usuario,),
             ).fetchone()
             if not otro_admin:
@@ -165,7 +143,7 @@ def cambiar_estado_usuario(id_usuario: int) -> Response | tuple[Response, int]:
 
 @api_bp.delete("/usuarios/<int:id_usuario>")
 @requiere_rol("ADMIN")
-def eliminar_usuario(id_usuario: int) -> Response | tuple[Response, int]:
+def eliminar_usuario(id_usuario):
     if id_usuario == g.usuario["id"]:
         return error("No puedes eliminar tu propia cuenta desde Gestión de usuarios.", 409)
 
@@ -178,8 +156,7 @@ def eliminar_usuario(id_usuario: int) -> Response | tuple[Response, int]:
 
         if fila["rol"] == "ADMIN":
             otro_admin = conn.execute(
-                "SELECT 1 FROM usuarios WHERE rol = 'ADMIN' "
-                "AND COALESCE(activo, 1) = 1 AND id <> ? LIMIT 1",
+                "SELECT 1 FROM usuarios WHERE rol = 'ADMIN' AND activo = 1 AND id <> ? LIMIT 1",
                 (id_usuario,),
             ).fetchone()
             if not otro_admin:
@@ -205,14 +182,14 @@ def eliminar_usuario(id_usuario: int) -> Response | tuple[Response, int]:
 
 @api_bp.post("/usuarios/<int:id_usuario>/restablecer-clave")
 @requiere_rol("ADMIN")
-def restablecer_clave_usuario(id_usuario: int) -> Response | tuple[Response, int]:
+def restablecer_clave_usuario(id_usuario):
     if id_usuario == g.usuario["id"]:
         return error(
             "No puedes restablecer tu propia clave desde Gestión de usuarios.",
             409,
         )
 
-    datos: dict[str, Any] = cuerpo_json()
+    datos = cuerpo_json()
     clave_admin = datos.get("clave_admin")
     if not isinstance(clave_admin, str) or not clave_admin:
         return error("Debes confirmar la acción con tu contraseña actual.", 400)
@@ -230,7 +207,7 @@ def restablecer_clave_usuario(id_usuario: int) -> Response | tuple[Response, int
         if not usuario:
             return error("Usuario no encontrado.", 404)
 
-        clave_temporal = secrets.token_urlsafe(12)
+        clave_temporal = secrets.token_urlsafe(8)
         conn.execute(
             "UPDATE usuarios SET password_hash = ?, debe_cambiar_clave = 1, "
             "intentos_fallidos = 0, bloqueado = 0, tiempo_bloqueo = NULL, "

@@ -1,6 +1,6 @@
-from collections import defaultdict
+# Rutas de reportes de ventas por período, rango de fechas y vendedor.
+
 from datetime import datetime, timedelta
-from decimal import Decimal
 
 from flask import g, jsonify, request
 
@@ -11,8 +11,7 @@ from backend.config import FORMATO_FECHA
 from seguridad import requiere_login, requiere_rol
 
 
-def _rango_periodo(periodo: str) -> datetime:
-    """Calcula el inicio del período alineado a las 00:00:00 del día calendario."""
+def _rango_periodo(periodo):
     hoy_inicio = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     if periodo == "semana":
         return hoy_inicio - timedelta(days=6)
@@ -57,7 +56,7 @@ def obtener_reportes():
     else:
         periodo = "rango"
 
-    condiciones = ["COALESCE(v.estado, 'COMPLETADA') = 'COMPLETADA'"]
+    condiciones = ["v.estado = 'COMPLETADA'"]
     parametros = []
 
     if g.usuario.get("rol") != "ADMIN":
@@ -74,9 +73,8 @@ def obtener_reportes():
 
     with db.conectar_db() as conn:
         ventas = conn.execute(
-            "SELECT v.id, v.fecha, COALESCE(v.subtotal, 0) AS subtotal, "
-            "COALESCE(v.impuesto, 0) AS impuesto, v.total, v.metodo_pago, "
-            "COALESCE(v.estado, 'COMPLETADA') AS estado, u.nombre AS vendedor "
+            "SELECT v.id, v.fecha, v.subtotal, v.impuesto, v.total, "
+            "v.metodo_pago, v.estado, u.nombre AS vendedor "
             "FROM ventas v JOIN usuarios u ON u.id = v.usuario_id "
             f"WHERE {filtro} ORDER BY v.fecha DESC",
             tuple(parametros),
@@ -89,13 +87,9 @@ def obtener_reportes():
             tuple(parametros),
         ).fetchone()[0]
 
-    totales = [Decimal(str(f["total"] or 0)) for f in ventas]
-    subtotales = [Decimal(str(f["subtotal"] or 0)) for f in ventas]
-    impuestos = [Decimal(str(f["impuesto"] or 0)) for f in ventas]
-
-    suma_total = dinero(sum(totales, Decimal("0")))
-    suma_subtotal = dinero(sum(subtotales, Decimal("0")))
-    suma_impuesto = dinero(sum(impuestos, Decimal("0")))
+    suma_total = dinero(sum((f["total"] or 0) for f in ventas))
+    suma_subtotal = dinero(sum((f["subtotal"] or 0) for f in ventas))
+    suma_impuesto = dinero(sum((f["impuesto"] or 0) for f in ventas))
     cantidad_ventas = len(ventas)
 
     return jsonify({
@@ -128,7 +122,7 @@ def obtener_reportes():
 
 @api_bp.get("/reportes/usuario/<int:usuario_id>")
 @requiere_rol("ADMIN")
-def reporte_ventas_de_usuario(usuario_id: int):
+def reporte_ventas_de_usuario(usuario_id):
     try:
         desde_txt, hasta_txt = _rango_fechas()
     except ValueError:
@@ -151,10 +145,7 @@ def reporte_ventas_de_usuario(usuario_id: int):
         if usuario is None:
             return error("El usuario no existe.", 404)
 
-        condiciones = [
-            "v.usuario_id = ?",
-            "COALESCE(v.estado, 'COMPLETADA') = 'COMPLETADA'",
-        ]
+        condiciones = ["v.usuario_id = ?", "v.estado = 'COMPLETADA'"]
         parametros = [usuario_id]
         if desde_txt:
             condiciones.append("v.fecha >= ?")
@@ -162,24 +153,17 @@ def reporte_ventas_de_usuario(usuario_id: int):
         if hasta_txt:
             condiciones.append("v.fecha <= ?")
             parametros.append(hasta_txt)
-        if categoria_id is not None:
-            condiciones.append(
-                "EXISTS (SELECT 1 FROM detalle_ventas dx "
-                "JOIN productos px ON px.id = dx.producto_id "
-                "WHERE dx.venta_id = v.id AND px.categoria_id = ?)"
-            )
-            parametros.append(categoria_id)
         where = " AND ".join(condiciones)
 
         filas_ventas = conn.execute(
-            "SELECT v.id, v.fecha, COALESCE(v.subtotal, 0) AS subtotal, "
-            "COALESCE(v.impuesto, 0) AS impuesto, v.total, v.metodo_pago, u.nombre AS vendedor "
+            "SELECT v.id, v.fecha, v.subtotal, v.impuesto, v.total, "
+            "v.metodo_pago, u.nombre AS vendedor "
             "FROM ventas v JOIN usuarios u ON u.id = v.usuario_id "
             f"WHERE {where} ORDER BY v.fecha DESC",
             tuple(parametros),
         ).fetchall()
 
-        items_por_venta = defaultdict(list)
+        items_por_venta = {}
         if filas_ventas:
             filas_items = conn.execute(
                 "SELECT d.venta_id, d.producto_id, d.cantidad, d.precio_unitario, "
@@ -192,29 +176,38 @@ def reporte_ventas_de_usuario(usuario_id: int):
             ).fetchall()
 
             for item in filas_items:
-                items_por_venta[item["venta_id"]].append({
+                vid = item["venta_id"]
+                if vid not in items_por_venta:
+                    items_por_venta[vid] = []
+                items_por_venta[vid].append({
                     "id": item["producto_id"],
                     "nombre": item["nombre_producto"],
                     "categoria_id": item["categoria_id"],
                     "cantidad": item["cantidad"],
                     "precio_unitario": dinero(item["precio_unitario"]),
-                    "subtotal": dinero(Decimal(str(item["precio_unitario"])) * item["cantidad"]),
+                    "subtotal": dinero(item["precio_unitario"] * item["cantidad"]),
                 })
 
     ventas = []
-    dias_set = set()
+    dias = []
     unidades_vendidas = 0
-    totales = []
-    subtotales = []
+    suma_total = 0.0
+    suma_subtotal = 0.0
 
     for fila in filas_ventas:
         lineas = items_por_venta.get(fila["id"], [])
-        unidades_vendidas += sum(linea["cantidad"] for linea in lineas)
-        totales.append(Decimal(str(fila["total"] or 0)))
-        subtotales.append(Decimal(str(fila["subtotal"] or 0)))
+        if categoria_id is not None:
+            tiene_categoria = any(l["categoria_id"] == categoria_id for l in lineas)
+            if not tiene_categoria:
+                continue
+
+        unidades_vendidas += sum(l["cantidad"] for l in lineas)
+        suma_total += fila["total"] or 0.0
+        suma_subtotal += fila["subtotal"] or 0.0
+
         dia = str(fila["fecha"] or "")[:10]
-        if dia:
-            dias_set.add(dia)
+        if dia and dia not in dias:
+            dias.append(dia)
 
         ventas.append({
             "id": fila["id"],
@@ -228,8 +221,8 @@ def reporte_ventas_de_usuario(usuario_id: int):
             "items": lineas,
         })
 
-    total_vendido = dinero(sum(totales, Decimal("0"))) if totales else 0.0
-    subtotal_vendido = dinero(sum(subtotales, Decimal("0"))) if subtotales else 0.0
+    total_vendido = dinero(suma_total)
+    subtotal_vendido = dinero(suma_subtotal)
 
     return jsonify({
         "exito": True,
@@ -239,7 +232,7 @@ def reporte_ventas_de_usuario(usuario_id: int):
             "usuario": usuario["usuario"],
             "rol": usuario["rol"],
         },
-        "dias": sorted(dias_set, reverse=True),
+        "dias": dias,
         "ventas": ventas,
         "kpis": {
             "subtotal_vendido": subtotal_vendido,

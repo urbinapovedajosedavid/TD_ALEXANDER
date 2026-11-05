@@ -1,10 +1,6 @@
-"""api.productos
-=============
-Gestión de inventario, productos, categorías y recarga atómica de stock con control de costos.
-"""
+# Rutas de productos, categorías y control de stock.
 
 import sqlite3
-from decimal import Decimal
 
 from flask import jsonify
 
@@ -21,12 +17,12 @@ def _fila_producto(f):
         "codigo": f["codigo_barra"],
         "nombre": f["nombre"],
         "precio": f["precio"],
-        "costo_entrada": f["costo_entrada"] if "costo_entrada" in f.keys() else 0.0,
+        "costo_entrada": f["costo_entrada"] or 0.0,
         "stock": f["stock"],
         "categoria_id": f["categoria_id"],
         "categoria_nombre": f["categoria_nombre"] or "Sin Categoría",
-        "proveedor_id": f["proveedor_id"] if "proveedor_id" in f.keys() else None,
-        "proveedor_nombre": (f["proveedor_nombre"] if "proveedor_nombre" in f.keys() else None) or "",
+        "proveedor_id": f["proveedor_id"],
+        "proveedor_nombre": f["proveedor_nombre"] or "",
     }
 
 
@@ -51,7 +47,7 @@ def _validar_producto_negocio(datos):
 
     costo_entrada = datos.get("costo_entrada", 0.0)
     try:
-        costo_entrada = dinero(float(costo_entrada)) if costo_entrada not in (None, "") else 0.0
+        costo_entrada = dinero(costo_entrada) if costo_entrada not in (None, "") else 0.0
         if costo_entrada < 0:
             return None, "El costo de entrada no puede ser negativo."
     except (TypeError, ValueError):
@@ -61,15 +57,13 @@ def _validar_producto_negocio(datos):
     return {
         "nombre": str(datos.get("nombre")).strip(),
         "codigo": codigo,
-        "precio": dinero(float(datos.get("precio"))),
+        "precio": dinero(datos.get("precio")),
         "costo_entrada": costo_entrada,
         "stock": stock,
         "categoria_id": categoria_id,
         "proveedor_id": proveedor_id,
     }, None
 
-
-# ---------- Categorías ----------
 
 @api_bp.get("/categorias")
 @requiere_login
@@ -98,16 +92,14 @@ def crear_categoria():
     return jsonify({"exito": True, "id": nuevo_id, "nombre": nombre}), 201
 
 
-# ---------- Productos ----------
-
 @api_bp.get("/productos")
 @requiere_login
 def obtener_productos():
     with db.conectar_db() as conn:
         filas = conn.execute("""
             SELECT p.id, p.codigo_barra, p.nombre, p.precio,
-                   COALESCE(p.costo_entrada, 0.0) AS costo_entrada,
-                   p.stock, p.categoria_id, c.nombre AS categoria_nombre,
+                   p.costo_entrada, p.stock, p.categoria_id,
+                   c.nombre AS categoria_nombre,
                    p.proveedor_id, pr.nombre AS proveedor_nombre
             FROM productos p
             LEFT JOIN categorias c ON p.categoria_id = c.id
@@ -142,7 +134,8 @@ def crear_producto():
 @api_bp.put("/productos/<int:id_producto>")
 @requiere_login
 def actualizar_producto(id_producto):
-    datos, problema = _validar_producto_negocio(cuerpo_json())
+    cuerpo = cuerpo_json()
+    datos, problema = _validar_producto_negocio(cuerpo)
     if problema:
         return error(problema, 400)
 
@@ -155,9 +148,9 @@ def actualizar_producto(id_producto):
             if not existe:
                 return error("Producto no encontrado.", 404)
 
-            if "costo_entrada" not in cuerpo_json():
+            if "costo_entrada" not in cuerpo:
                 datos["costo_entrada"] = existe["costo_entrada"] or 0.0
-            if "proveedor_id" not in cuerpo_json():
+            if "proveedor_id" not in cuerpo:
                 datos["proveedor_id"] = existe["proveedor_id"]
 
             conn.execute(
@@ -191,7 +184,6 @@ def eliminar_producto(id_producto):
 @api_bp.post("/productos/<int:id_producto>/recargar")
 @requiere_login
 def recargar_stock_producto(id_producto):
-    """Suma stock de forma atómica en el servidor y ajusta precio si el costo supera el margen."""
     datos = cuerpo_json()
     try:
         cantidad = int(datos.get("cantidad", 0))
@@ -213,8 +205,7 @@ def recargar_stock_producto(id_producto):
 
     with db.conectar_db() as conn:
         producto = conn.execute(
-            "SELECT id, nombre, stock, precio, COALESCE(costo_entrada, 0.0) AS costo_entrada "
-            "FROM productos WHERE id = ?",
+            "SELECT id, nombre, stock, precio, costo_entrada FROM productos WHERE id = ?",
             (id_producto,),
         ).fetchone()
 
@@ -230,11 +221,8 @@ def recargar_stock_producto(id_producto):
 
         if precio_entrada is not None:
             nuevo_costo = dinero(precio_entrada)
-            # Regla de negocio en servidor: garantizar al menos 5% sobre el costo de entrada
-            precio_minimo = dinero(
-                Decimal(str(precio_entrada)) * (Decimal("1") + MARGEN_RECARGA)
-            )
-            if precio_entrada > precio_anterior or precio_minimo > precio_anterior:
+            precio_minimo = dinero(precio_entrada * (1 + MARGEN_RECARGA))
+            if precio_minimo > precio_anterior:
                 nuevo_precio = precio_minimo
                 precio_actualizado = True
 
@@ -259,8 +247,6 @@ def recargar_stock_producto(id_producto):
     })
 
 
-# ---------- Resumen de Inventario ----------
-
 @api_bp.get("/inventario/resumen")
 @requiere_login
 def resumen_inventario():
@@ -268,7 +254,7 @@ def resumen_inventario():
         fila = conn.execute("""
             SELECT COUNT(*) AS total_productos,
                    COALESCE(SUM(precio * stock), 0) AS valor_inventario,
-                   COALESCE(SUM(COALESCE(costo_entrada, 0) * stock), 0) AS costo_inventario,
+                   COALESCE(SUM(costo_entrada * stock), 0) AS costo_inventario,
                    COALESCE(SUM(CASE WHEN stock = 0 THEN 1 ELSE 0 END), 0) AS agotados,
                    COALESCE(SUM(CASE WHEN stock > 0 AND stock <= 5 THEN 1 ELSE 0 END), 0) AS stock_bajo
             FROM productos
