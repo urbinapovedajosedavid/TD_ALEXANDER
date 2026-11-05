@@ -40,6 +40,6 @@ echo Para cerrar el sistema, simplemente cierra esta ventana.
 echo ==========================================================
 echo.
 
-python app.py
+python -B app.py
 
 pause

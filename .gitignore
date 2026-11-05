@@ -1,14 +1,18 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
+.pytest_cache/
 .venv/
 venv/
 build/
 dist/
 
-# Base de datos y archivos temporales de respaldo:
+# Base de datos, archivos WAL y respaldos temporales:
 # se generan automáticamente al arrancar app.py a partir de database/esquema.sql
 *.db
+*.db-wal
+*.db-shm
+*.bak
 *.descargando
 *.restaurando
 *.antes-de-restaurar
@@ -19,8 +23,5 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Variables de entorno y claves secretas autogeneradas (nunca subir al repositorio)
+# Variables de entorno y claves secretas autogeneradas
 .env
-
-database/*.db
-database/*.bak
