@@ -152,8 +152,9 @@ App.api = (function () {
                 `/reportes?fecha_inicio=${encodeURIComponent(inicio)}` +
                     `&fecha_fin=${encodeURIComponent(fin)}`
             ),
-        reportesPorUsuario: (usuarioId, inicio = "", fin = "") => {
+        reportesPorUsuario: (usuarioId, categoriaId = "", inicio = "", fin = "") => {
             const params = new URLSearchParams();
+            if (categoriaId) params.set("categoria_id", categoriaId);
             if (inicio) params.set("fecha_inicio", inicio);
             if (fin) params.set("fecha_fin", fin);
             const qs = params.toString();
@@ -478,301 +479,23 @@ document.addEventListener("click", (evento) => {
 });
 
 /* ==========================================
-   FACTURA — hoja imprimible de una venta
+   FACTURA — apertura de factura.html
    ========================================== */
 
 App.factura = (function () {
-    const IVA_PORCENTAJE = 15;
-
-    const METODOS = {
-        efectivo: "Efectivo",
-        tarjeta: "Tarjeta",
-        transferencia: "Transferencia",
-    };
-
-    function numero(venta) {
-        return venta.venta_id !== undefined ? venta.venta_id : venta.id;
-    }
-
-    function metodo(valor) {
-        return METODOS[valor] || App.fmt.texto(valor) || "—";
-    }
-
-    function detalle(venta) {
-        const items = venta.items || [];
-
-        if (items.length) {
-            return items
-                .map(
-                    (i, n) => `
-                    <tr>
-                        <td class="num">${n + 1}</td>
-                        <td>${App.fmt.texto(i.nombre)}</td>
-                        <td class="num">${App.fmt.entero(i.cantidad)}</td>
-                        <td class="num">${App.fmt.dinero(i.precio_unitario)}</td>
-                        <td class="num">${App.fmt.dinero(i.subtotal)}</td>
-                    </tr>`
-                )
-                .join("");
-        }
-
-        return `
-            <tr>
-                <td class="num">1</td>
-                <td>Sin detalle de productos</td>
-                <td class="num">—</td>
-                <td class="num">—</td>
-                <td class="num">${App.fmt.dinero(venta.total)}</td>
-            </tr>`;
-    }
-
-    function unidades(venta) {
-        return (venta.items || []).reduce((s, i) => s + Number(i.cantidad || 0), 0);
-    }
-
-    function bloqueEfectivo(venta) {
-        if (venta.efectivo_recibido === null || venta.efectivo_recibido === undefined) {
-            return "";
-        }
-        return `
-            <div class="sub">
-                <span>Efectivo recibido</span>
-                <span>${App.fmt.dinero(venta.efectivo_recibido)}</span>
-            </div>
-            <div class="sub">
-                <span>Vuelto entregado</span>
-                <span>${App.fmt.dinero(venta.vuelto || 0)}</span>
-            </div>`;
-    }
-
-    function plantilla(venta) {
-        const total = venta.total !== undefined ? venta.total : venta.subtotal;
-        const id = numero(venta);
-        const esAnulada = venta.estado === "ANULADA";
-
-        return `<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<title>Factura #${App.fmt.entero(id)}</title>
-<style>
-    * { box-sizing: border-box; }
-    body {
-        margin: 0;
-        padding: 24px;
-        background: #eceff3;
-        color: #1a1a1a;
-        font: 13px/1.5 "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-    .hoja {
-        max-width: 760px;
-        margin: 0 auto;
-        padding: 40px 44px;
-        background: #fff;
-        border: 1px solid #d9dee5;
-    }
-    .encabezado {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 24px;
-        padding-bottom: 18px;
-        border-bottom: 2px solid #1a1a1a;
-    }
-    .negocio { font-size: 19px; font-weight: 700; letter-spacing: .2px; }
-    .negocio small {
-        display: block;
-        margin-top: 3px;
-        font-size: 11px;
-        font-weight: 400;
-        color: #6b7280;
-    }
-    .doc { text-align: right; white-space: nowrap; }
-    .doc .tipo {
-        font-size: 11px;
-        letter-spacing: 1.6px;
-        text-transform: uppercase;
-        color: #6b7280;
-    }
-    .doc .folio { font-size: 23px; font-weight: 700; }
-    .sello-anulada {
-        display: inline-block;
-        margin-top: 4px;
-        padding: 2px 8px;
-        background: #fee2e2;
-        color: #b91c1c;
-        border: 1px solid #ef4444;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 700;
-    }
-    .datos {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px 40px;
-        padding: 16px 0 22px;
-        font-size: 12px;
-    }
-    .datos p { margin: 0; }
-    .datos b { margin-left: 6px; font-weight: 600; }
-    table { width: 100%; border-collapse: collapse; }
-    thead th {
-        padding: 9px 10px;
-        background: #f4f6f8;
-        border-bottom: 1px solid #1a1a1a;
-        border-top: 1px solid #1a1a1a;
-        font-size: 10.5px;
-        font-weight: 700;
-        letter-spacing: .7px;
-        text-transform: uppercase;
-        text-align: left;
-    }
-    tbody td {
-        padding: 9px 10px;
-        border-bottom: 1px solid #e3e7ec;
-        vertical-align: top;
-    }
-    .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
-    thead .num { text-align: right; }
-    tbody td:nth-child(1),
-    tbody td:nth-child(3),
-    tbody td:nth-child(4),
-    tbody td:nth-child(5) { width: 1%; }
-    .cierre {
-        display: flex;
-        justify-content: flex-end;
-        margin-top: 22px;
-    }
-    .totales { width: 290px; }
-    .totales div {
-        display: flex;
-        justify-content: space-between;
-        gap: 20px;
-        padding: 6px 10px;
-    }
-    .totales .sub { color: #4b5563; }
-    .totales .iva { border-bottom: 1px solid #cbd2da; }
-    .totales .gran {
-        margin-top: 4px;
-        padding: 11px 10px;
-        background: #f4f6f8;
-        border-top: 2px solid #1a1a1a;
-        border-bottom: 2px solid #1a1a1a;
-        font-size: 16px;
-        font-weight: 700;
-    }
-    .acciones {
-        max-width: 760px;
-        margin: 0 auto 14px;
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-    }
-    .acciones button {
-        padding: 8px 16px;
-        font: inherit;
-        font-size: 12px;
-        border: 1px solid #b9c1cb;
-        border-radius: 6px;
-        background: #fff;
-        color: #1a1a1a;
-        cursor: pointer;
-    }
-    .acciones .primario {
-        background: #1a1a1a;
-        border-color: #1a1a1a;
-        color: #fff;
-    }
-    @page { margin: 14mm; }
-    @media print {
-        body { padding: 0; background: #fff; }
-        .acciones { display: none; }
-        .hoja { max-width: none; padding: 0; border: 0; }
-        tr { page-break-inside: avoid; }
-        thead { display: table-header-group; }
-    }
-</style>
-</head>
-<body>
-<div class="acciones">
-    <button type="button" onclick="window.close()">Cerrar</button>
-    <button type="button" class="primario" onclick="window.print()">Imprimir</button>
-</div>
-
-<main class="hoja">
-    <header class="encabezado">
-        <div class="negocio">
-            Tienda Alexander
-            <small>Ventas e inventario</small>
-        </div>
-        <div class="doc">
-            <div class="tipo">Factura</div>
-            <div class="folio">#${App.fmt.entero(id)}</div>
-            ${esAnulada ? '<div class="sello-anulada">ANULADA</div>' : ""}
-        </div>
-    </header>
-
-    <section class="datos">
-        <p>Fecha<b>${App.fmt.fechaHora(venta.fecha) || "—"}</b></p>
-        <p>Método de pago<b>${metodo(venta.metodo_pago)}</b></p>
-        <p>Atendió<b>${App.fmt.texto(venta.vendedor) || "—"}</b></p>
-        <p>Artículos<b>${App.fmt.entero(unidades(venta))}</b></p>
-    </section>
-
-    <table>
-        <thead>
-            <tr>
-                <th class="num">#</th>
-                <th>Producto</th>
-                <th class="num">Cant.</th>
-                <th class="num">Precio</th>
-                <th class="num">Importe</th>
-            </tr>
-        </thead>
-        <tbody>${detalle(venta)}</tbody>
-    </table>
-
-    <section class="cierre">
-        <div class="totales">
-            <div class="sub">
-                <span>Subtotal</span>
-                <span>${App.fmt.dinero(venta.subtotal)}</span>
-            </div>
-            <div class="sub iva">
-                <span>IVA (${IVA_PORCENTAJE}%)</span>
-                <span>${App.fmt.dinero(venta.impuesto)}</span>
-            </div>
-            <div class="gran">
-                <span>Total</span>
-                <span>${App.fmt.dinero(total)}</span>
-            </div>
-            ${bloqueEfectivo(venta)}
-        </div>
-    </section>
-</main>
-</body>
-</html>`;
-    }
-
     function imprimir(venta) {
-        const ventana = window.open("", "_blank");
+        const id = venta.venta_id !== undefined ? venta.venta_id : venta.id;
+        try {
+            sessionStorage.setItem("factura_actual", JSON.stringify(venta));
+        } catch (e) {}
+
+        const ventana = window.open(`factura.html?id=${encodeURIComponent(id)}`, "_blank");
         if (!ventana) {
-            App.ui.aviso(
-                "Permite las ventanas emergentes del navegador para ver la factura."
-            );
+            App.ui.aviso("Permite las ventanas emergentes del navegador para ver la factura.");
             return false;
         }
-
-        ventana.document.write(plantilla(venta));
-        ventana.document.close();
-
-        ventana.addEventListener("load", () => {
-            ventana.focus();
-            ventana.print();
-        });
-
         return true;
     }
 
-    return { imprimir, plantilla };
+    return { imprimir };
 })();

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factura — Tienda Alexander</title>
+    <link rel="stylesheet" href="css/factura.css">
+</head>
+<body>
+    <div class="acciones">
+        <button type="button" onclick="window.close()">Cerrar</button>
+        <button type="button" class="primario" onclick="window.print()">Imprimir</button>
+    </div>
+
+    <main class="hoja">
+        <header class="encabezado">
+            <div class="marca-factura">
+                <img class="logo-factura" src="https://i.postimg.cc/XqZdZjvF/logo-TD.jpg" alt="Logo Tienda Alexander">
+                <div class="negocio">
+                    Tienda Alexander
+                    <small>Ventas e inventario</small>
+                </div>
+            </div>
+            <div class="doc">
+                <div class="tipo">Factura</div>
+                <div class="folio" id="facturaFolio">#0</div>
+                <div class="sello-anulada oculto" id="facturaSelloAnulada">ANULADA</div>
+            </div>
+        </header>
+
+        <section class="datos">
+            <p>Fecha<b id="facturaFecha">—</b></p>
+            <p>Método de pago<b id="facturaMetodo">—</b></p>
+            <p>Atendió<b id="facturaVendedor">—</b></p>
+            <p>Artículos<b id="facturaArticulos">0</b></p>
+        </section>
+
+        <table>
+            <thead>
+                <tr>
+                    <th class="num">#</th>
+                    <th>Producto</th>
+                    <th class="num">Cant.</th>
+                    <th class="num">Precio</th>
+                    <th class="num">Importe</th>
+                </tr>
+            </thead>
+            <tbody id="facturaDetalle"></tbody>
+        </table>
+
+        <section class="cierre">
+            <div class="totales">
+                <div class="sub">
+                    <span>Subtotal</span>
+                    <span id="facturaSubtotal">C$0.00</span>
+                </div>
+                <div class="sub iva">
+                    <span>IVA (15%)</span>
+                    <span id="facturaImpuesto">C$0.00</span>
+                </div>
+                <div class="gran">
+                    <span>Total</span>
+                    <span id="facturaTotal">C$0.00</span>
+                </div>
+                <div class="sub oculto" id="filaEfectivoRecibido">
+                    <span>Efectivo recibido</span>
+                    <span id="facturaEfectivo">C$0.00</span>
+                </div>
+                <div class="sub oculto" id="filaVueltoEntregado">
+                    <span>Vuelto entregado</span>
+                    <span id="facturaVuelto">C$0.00</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/core.js"></script>
+    <script>
+        (async function () {
+            const METODOS = {
+                efectivo: "Efectivo",
+                tarjeta: "Tarjeta",
+                transferencia: "Transferencia",
+            };
+
+            function renderizarFactura(venta) {
+                const id = venta.venta_id !== undefined ? venta.venta_id : venta.id;
+                const total = venta.total !== undefined ? venta.total : venta.subtotal;
+                const items = venta.items || [];
+                const unidades = items.reduce((s, i) => s + Number(i.cantidad || 0), 0);
+
+                document.title = `Factura #${App.fmt.entero(id)}`;
+                document.getElementById("facturaFolio").textContent = `#${App.fmt.entero(id)}`;
+                document.getElementById("facturaFecha").textContent = App.fmt.fechaHora(venta.fecha) || "—";
+                document.getElementById("facturaMetodo").textContent = METODOS[venta.metodo_pago] || venta.metodo_pago || "—";
+                document.getElementById("facturaVendedor").textContent = venta.vendedor || "—";
+                document.getElementById("facturaArticulos").textContent = App.fmt.entero(unidades);
+
+                if (venta.estado === "ANULADA") {
+                    document.getElementById("facturaSelloAnulada").classList.remove("oculto");
+                }
+
+                const tbody = document.getElementById("facturaDetalle");
+                if (items.length) {
+                    tbody.innerHTML = items.map((i, n) => `
+                        <tr>
+                            <td class="num">${n + 1}</td>
+                            <td>${App.fmt.texto(i.nombre)}</td>
+                            <td class="num">${App.fmt.entero(i.cantidad)}</td>
+                            <td class="num">${App.fmt.dinero(i.precio_unitario)}</td>
+                            <td class="num">${App.fmt.dinero(i.subtotal)}</td>
+                        </tr>`).join("");
+                } else {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td class="num">1</td>
+                            <td>Sin detalle de productos</td>
+                            <td class="num">—</td>
+                            <td class="num">—</td>
+                            <td class="num">${App.fmt.dinero(total)}</td>
+                        </tr>`;
+                }
+
+                document.getElementById("facturaSubtotal").textContent = App.fmt.dinero(venta.subtotal);
+                document.getElementById("facturaImpuesto").textContent = App.fmt.dinero(venta.impuesto);
+                document.getElementById("facturaTotal").textContent = App.fmt.dinero(total);
+
+                if (venta.efectivo_recibido !== null && venta.efectivo_recibido !== undefined) {
+                    document.getElementById("filaEfectivoRecibido").classList.remove("oculto");
+                    document.getElementById("filaVueltoEntregado").classList.remove("oculto");
+                    document.getElementById("facturaEfectivo").textContent = App.fmt.dinero(venta.efectivo_recibido);
+                    document.getElementById("facturaVuelto").textContent = App.fmt.dinero(venta.vuelto || 0);
+                }
+
+                setTimeout(() => {
+                    window.focus();
+                    window.print();
+                }, 150);
+            }
+
+            const params = new URLSearchParams(window.location.search);
+            const idParam = params.get("id");
+
+            try {
+                const guardada = sessionStorage.getItem("factura_actual");
+                if (guardada) {
+                    const datos = JSON.parse(guardada);
+                    const idGuardado = datos.venta_id !== undefined ? datos.venta_id : datos.id;
+                    if (!idParam || String(idGuardado) === String(idParam)) {
+                        renderizarFactura(datos);
+                        return;
+                    }
+                }
+                if (idParam) {
+                    const venta = await App.api.venta(Number(idParam));
+                    renderizarFactura(venta);
+                }
+            } catch (err) {
+                App.ui.aviso(err.message || "No se pudo cargar la factura.");
+            }
+        })();
+    </script>
+</body>
+</html>

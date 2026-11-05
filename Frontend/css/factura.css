@@ -1,0 +1,243 @@
+/* Hoja de estilos de la Factura Imprimible - Tienda Alexander
+ * Puedes modificar libremente posiciones, tamaños, fuentes, bordes o logos aquí
+ * para ajustar el diseño al formato físico de la factura.
+ */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 24px;
+    background: #eceff3;
+    color: #1a1a1a;
+    font: 13px/1.5 "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Barra superior de botones (no sale al imprimir) */
+.acciones {
+    max-width: 760px;
+    margin: 0 auto 14px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.acciones button {
+    padding: 8px 16px;
+    font: inherit;
+    font-size: 12px;
+    border: 1px solid #b9c1cb;
+    border-radius: 6px;
+    background: #fff;
+    color: #1a1a1a;
+    cursor: pointer;
+}
+
+.acciones .primario {
+    background: #1a1a1a;
+    border-color: #1a1a1a;
+    color: #fff;
+}
+
+/* Contenedor principal de la hoja de factura */
+.hoja {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 40px 44px;
+    background: #fff;
+    border: 1px solid #d9dee5;
+}
+
+/* Cabecera: logo, nombre del negocio y número de factura */
+.encabezado {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    padding-bottom: 18px;
+    border-bottom: 2px solid #1a1a1a;
+}
+
+.marca-factura {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.logo-factura {
+    width: 52px;
+    height: 52px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #d9dee5;
+}
+
+.negocio {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.negocio small {
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+    font-weight: 400;
+    color: #6b7280;
+}
+
+.doc {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.doc .tipo {
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: #6b7280;
+}
+
+.doc .folio {
+    font-size: 23px;
+    font-weight: 700;
+}
+
+.sello-anulada {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 2px 8px;
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #ef4444;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.oculto {
+    display: none !important;
+}
+
+/* Metadatos de la venta (Fecha, Método de pago, Vendedor) */
+.datos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 40px;
+    padding: 16px 0 22px;
+    font-size: 12px;
+}
+
+.datos p {
+    margin: 0;
+}
+
+.datos b {
+    margin-left: 6px;
+    font-weight: 600;
+}
+
+/* Tabla de productos facturados */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead th {
+    padding: 9px 10px;
+    background: #f4f6f8;
+    border-bottom: 1px solid #1a1a1a;
+    border-top: 1px solid #1a1a1a;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    text-align: left;
+}
+
+tbody td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #e3e7ec;
+    vertical-align: top;
+}
+
+.num {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+thead .num {
+    text-align: right;
+}
+
+tbody td:nth-child(1),
+tbody td:nth-child(3),
+tbody td:nth-child(4),
+tbody td:nth-child(5) {
+    width: 1%;
+}
+
+/* Bloque inferior de totales, IVA y vuelto */
+.cierre {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 22px;
+}
+
+.totales {
+    width: 290px;
+}
+
+.totales div {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 6px 10px;
+}
+
+.totales .sub {
+    color: #4b5563;
+}
+
+.totales .iva {
+    border-bottom: 1px solid #cbd2da;
+}
+
+.totales .gran {
+    margin-top: 4px;
+    padding: 11px 10px;
+    background: #f4f6f8;
+    border-top: 2px solid #1a1a1a;
+    border-bottom: 2px solid #1a1a1a;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+/* Reglas para impresión en papel / PDF */
+@page {
+    margin: 14mm;
+}
+
+@media print {
+    body {
+        padding: 0;
+        background: #fff;
+    }
+    .acciones {
+        display: none;
+    }
+    .hoja {
+        max-width: none;
+        padding: 0;
+        border: 0;
+    }
+    tr {
+        page-break-inside: avoid;
+    }
+    thead {
+        display: table-header-group;
+    }
+}

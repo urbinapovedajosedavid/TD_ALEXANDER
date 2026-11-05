@@ -1,0 +1,3 @@
+# Clasificar los recursos estáticos del navegador como assets de interfaz
+# para que GitHub contabilice Python como el lenguaje principal del proyecto.
+Frontend/** linguist-vendored

@@ -1,9 +1,8 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import TypedDict
 
-from flask import Response, g, jsonify, request
+from flask import g, jsonify, request
 
 import backend.db as db
 from backend.api import api_bp
@@ -12,18 +11,8 @@ from backend.config import FORMATO_FECHA
 from seguridad import requiere_login, requiere_rol
 
 
-class ItemVenta(TypedDict):
-    id: int | None
-    nombre: str
-    categoria_id: int | None
-    cantidad: int
-    precio_unitario: float
-    subtotal: float
-
-
 def _rango_periodo(periodo: str) -> datetime:
-    """Calcula el inicio del período alineado a las 00:00:00 del día calendario
-    (exactamente igual que el selector de fechas del frontend)."""
+    """Calcula el inicio del período alineado a las 00:00:00 del día calendario."""
     hoy_inicio = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     if periodo == "semana":
         return hoy_inicio - timedelta(days=6)
@@ -32,7 +21,7 @@ def _rango_periodo(periodo: str) -> datetime:
     return hoy_inicio
 
 
-def _rango_fechas() -> tuple[str | None, str | None]:
+def _rango_fechas():
     inicio = (request.args.get("fecha_inicio") or "").strip()
     fin = (request.args.get("fecha_fin") or "").strip()
     if not inicio and not fin:
@@ -55,7 +44,7 @@ def _rango_fechas() -> tuple[str | None, str | None]:
 
 @api_bp.get("/reportes")
 @requiere_login
-def obtener_reportes() -> Response | tuple[Response, int]:
+def obtener_reportes():
     try:
         desde_txt, hasta_txt = _rango_fechas()
     except ValueError:
@@ -69,9 +58,8 @@ def obtener_reportes() -> Response | tuple[Response, int]:
         periodo = "rango"
 
     condiciones = ["COALESCE(v.estado, 'COMPLETADA') = 'COMPLETADA'"]
-    parametros: list[str | int] = []
+    parametros = []
 
-    # Los vendedores solo consultan sus propias ventas; el administrador ve toda la tienda
     if g.usuario.get("rol") != "ADMIN":
         condiciones.append("v.usuario_id = ?")
         parametros.append(g.usuario["id"])
@@ -140,11 +128,19 @@ def obtener_reportes() -> Response | tuple[Response, int]:
 
 @api_bp.get("/reportes/usuario/<int:usuario_id>")
 @requiere_rol("ADMIN")
-def reporte_ventas_de_usuario(usuario_id: int) -> Response | tuple[Response, int]:
+def reporte_ventas_de_usuario(usuario_id: int):
     try:
         desde_txt, hasta_txt = _rango_fechas()
     except ValueError:
         return error("Formato de fecha inválido. Usa AAAA-MM-DD.", 400)
+
+    categoria_raw = (request.args.get("categoria_id") or "").strip()
+    categoria_id = None
+    if categoria_raw:
+        try:
+            categoria_id = int(categoria_raw)
+        except ValueError:
+            return error("Categoría inválida.", 400)
 
     with db.conectar_db() as conn:
         usuario = conn.execute(
@@ -159,13 +155,20 @@ def reporte_ventas_de_usuario(usuario_id: int) -> Response | tuple[Response, int
             "v.usuario_id = ?",
             "COALESCE(v.estado, 'COMPLETADA') = 'COMPLETADA'",
         ]
-        parametros: list[str | int] = [usuario_id]
+        parametros = [usuario_id]
         if desde_txt:
             condiciones.append("v.fecha >= ?")
             parametros.append(desde_txt)
         if hasta_txt:
             condiciones.append("v.fecha <= ?")
             parametros.append(hasta_txt)
+        if categoria_id is not None:
+            condiciones.append(
+                "EXISTS (SELECT 1 FROM detalle_ventas dx "
+                "JOIN productos px ON px.id = dx.producto_id "
+                "WHERE dx.venta_id = v.id AND px.categoria_id = ?)"
+            )
+            parametros.append(categoria_id)
         where = " AND ".join(condiciones)
 
         filas_ventas = conn.execute(
@@ -176,8 +179,7 @@ def reporte_ventas_de_usuario(usuario_id: int) -> Response | tuple[Response, int
             tuple(parametros),
         ).fetchall()
 
-        # Una sola consulta SQL para todos los detalles (elimina el problema N+1)
-        items_por_venta: defaultdict[int, list[ItemVenta]] = defaultdict(list)
+        items_por_venta = defaultdict(list)
         if filas_ventas:
             filas_items = conn.execute(
                 "SELECT d.venta_id, d.producto_id, d.cantidad, d.precio_unitario, "
@@ -199,20 +201,25 @@ def reporte_ventas_de_usuario(usuario_id: int) -> Response | tuple[Response, int
                     "subtotal": dinero(Decimal(str(item["precio_unitario"])) * item["cantidad"]),
                 })
 
-    ventas: list[dict[str, object]] = []
+    ventas = []
+    dias_set = set()
     unidades_vendidas = 0
-    totales: list[Decimal] = []
-    subtotales: list[Decimal] = []
+    totales = []
+    subtotales = []
 
     for fila in filas_ventas:
         lineas = items_por_venta.get(fila["id"], [])
         unidades_vendidas += sum(linea["cantidad"] for linea in lineas)
         totales.append(Decimal(str(fila["total"] or 0)))
         subtotales.append(Decimal(str(fila["subtotal"] or 0)))
+        dia = str(fila["fecha"] or "")[:10]
+        if dia:
+            dias_set.add(dia)
 
         ventas.append({
             "id": fila["id"],
             "fecha": fila["fecha"],
+            "dia": dia,
             "metodo_pago": fila["metodo_pago"],
             "subtotal": dinero(fila["subtotal"]),
             "impuesto": dinero(fila["impuesto"]),
@@ -232,6 +239,7 @@ def reporte_ventas_de_usuario(usuario_id: int) -> Response | tuple[Response, int
             "usuario": usuario["usuario"],
             "rol": usuario["rol"],
         },
+        "dias": sorted(dias_set, reverse=True),
         "ventas": ventas,
         "kpis": {
             "subtotal_vendido": subtotal_vendido,

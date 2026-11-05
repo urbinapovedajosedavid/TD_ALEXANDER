@@ -26,8 +26,8 @@
     let ultimoReporte = null;
 
     let usuariosReporte = [];
-    let productosReporte = [];
     let ventasPorUsuario = [];
+    let diasPorUsuario = [];
     let usuarioReporteActivo = null;
     let diaDetalle = null;
     let modoDetalle = "facturas";
@@ -99,15 +99,6 @@
         }
     }
 
-    async function cargarProductosReporte() {
-        try {
-            productosReporte = await App.api.productos();
-        } catch (err) {
-            App.ui.aviso(err.message);
-            productosReporte = [];
-        }
-    }
-
     async function cargarUsuariosReporte() {
         try {
             usuariosReporte = await App.api.usuarios();
@@ -142,6 +133,7 @@
     async function cargarReporteUsuario(idUsuario) {
         if (!idUsuario) {
             ventasPorUsuario = [];
+            diasPorUsuario = [];
             usuarioReporteActivo = null;
             diaDetalle = null;
             renderizarHistorialUsuario([], null);
@@ -150,68 +142,36 @@
             return;
         }
 
-        try {
-            const reporte = await App.api.reportesPorUsuario(idUsuario);
-            ventasPorUsuario = reporte.ventas || [];
-            usuarioReporteActivo = reporte.usuario || { id: idUsuario, nombre: "", rol: "" };
-            diaDetalle = null;
+        const selectCategoria = $("filtroCategoriaReporte");
+        const categoriaId = selectCategoria ? selectCategoria.value : "";
 
-            const filtradas = filtrarVentasPorCategoria(ventasPorUsuario);
-            renderizarHistorialUsuario(filtradas, usuarioReporteActivo);
-            const detalle = $("detalleReporteUsuario");
-            if (detalle) detalle.classList.add("oculto");
+        try {
+            const reporte = await App.api.reportesPorUsuario(idUsuario, categoriaId);
+            ventasPorUsuario = reporte.ventas || [];
+            diasPorUsuario = reporte.dias || [];
+            usuarioReporteActivo = reporte.usuario || { id: idUsuario, nombre: "", rol: "" };
+            if (diaDetalle && !diasPorUsuario.includes(diaDetalle)) {
+                diaDetalle = null;
+            }
+
+            renderizarHistorialUsuario(diasPorUsuario, usuarioReporteActivo);
+            renderizarDetalleUsuario();
         } catch (err) {
             App.ui.aviso(err.message);
         }
     }
 
-    function agruparVentasPorDia(ventas) {
-        const dias = {};
-        (ventas || []).forEach((v) => {
-            const dia = String(v.fecha || "").slice(0, 10);
-            if (!dia) return;
-            if (!dias[dia]) dias[dia] = [];
-            dias[dia].push(v);
-        });
-        return Object.keys(dias).sort((a, b) => b.localeCompare(a));
-    }
-
-    function filtrarVentasPorCategoria(ventas) {
-        const select = $("filtroCategoriaReporte");
-        const idCategoria = select ? String(select.value || "") : "";
-        if (!idCategoria) return ventas || [];
-
-        const mapa = {};
-        productosReporte.forEach((p) => {
-            mapa[String(p.id)] = p;
-        });
-
-        return (ventas || []).filter((v) => {
-            const items = v.items || [];
-            return items.some((i) => {
-                if (i.categoria_id !== undefined && i.categoria_id !== null) {
-                    return String(i.categoria_id) === idCategoria;
-                }
-                const producto = mapa[String(i.id)];
-                const categoriaId = producto ? String(producto.categoria_id || "") : "";
-                return categoriaId === idCategoria;
-            });
-        });
-    }
-
-    function renderizarHistorialUsuario(ventas, usuario) {
+    function renderizarHistorialUsuario(dias, usuario) {
         const contenedor = $("contenedorHistorialUsuario");
         if (!contenedor) return;
         contenedor.innerHTML = "";
 
-        const lista = ventas || [];
         if (!usuario) {
             contenedor.innerHTML =
                 '<div class="estado-vacio">Selecciona un usuario para ver su historial de ventas.</div>';
             return;
         }
 
-        const dias = agruparVentasPorDia(lista);
         if (!dias.length) {
             contenedor.innerHTML = `<div class="estado-vacio">El usuario ${App.fmt.texto(
                 usuario.nombre
@@ -270,8 +230,8 @@
     }
 
     function ventasDelDiaSeleccionadas() {
-        return filtrarVentasPorCategoria(ventasPorUsuario).filter(
-            (v) => String(v.fecha || "").slice(0, 10) === diaDetalle
+        return ventasPorUsuario.filter(
+            (v) => (v.dia || String(v.fecha || "").slice(0, 10)) === diaDetalle
         );
     }
 
@@ -367,7 +327,6 @@
         if (tipo === "ventas_usuario") {
             await Promise.all([
                 cargarCategoriasReporte(),
-                cargarProductosReporte(),
                 cargarUsuariosReporte(),
             ]);
         } else if (tipo === "inventario") {
@@ -553,13 +512,8 @@
 
         if (filtroCategoria) {
             filtroCategoria.addEventListener("change", () => {
-                const filtradas = filtrarVentasPorCategoria(ventasPorUsuario);
-                const diasDisponibles = agruparVentasPorDia(filtradas);
-                if (diaDetalle && !diasDisponibles.includes(diaDetalle)) {
-                    diaDetalle = null;
-                }
-                renderizarHistorialUsuario(filtradas, usuarioReporteActivo);
-                renderizarDetalleUsuario();
+                const idUsuario = selectUsuario ? Number(selectUsuario.value) : 0;
+                cargarReporteUsuario(idUsuario);
             });
         }
 

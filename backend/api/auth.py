@@ -1,12 +1,4 @@
-"""api.auth
-========
-Endpoints de autenticación, control de sesiones revocables en el servidor,
-cambio de contraseña y alta de usuarios.
-"""
-
-from typing import Any, TypedDict, cast
-
-from flask import Response, g, jsonify, session
+from flask import g, jsonify, session
 
 import backend.db as db
 from backend.api import api_bp
@@ -25,19 +17,8 @@ from seguridad import (
 )
 
 
-class UsuarioAutenticado(TypedDict):
-    id: int
-    nombre: str
-    usuario: str
-    rol: str
-    debe_cambiar_clave: bool
-
-
-def _crear_cuenta_usuario(
-    datos: dict[str, Any],
-    permitir_rol_admin: bool = False,
-) -> Response | tuple[Response, int]:
-    """Valida e inserta un nuevo usuario en la base de datos evitando duplicar lógica."""
+def _crear_cuenta_usuario(datos: dict, permitir_rol_admin: bool = False):
+    """Valida e inserta un nuevo usuario en la base de datos."""
     valido, problema = validar_usuario(datos)
     if not valido:
         return error(problema or "Los datos del usuario no son válidos.", 400)
@@ -75,7 +56,7 @@ def _crear_cuenta_usuario(
 
 
 @api_bp.post("/auth/login")
-def login() -> Response | tuple[Response, int]:
+def login():
     datos = cuerpo_json()
     usuario = str(datos.get("usuario") or "").strip()
     clave = str(datos.get("clave") or "")
@@ -88,11 +69,10 @@ def login() -> Response | tuple[Response, int]:
         if not exito:
             return jsonify({"exito": False, **resultado}), codigo
 
-        usuario_autenticado = cast(UsuarioAutenticado, resultado)
+        usuario_autenticado = resultado
         purgar_sesiones_vencidas(conn)
         token = crear_sesion(conn, usuario_autenticado["id"])
 
-    # Sesión de servidor firmada en cookie HttpOnly y respaldada por la tabla `sesiones`
     session.clear()
     session["token"] = token
     session["usuario_id"] = usuario_autenticado["id"]
@@ -129,7 +109,7 @@ def cerrar_sesion():
 
 @api_bp.post("/auth/cambiar-clave")
 @requiere_login
-def cambiar_clave() -> Response | tuple[Response, int]:
+def cambiar_clave():
     datos = cuerpo_json()
     actual = datos.get("actual")
     nueva = datos.get("nueva")
@@ -161,14 +141,9 @@ def cambiar_clave() -> Response | tuple[Response, int]:
             return error("La clave actual no es correcta.", 401)
 
         conn.execute(
-            "UPDATE usuarios SET password_hash = ? WHERE id = ?",
+            "UPDATE usuarios SET password_hash = ?, debe_cambiar_clave = 0 WHERE id = ?",
             (hash_password(nueva), g.usuario["id"]),
         )
-        conn.execute(
-            "UPDATE usuarios SET debe_cambiar_clave = 0 WHERE id = ?",
-            (g.usuario["id"],),
-        )
-        # Revocar todas las demás sesiones abiertas del usuario (incluidas otras cookies)
         if token_actual:
             conn.execute(
                 "DELETE FROM sesiones WHERE usuario_id = ? AND token <> ?",
@@ -215,7 +190,7 @@ def eliminar_cuenta_propia():
 
 @api_bp.post("/auth/registro")
 @requiere_rol("ADMIN")
-def registrar_usuario() -> Response | tuple[Response, int]:
+def registrar_usuario():
     """Registro de usuarios (VENDEDOR o ADMIN) por parte de un Administrador."""
     datos = cuerpo_json()
     clave_admin = datos.get("clave_admin")
@@ -237,6 +212,6 @@ def registrar_usuario() -> Response | tuple[Response, int]:
 
 
 @api_bp.post("/auth/registro-publico")
-def registrar_usuario_publico() -> Response | tuple[Response, int]:
-    """Alta de cuenta con rol estrictamente restringido a VENDEDOR."""
+def registrar_usuario_publico():
+    """Alta de cuenta pública con rol VENDEDOR."""
     return _crear_cuenta_usuario(cuerpo_json(), permitir_rol_admin=False)
