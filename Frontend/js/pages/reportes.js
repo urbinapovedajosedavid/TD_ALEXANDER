@@ -1,4 +1,4 @@
-/* Módulo de analítica, reportes de ventas, historial por vendedor e inventario. */
+/* Módulo de analítica, reportes de ventas, estadísticas comerciales e inventario. */
 
 (function () {
     const $ = (id) => document.getElementById(id);
@@ -277,10 +277,16 @@
         try {
             const inventario = await App.api.resumenInventario();
             const kpiValor = $("kpiInvValor");
+            const kpiCosto = $("kpiInvCosto");
+            const kpiGanancia = $("kpiInvGanancia");
             const kpiProductos = $("kpiInvProductos");
             const kpiAgotados = $("kpiInvAgotados");
             if (kpiValor) kpiValor.textContent = App.fmt.dinero(inventario.valor_inventario);
-            if (kpiProductos) kpiProductos.textContent = App.fmt.entero(inventario.total_productos);
+            if (kpiCosto) kpiCosto.textContent = App.fmt.dinero(inventario.costo_inventario || 0);
+            if (kpiGanancia) kpiGanancia.textContent = App.fmt.dinero(inventario.ganancia_potencial || 0);
+            if (kpiProductos) {
+                kpiProductos.textContent = `${App.fmt.entero(inventario.total_productos)} / ${App.fmt.entero(inventario.unidades_totales || 0)} u.`;
+            }
             if (kpiAgotados) kpiAgotados.textContent = App.fmt.entero(inventario.productos_agotados);
 
             const productos = await App.api.productos();
@@ -291,6 +297,7 @@
                 (p) => `
                     <td><strong>${App.fmt.texto(p.nombre)}</strong></td>
                     <td>${App.fmt.texto(p.categoria_nombre)}</td>
+                    <td>${App.fmt.dinero(p.costo_entrada || 0)}</td>
                     <td>${App.fmt.dinero(p.precio)}</td>
                     <td>${App.fmt.entero(p.stock)}</td>`
             );
@@ -309,6 +316,7 @@
                 tarjeta.querySelector("#kpiVentasHoy")?.closest(".kpi-grid"),
                 $("btnReporteHoy")?.closest(".acciones-inventario-pills"),
                 $("contenedorTablaReporte"),
+                $("panelEstadisticasAmpliadas"),
                 $("btnExportarExcel")?.closest(".acciones-inventario-pills"),
             ].filter(Boolean);
 
@@ -334,12 +342,58 @@
         }
     }
 
+    function pintarEstadisticas(est) {
+        const datos = est || {};
+
+        App.ui.pintarTabla(
+            "tablaTopProductos",
+            "mensajeSinTopProductos",
+            datos.top_productos || [],
+            (p) => `
+                <td><strong>${App.fmt.texto(p.nombre)}</strong></td>
+                <td>${App.fmt.texto(p.categoria)}</td>
+                <td>${App.fmt.entero(p.unidades)}</td>
+                <td>${App.fmt.dinero(p.subtotal)}</td>
+                <td><strong>${App.fmt.dinero(p.ganancia || 0)}</strong></td>
+                <td><span class="badge disponible">${Number(p.participacion_pct || 0).toFixed(1)}%</span></td>`
+        );
+
+        App.ui.pintarTabla(
+            "tablaEstadisticasCategoria",
+            "mensajeSinEstCategoria",
+            datos.por_categoria || [],
+            (c) => `
+                <td><strong>${App.fmt.texto(c.categoria)}</strong></td>
+                <td>${App.fmt.entero(c.unidades)}</td>
+                <td>${App.fmt.dinero(c.subtotal)}</td>
+                <td>${App.fmt.dinero(c.total_con_iva)}</td>
+                <td><span class="badge disponible">${Number(c.participacion_pct || 0).toFixed(1)}%</span></td>`
+        );
+
+        App.ui.pintarTabla(
+            "tablaEstadisticasMetodo",
+            "mensajeSinEstMetodo",
+            datos.por_metodo_pago || [],
+            (m) => `
+                <td><strong>${App.fmt.texto(m.metodo_pago).toUpperCase()}</strong></td>
+                <td>${App.fmt.entero(m.transacciones)}</td>
+                <td>${App.fmt.dinero(m.total)}</td>
+                <td><span class="badge disponible">${Number(m.participacion_pct || 0).toFixed(1)}%</span></td>`
+        );
+    }
+
     function pintarReporte(reporte) {
         ultimoReporte = reporte;
         const esAdmin = App.auth.esAdmin();
 
         const k = reporte.kpis;
         $("kpiVentasHoy").textContent = App.fmt.dinero(k.total_vendido);
+        if ($("kpiGananciaBruta")) {
+            $("kpiGananciaBruta").textContent = App.fmt.dinero(k.ganancia_bruta || 0);
+        }
+        if ($("kpiMargenPorcentaje")) {
+            $("kpiMargenPorcentaje").textContent = `${Number(k.margen_porcentaje || 0).toFixed(1)}%`;
+        }
         $("kpiCantidadVentasHoy").textContent = App.fmt.entero(k.cantidad_ventas);
         $("kpiProductosVendidosHoy").textContent = App.fmt.entero(k.productos_vendidos);
         $("kpiTicketPromedio").textContent = App.fmt.dinero(k.ticket_promedio || 0);
@@ -366,6 +420,7 @@
             }
         );
 
+        pintarEstadisticas(reporte.estadisticas);
         ajustarAlturaTabla();
     }
 

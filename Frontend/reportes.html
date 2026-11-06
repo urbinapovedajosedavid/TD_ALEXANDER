@@ -26,9 +26,9 @@
                         <div class="filtro-grupo">
                             <label for="selectTipoReporte">Tipo de reporte</label>
                             <select id="selectTipoReporte">
-                                <option value="">Reporte General de Ventas</option>
+                                <option value="">Reporte General y Estadísticas de Ventas</option>
                                 <option value="ventas_usuario">Reporte de Ventas por Usuario</option>
-                                <option value="inventario">Inventario Total</option>
+                                <option value="inventario">Inventario Total y Valorización</option>
                             </select>
                         </div>
                     </div>
@@ -99,11 +99,19 @@
                     <div id="panelReporteInventario" class="oculto">
                         <div class="kpi-grid">
                             <article class="kpi-card">
-                                <h3>Inventario Total</h3>
+                                <h3>Valor Comercial</h3>
                                 <p class="kpi-valor" id="kpiInvValor">C$0.00</p>
                             </article>
                             <article class="kpi-card">
-                                <h3>Productos en Stock</h3>
+                                <h3>Costo en Bodega</h3>
+                                <p class="kpi-valor" id="kpiInvCosto">C$0.00</p>
+                            </article>
+                            <article class="kpi-card">
+                                <h3>Ganancia Potencial</h3>
+                                <p class="kpi-valor" id="kpiInvGanancia">C$0.00</p>
+                            </article>
+                            <article class="kpi-card">
+                                <h3>Productos / Unidades</h3>
                                 <p class="kpi-valor" id="kpiInvProductos">0</p>
                             </article>
                             <article class="kpi-card">
@@ -117,7 +125,8 @@
                                     <tr>
                                         <th>Producto</th>
                                         <th>Categoría</th>
-                                        <th>Precio</th>
+                                        <th>Costo Entrada</th>
+                                        <th>Precio Venta</th>
                                         <th>Stock</th>
                                     </tr>
                                 </thead>
@@ -152,6 +161,14 @@
                         <article class="kpi-card">
                             <h3>Total Vendido (c/IVA)</h3>
                             <p class="kpi-valor" id="kpiVentasHoy">C$0.00</p>
+                        </article>
+                        <article class="kpi-card">
+                            <h3>Ganancia Bruta (s/IVA)</h3>
+                            <p class="kpi-valor" id="kpiGananciaBruta">C$0.00</p>
+                        </article>
+                        <article class="kpi-card">
+                            <h3>Margen Rentabilidad</h3>
+                            <p class="kpi-valor" id="kpiMargenPorcentaje">0.0%</p>
                         </article>
                         <article class="kpi-card">
                             <h3>Transacciones</h3>
@@ -195,6 +212,64 @@
                         </table>
                         <div id="mensajeSinReportes" class="estado-vacio" style="display: none;">
                             No se encontraron registros de ventas para este período.
+                        </div>
+                    </div>
+
+                    <div id="panelEstadisticasAmpliadas" style="margin-top: 16px;">
+                        <h3>Ranking de Productos Más Vendidos</h3>
+                        <div class="tabla-panel" style="margin-bottom: 14px;">
+                            <table class="tabla">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Categoría</th>
+                                        <th>Unidades</th>
+                                        <th>Subtotal Neto</th>
+                                        <th>Ganancia Est.</th>
+                                        <th>% Participación</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaTopProductos"></tbody>
+                            </table>
+                            <div id="mensajeSinTopProductos" class="estado-vacio" style="display: none;">
+                                Sin datos de productos vendidos en este período.
+                            </div>
+                        </div>
+
+                        <h3>Ventas por Categoría y Distribución por Método de Pago</h3>
+                        <div class="tabla-panel" style="margin-bottom: 14px;">
+                            <table class="tabla">
+                                <thead>
+                                    <tr>
+                                        <th>Categoría</th>
+                                        <th>Unidades Vendidas</th>
+                                        <th>Subtotal Neto</th>
+                                        <th>Total (c/IVA)</th>
+                                        <th>% del Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaEstadisticasCategoria"></tbody>
+                            </table>
+                            <div id="mensajeSinEstCategoria" class="estado-vacio" style="display: none;">
+                                Sin ventas por categoría en este período.
+                            </div>
+                        </div>
+
+                        <div class="tabla-panel" style="margin-bottom: 14px;">
+                            <table class="tabla">
+                                <thead>
+                                    <tr>
+                                        <th>Método de Pago</th>
+                                        <th>Transacciones</th>
+                                        <th>Monto Recaudado (c/IVA)</th>
+                                        <th>% de Participación</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaEstadisticasMetodo"></tbody>
+                            </table>
+                            <div id="mensajeSinEstMetodo" class="estado-vacio" style="display: none;">
+                                Sin transacciones registradas en este período.
+                            </div>
                         </div>
                     </div>
 

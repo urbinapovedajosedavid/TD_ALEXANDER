@@ -12,11 +12,21 @@
         const mensaje = $("mensajeModal");
         const btnEntrarNuevo = $("btnEntrarNuevo");
         const btnVolverLogin = $("btnVolverLogin");
+        const titulo = $("tituloRegistro");
+        const contenedorRol = $("contenedorRolAdmin");
+        const selectRol = $("rolModal");
 
         const sesionActiva = App.auth.actual();
         const esAdmin = App.auth.esAdmin();
         const confirmacionAdmin = $("confirmacionAdmin");
         const claveAdminInput = $("claveAdminModal");
+
+        if (esAdmin && titulo) {
+            titulo.textContent = "Registrar nuevo usuario";
+        }
+        if (contenedorRol) {
+            contenedorRol.hidden = !esAdmin;
+        }
         if (confirmacionAdmin) {
             confirmacionAdmin.hidden = !esAdmin;
         }
@@ -36,6 +46,7 @@
             const usuario = ($("usuarioModal") ? $("usuarioModal").value : "").trim();
             const clave = $("claveModal") ? $("claveModal").value : "";
             const claveAdmin = claveAdminInput ? claveAdminInput.value : "";
+            const rol = esAdmin && selectRol ? selectRol.value : "VENDEDOR";
 
             if (!nombre || !apellido || !telefono || !usuario || !clave) {
                 App.ui.mensaje(mensaje, "Completa todos los campos obligatorios.", "error");
@@ -75,6 +86,7 @@
                     clave,
                 };
                 if (esAdmin) {
+                    datos.rol = rol;
                     datos.clave_admin = claveAdmin;
                 }
                 const res = await peticion(datos);

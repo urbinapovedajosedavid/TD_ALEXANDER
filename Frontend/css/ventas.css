@@ -1,57 +1,67 @@
 .layout-ventas {
     display: grid;
-    grid-template-columns: 1fr 272px;
-    gap: 9.6px;
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 0.9rem;
+    align-items: start;
 }
 
 @media (max-width: 1024px) {
     .layout-ventas {
         grid-template-columns: 1fr;
-        overflow-y: auto;
     }
 }
 
 .panel-venta {
     background: var(--fondo-panel);
     border: 1px solid var(--borde);
-    border-radius: 9.6px;
-    padding: 8px 9.6px;
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
     display: flex;
     flex-direction: column;
+    gap: 0.55rem;
     min-height: 0;
-    overflow: hidden;
+}
+
+.panel-venta h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--azul-marino);
+}
+
+.panel-venta .search-bar-pill {
+    margin-bottom: 0.25rem;
+}
+
+.tabla-carrito-scroll {
+    max-height: 210px;
+    overflow-y: auto;
 }
 
 .resumen-cobro {
-    margin-top: 2.4px;
+    margin-top: 0.25rem;
     background: var(--blanco);
     border: 1px solid var(--borde);
     border-radius: var(--border-radius, 12px);
-    padding: 6.4px 8px;
-    flex-shrink: 0;
+    padding: 0.75rem 0.9rem;
     display: flex;
     flex-direction: column;
-    gap: 2.4px;
+    gap: 0.4rem;
 }
 
 .linea-resumen {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 2.4px;
-    font-size: 0.68rem;
+    font-size: 0.84rem;
     color: var(--texto);
 }
 
 .total-destacado {
-    font-size: 0.816rem;
+    font-size: 1rem;
     font-weight: 700;
     color: var(--azul-marino);
     border-top: 2px solid var(--borde);
-    padding-top: 3.2px;
-    margin-top: 2.4px;
+    padding-top: 0.4rem;
+    margin-top: 0.2rem;
 }
 
 /* ==========================================
@@ -59,16 +69,15 @@
    ========================================== */
 
 .panel-pago {
-    margin-top: 2.4px;
-    padding: 4.8px 6.4px;
+    margin-top: 0.25rem;
+    padding: 0.65rem 0.75rem;
     border: 1px solid var(--borde);
-    border-radius: 6.4px;
+    border-radius: 10px;
     background: linear-gradient(160deg, #f2fdf9 0%, #eaf7f2 100%);
     display: flex;
     flex-direction: column;
-    gap: 3.2px;
+    gap: 0.5rem;
     transition: opacity 0.2s ease;
-    flex-shrink: 0;
 }
 
 .panel-pago.oculto {
@@ -77,10 +86,10 @@
 
 .campo-pago label {
     display: block;
-    font-size: 0.499rem;
+    font-size: 0.78rem;
     font-weight: 700;
     color: var(--azul-marino);
-    margin-bottom: 3.2px;
+    margin-bottom: 0.3rem;
 }
 
 .input-dinero {
@@ -88,7 +97,7 @@
     align-items: center;
     background: var(--blanco);
     border: 1px solid var(--borde);
-    border-radius: 7.04px;
+    border-radius: 9px;
     overflow: hidden;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -99,8 +108,8 @@
 }
 
 .simbolo-moneda {
-    padding: 0 1.92px 0 7.68px;
-    font-size: 0.608rem;
+    padding: 0 0.25rem 0 0.7rem;
+    font-size: 0.85rem;
     font-weight: 700;
     color: var(--texto-suave);
 }
@@ -110,8 +119,8 @@
     border: none;
     outline: none;
     background: transparent;
-    padding: 4.48px 5.76px 4.48px 3.2px;
-    font-size: 0.608rem;
+    padding: 0.48rem 0.65rem 0.48rem 0.3rem;
+    font-size: 0.9rem;
     font-weight: 700;
     color: var(--azul-marino);
     width: 100%;
@@ -136,17 +145,17 @@
 .montos-rapidos {
     display: flex;
     flex-wrap: wrap;
-    gap: 4.8px;
-    margin-top: 5.6px;
+    gap: 0.4rem;
+    margin-top: 0.45rem;
 }
 
 .chip-monto {
     border: 1px solid var(--borde);
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.9);
     color: var(--azul-marino);
-    font-size: 0.56rem;
+    font-size: 0.76rem;
     font-weight: 700;
-    padding: 3.2px 6.4px;
+    padding: 0.3rem 0.65rem;
     border-radius: 999px;
     cursor: pointer;
     transition: background 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
@@ -162,22 +171,22 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 6.4px;
-    padding: 5.6px 8px;
-    border-radius: 7.2px;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 9px;
     background: var(--azul-marino);
     color: var(--blanco);
     transition: background 0.25s ease;
 }
 
 .vuelto-etiqueta {
-    font-size: 0.624rem;
+    font-size: 0.8rem;
     font-weight: 600;
-    opacity: 0.9;
+    opacity: 0.92;
 }
 
 .vuelto-valor {
-    font-size: 0.816rem;
+    font-size: 0.95rem;
     font-weight: 800;
     letter-spacing: 0.3px;
     white-space: nowrap;
@@ -192,11 +201,11 @@
 }
 
 .alerta-pago {
-    margin: 4.8px 1.6px 0;
-    font-size: 0.608rem;
+    margin: 0.35rem 0.1rem 0;
+    font-size: 0.78rem;
     font-weight: 600;
     color: var(--error);
-    min-height: 12.8px;
+    min-height: 1rem;
     display: none;
 }
 
@@ -205,23 +214,23 @@
 }
 
 .metodo-pago {
-    margin-top: 4.8px;
+    margin-top: 0.25rem;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0.3rem;
 }
 
 .metodo-pago label {
-    font-size: 0.624rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: var(--azul-marino);
 }
 
 .metodo-pago select {
-    padding: 6.4px 8.8px;
+    padding: 0.5rem 0.75rem;
     border: 1px solid var(--borde);
-    border-radius: 8px;
-    font-size: 0.68rem;
+    border-radius: 9px;
+    font-size: 0.86rem;
     background: #fbfffe;
     color: var(--texto);
     outline: none;
@@ -234,20 +243,8 @@
 }
 
 .form-cobro-acciones {
-    margin-top: 2.4px;
+    margin-top: 0.35rem;
     display: flex;
     flex-direction: column;
-    gap: 2.4px;
-}
-
-/* ==========================================
-   COLUMNA DERECHA — DETALLE DE LA VENTA (compacta)
-   Reduce los espacios internos del panel para que el
-   encabezado, la tabla, el resumen de cobro, los
-   inputs de pago y el botón "Procesar y Cobrar" queden
-   completamente visibles sin scroll vertical.
-   ========================================== */
-
-.panel-venta:last-child {
-    padding-bottom: 6px;
+    gap: 0.4rem;
 }

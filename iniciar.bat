@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0"
 title Tienda Alexander - Iniciando Sistema
 color 0A
 cls
@@ -22,13 +23,16 @@ if %errorlevel% neq 0 (
 
 echo [OK] Python detectado.
 echo.
-echo [2/3] Verificando e instalando dependencias (Flask, Flask-Cors)...
-python -m pip install -r requirements.txt --quiet
+echo [2/3] Verificando dependencias (Flask, Flask-Cors)...
+python -c "import flask, flask_cors" >nul 2>&1
 if %errorlevel% neq 0 (
-    color 0C
-    echo [ERROR] No se pudieron instalar las dependencias de requirements.txt.
-    pause
-    exit /b 1
+    python -m pip install -r requirements.txt --quiet
+    if %errorlevel% neq 0 (
+        color 0C
+        echo [ERROR] No se pudieron instalar las dependencias de requirements.txt.
+        pause
+        exit /b 1
+    )
 )
 
 echo [OK] Dependencias listas.

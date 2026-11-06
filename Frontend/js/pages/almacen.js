@@ -5,6 +5,7 @@
 
     let productos = [];
     let categorias = [];
+    let proveedores = [];
     let filtroCategoria = "";
     let ordenPrecio = "";
 
@@ -30,6 +31,26 @@
         }
 
         poblarFiltroCategorias();
+    }
+
+    async function cargarProveedores() {
+        try {
+            proveedores = await App.api.proveedores();
+        } catch (err) {
+            proveedores = [];
+        }
+
+        const select = $("selectProveedor");
+        if (select) {
+            select.innerHTML =
+                '<option value="">-- Sin proveedor asignado --</option>' +
+                proveedores
+                    .map(
+                        (pr) =>
+                            `<option value="${pr.id}">${App.fmt.texto(pr.nombre)}</option>`
+                    )
+                    .join("");
+        }
     }
 
     function poblarFiltroCategorias() {
@@ -85,7 +106,8 @@
                 !texto ||
                 p.nombre.toLowerCase().includes(texto) ||
                 (p.codigo || "").toLowerCase().includes(texto) ||
-                (p.categoria_nombre || "").toLowerCase().includes(texto)
+                (p.categoria_nombre || "").toLowerCase().includes(texto) ||
+                (p.proveedor_nombre || "").toLowerCase().includes(texto)
         );
 
         if (filtroCategoria) {
@@ -99,6 +121,9 @@
         } else if (ordenPrecio === "desc") {
             filtrados = filtrados.slice().sort((a, b) => b.precio - a.precio);
         }
+
+        const iconoCarpeta = (App.iconos && App.iconos.folder) || "";
+        const iconoProveedor = (App.iconos && App.iconos.truckSmall) || "";
 
         App.ui.pintarTabla(
             "tablaProductos",
@@ -114,12 +139,16 @@
                     ? `<button class="btn-accion eliminar" data-accion="eliminar" data-id="${p.id}">Eliminar</button>`
                     : "";
 
+                const etiquetaProveedor = p.proveedor_nombre
+                    ? ` <span class="separador-meta">·</span> <span class="meta-item">${iconoProveedor} ${App.fmt.texto(p.proveedor_nombre)}</span>`
+                    : "";
+
                 return `
                     <td>
                         <strong>${App.fmt.texto(p.nombre)}</strong><br>
-                        <small class="sub-categoria">📁 ${App.fmt.texto(
-                            p.categoria_nombre
-                        )}</small>
+                        <small class="sub-categoria">
+                            <span class="meta-item">${iconoCarpeta} ${App.fmt.texto(p.categoria_nombre)}</span>${etiquetaProveedor}
+                        </small>
                     </td>
                     <td>${App.fmt.texto(p.codigo) || "N/A"}</td>
                     <td>${App.fmt.dinero(p.precio)}</td>
@@ -170,6 +199,7 @@
     function abrirModalAgregar() {
         $("formProducto").reset();
         $("productoId").value = "";
+        if ($("selectProveedor")) $("selectProveedor").value = "";
         $("tituloModal").textContent = "Añadir Nuevo Producto";
         manejarCambioCategoria();
         App.ui.abrir("modalProducto");
@@ -185,6 +215,9 @@
         $("prodPrecio").value = producto.precio;
         $("prodStock").value = producto.stock;
         $("selectCategoria").value = producto.categoria_id || "";
+        if ($("selectProveedor")) {
+            $("selectProveedor").value = producto.proveedor_id || "";
+        }
 
         $("tituloModal").textContent = "Editar Producto";
         manejarCambioCategoria();
@@ -218,12 +251,15 @@
             }
         }
 
+        const proveedorId = $("selectProveedor") ? $("selectProveedor").value : "";
+
         const cuerpo = {
             nombre: $("prodNombre").value.trim(),
             codigo: $("prodCodigo").value.trim(),
             precio: parseFloat($("prodPrecio").value),
             stock: stock,
             categoria_id: categoriaId === "OTRO" ? null : categoriaId || null,
+            proveedor_id: proveedorId || null,
         };
 
         const id = $("productoId").value;
@@ -304,7 +340,7 @@
             if (boton.dataset.accion === "eliminar") eliminar(id);
         });
 
-        await cargarCategorias();
+        await Promise.all([cargarCategorias(), cargarProveedores()]);
         await cargarProductos();
     });
 })();

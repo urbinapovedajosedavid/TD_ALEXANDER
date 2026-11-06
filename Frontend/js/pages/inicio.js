@@ -9,8 +9,16 @@
             const resumen = await App.api.resumenInventario();
 
             $("kpiProductos").textContent = App.fmt.entero(resumen.total_productos);
+            if ($("kpiUnidadesTotales")) {
+                $("kpiUnidadesTotales").textContent = App.fmt.entero(resumen.unidades_totales || 0);
+            }
             $("kpiValorInventario").textContent = App.fmt.dinero(resumen.valor_inventario);
-            $("kpiAgotados").textContent = App.fmt.entero(resumen.productos_agotados);
+            if ($("kpiGananciaPotencial")) {
+                $("kpiGananciaPotencial").textContent = App.fmt.dinero(resumen.ganancia_potencial || 0);
+            }
+            const bajos = Number(resumen.productos_stock_bajo || 0);
+            const agotados = Number(resumen.productos_agotados || 0);
+            $("kpiAgotados").textContent = `${bajos} / ${agotados}`;
         } catch (err) {
             App.ui.aviso(err.message);
         }
@@ -38,7 +46,7 @@
                 const estado =
                     p.stock === 0
                         ? '<span class="badge agotado">Agotado (0)</span>'
-                        : `<span class="badge" style="color: #fd7e14; font-weight: bold;">Bajo (${p.stock})</span>`;
+                        : `<span class="badge bajo">Bajo (${p.stock})</span>`;
                 return `
                     <td><strong>${App.fmt.texto(p.nombre)}</strong></td>
                     <td>${App.fmt.texto(p.categoria_nombre)}</td>

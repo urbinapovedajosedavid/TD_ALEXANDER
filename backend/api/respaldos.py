@@ -83,7 +83,17 @@ def restaurar_respaldo():
         temporal.unlink(missing_ok=True)
         return error(problema, 400)
 
+    respaldo_previo = db.RUTA_DB.with_suffix(".antes-de-restaurar")
     try:
+        if db.RUTA_DB.exists():
+            actual_conn = sqlite3.connect(db.RUTA_DB)
+            previo_conn = sqlite3.connect(respaldo_previo)
+            try:
+                actual_conn.backup(previo_conn)
+            finally:
+                previo_conn.close()
+                actual_conn.close()
+
         origen = sqlite3.connect(temporal)
         destino = sqlite3.connect(db.RUTA_DB)
         try:
@@ -100,7 +110,7 @@ def restaurar_respaldo():
 
     return jsonify({
         "exito": True,
-        "mensaje": "Respaldo restaurado correctamente. Vuelve a iniciar sesión.",
+        "mensaje": "Respaldo restaurado correctamente. Se guardó copia de seguridad previa.",
     })
 
 

@@ -40,6 +40,8 @@ ALIAS_PAGINAS = {
     "login": "Login.html",
     "login.html": "Login.html",
     "proveedores": "provedores.html",
+    "proveedores.html": "provedores.html",
+    "js/pages/proveedores.js": "js/pages/provedores.js",
     "copia_seguridad": "copia_de_seguridad.html",
     "registro": "agregar_usuario.html",
 }

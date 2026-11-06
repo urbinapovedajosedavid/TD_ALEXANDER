@@ -22,7 +22,9 @@
 
                     <div class="barra-filtros" style="margin-top: 8px;">
                         <div class="search-bar-pill">
-                            <span class="icono-buscar">🔍</span>
+                            <span class="icono-buscar" aria-hidden="true">
+                                <svg class="icono-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            </span>
                             <input type="text" id="inputBuscarStock"
                                 placeholder="Buscar producto para recargar...">
                         </div>
@@ -36,7 +38,7 @@
                         </div>
                     </div>
 
-                    <div class="tabla-panel tabla-scroll" id="contenedorTablaStock" style="margin-top: 11.2px;">
+                    <div class="tabla-panel tabla-scroll" id="contenedorTablaStock" style="margin-top: 12px;">
                         <table class="tabla">
                             <thead>
                                 <tr>

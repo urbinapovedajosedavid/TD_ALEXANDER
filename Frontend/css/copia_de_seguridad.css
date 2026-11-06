@@ -1,57 +1,57 @@
 .seccion {
     background: var(--blanco);
     border: 1px solid var(--borde);
-    border-radius: 11.2px;
-    padding: 12.8px;
+    border-radius: 16px;
+    padding: 1.2rem 1.4rem;
     box-shadow: var(--sombra);
-    margin-bottom: 11.2px;
+    margin-bottom: 1rem;
 }
 
 .seccion h2 {
-    font-size: 0.88rem;
+    font-size: 1.1rem;
     color: var(--azul-marino);
-    margin-bottom: 3.2px;
+    margin-bottom: 0.3rem;
 }
 
 .seccion p.subtitulo {
     color: var(--texto-suave);
-    font-size: 0.656rem;
-    margin-bottom: 11.2px;
+    font-size: 0.86rem;
+    margin-bottom: 0.95rem;
 }
 
 .seccion code {
     background: var(--fondo);
     border: 1px solid var(--borde);
-    border-radius: 4.8px;
-    padding: 1px 4px;
-    font-size: 0.68em;
+    border-radius: 6px;
+    padding: 0.1rem 0.35rem;
+    font-size: 0.85em;
 }
 
 /* ---------- Datos de la base ---------- */
 
 .datos-copia {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(144px, 1fr));
-    gap: 9.6px;
-    margin-bottom: 11.2px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
 }
 
 .dato-copia {
     background: var(--fondo-panel);
     border: 1px solid var(--borde);
-    border-radius: 8px;
-    padding: 8px 9.6px;
+    border-radius: 10px;
+    padding: 0.75rem 0.9rem;
 }
 
 .dato-copia span {
     display: block;
-    font-size: 0.576rem;
+    font-size: 0.78rem;
     color: var(--texto-suave);
-    margin-bottom: 2.4px;
+    margin-bottom: 0.25rem;
 }
 
 .dato-copia strong {
-    font-size: 0.68rem;
+    font-size: 0.92rem;
     color: var(--azul-marino);
     word-break: break-all;
 }
@@ -61,22 +61,22 @@
 .campo {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    margin-bottom: 9.6px;
+    gap: 0.35rem;
+    margin-bottom: 0.85rem;
 }
 
 .campo label {
-    font-size: 0.64rem;
+    font-size: 0.84rem;
     font-weight: 600;
     color: var(--azul-marino);
 }
 
 .campo input[type="text"],
 .campo input[type="file"] {
-    padding: 6.4px 8.8px;
+    padding: 0.55rem 0.75rem;
     border: 1px solid var(--borde);
-    border-radius: 8px;
-    font-size: 0.68rem;
+    border-radius: 9px;
+    font-size: 0.86rem;
     background: #fbfffe;
     color: var(--texto);
     outline: none;
@@ -89,6 +89,6 @@
 
 .fila-botones {
     display: flex;
-    gap: 10px;
+    gap: 0.65rem;
     flex-wrap: wrap;
 }

@@ -74,15 +74,17 @@ def registrar_venta():
 
         efectivo_recibido = None
         vuelto_valor = None
-        if metodo_pago == "efectivo" and datos.get("efectivo_recibido") is not None:
-            try:
-                recibido_num = dinero(datos.get("efectivo_recibido"))
+        if metodo_pago == "efectivo":
+            raw_recibido = datos.get("efectivo_recibido")
+            if raw_recibido is not None and str(raw_recibido).strip() != "":
+                try:
+                    recibido_num = round(float(raw_recibido), 2)
+                except (TypeError, ValueError):
+                    return error("El monto de efectivo recibido no es válido.", 400)
                 if recibido_num < total_valor:
                     return error("El efectivo recibido no alcanza para cubrir el total.", 400)
                 efectivo_recibido = recibido_num
                 vuelto_valor = dinero(recibido_num - total_valor)
-            except (TypeError, ValueError):
-                pass
 
         fecha_venta = ahora()
         cur = conn.execute(

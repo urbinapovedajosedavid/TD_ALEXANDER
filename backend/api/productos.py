@@ -253,6 +253,7 @@ def resumen_inventario():
     with db.conectar_db() as conn:
         fila = conn.execute("""
             SELECT COUNT(*) AS total_productos,
+                   COALESCE(SUM(stock), 0) AS unidades_totales,
                    COALESCE(SUM(precio * stock), 0) AS valor_inventario,
                    COALESCE(SUM(costo_entrada * stock), 0) AS costo_inventario,
                    COALESCE(SUM(CASE WHEN stock = 0 THEN 1 ELSE 0 END), 0) AS agotados,
@@ -260,10 +261,18 @@ def resumen_inventario():
             FROM productos
         """).fetchone()
 
+    valor = dinero(fila["valor_inventario"])
+    costo = dinero(fila["costo_inventario"])
+    ganancia_potencial = dinero(max(0.0, valor - costo))
+    margen_pct = round((ganancia_potencial / valor) * 100, 2) if valor > 0 else 0.0
+
     return jsonify({
         "total_productos": fila["total_productos"],
-        "valor_inventario": dinero(fila["valor_inventario"]),
-        "costo_inventario": dinero(fila["costo_inventario"]),
+        "unidades_totales": int(fila["unidades_totales"]),
+        "valor_inventario": valor,
+        "costo_inventario": costo,
+        "ganancia_potencial": ganancia_potencial,
+        "margen_inventario_pct": margen_pct,
         "productos_agotados": fila["agotados"],
         "productos_stock_bajo": fila["stock_bajo"],
     })

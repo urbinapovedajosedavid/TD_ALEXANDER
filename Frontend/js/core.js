@@ -7,6 +7,32 @@
 window.App = window.App || {};
 
 /* ==========================================
+   ICONOS — Iconografía vectorial coherente (Lucide SVG)
+   ========================================== */
+
+App.iconos = {
+    eye: '<svg class="icono-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>',
+    eyeOff: '<svg class="icono-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>',
+    inicio: '<svg class="icono-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>',
+    ventas: '<svg class="icono-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>',
+    almacen: '<svg class="icono-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>',
+    stock: '<svg class="icono-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>',
+    reportes: '<svg class="icono-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>',
+    proveedores: '<svg class="icono-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>',
+    copia_de_seguridad: '<svg class="icono-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>',
+    chevronDown: '<svg class="icono-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>',
+    settings: '<svg class="icono-svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>',
+    search: '<svg class="icono-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>',
+    folder: '<svg class="icono-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>',
+    truckSmall: '<svg class="icono-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>',
+    user: '<svg class="icono-svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
+    key: '<svg class="icono-svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>',
+    users: '<svg class="icono-svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>',
+    trash: '<svg class="icono-svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>',
+    logout: '<svg class="icono-svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>',
+};
+
+/* ==========================================
    API — cliente HTTP RESTful
    ========================================== */
 
@@ -200,11 +226,38 @@ App.api = (function () {
    ========================================== */
 
 App.auth = (function () {
+    const CLAVE_CACHE = "alexander_usuario_cache";
     let _usuarioActual = null;
     let _sesionComprobada = false;
 
+    function _leerCache() {
+        try {
+            const guardado = sessionStorage.getItem(CLAVE_CACHE);
+            if (guardado) return JSON.parse(guardado);
+        } catch (e) {}
+        return null;
+    }
+
+    function _escribirCache(usuario) {
+        try {
+            if (usuario) {
+                sessionStorage.setItem(CLAVE_CACHE, JSON.stringify(usuario));
+            } else {
+                sessionStorage.removeItem(CLAVE_CACHE);
+            }
+        } catch (e) {}
+    }
+
     function verificarSync() {
         if (_sesionComprobada) return _usuarioActual;
+        const enCache = _leerCache();
+        if (enCache) {
+            _usuarioActual = enCache;
+            _sesionComprobada = true;
+            // Revalida en segundo plano de forma asíncrona sin bloquear la interfaz
+            verificar();
+            return _usuarioActual;
+        }
         try {
             const xhr = new XMLHttpRequest();
             xhr.open("GET", App.api.BASE + "/auth/yo", false);
@@ -219,6 +272,7 @@ App.auth = (function () {
         } catch (e) {
             _usuarioActual = null;
         }
+        _escribirCache(_usuarioActual);
         _sesionComprobada = true;
         return _usuarioActual;
     }
@@ -227,10 +281,12 @@ App.auth = (function () {
         try {
             const r = await App.api.yo();
             _usuarioActual = r.usuario || null;
+            _escribirCache(_usuarioActual);
             _sesionComprobada = true;
             return _usuarioActual;
         } catch (e) {
             _usuarioActual = null;
+            _escribirCache(null);
             _sesionComprobada = true;
             return null;
         }
@@ -245,11 +301,13 @@ App.auth = (function () {
 
     function guardar(_tokenIgnorado, usuario) {
         _usuarioActual = usuario;
+        _escribirCache(usuario);
         _sesionComprobada = true;
     }
 
     function limpiar() {
         _usuarioActual = null;
+        _escribirCache(null);
         _sesionComprobada = true;
     }
 
@@ -461,7 +519,19 @@ App.ui = (function () {
     };
 })();
 
-/* Delegación global para botones de mostrar/ocultar contraseña (.btn-ver-password) */
+/* Inicializar y delegar botones de mostrar/ocultar contraseña (.btn-ver-password) */
+function inicializarBotonesPassword(raiz = document) {
+    raiz.querySelectorAll(".btn-ver-password").forEach((boton) => {
+        if (!boton.querySelector("svg")) {
+            boton.innerHTML = App.iconos.eye;
+        }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    inicializarBotonesPassword(document);
+});
+
 document.addEventListener("click", (evento) => {
     const boton = evento.target.closest(".btn-ver-password");
     if (!boton) return;
@@ -469,12 +539,16 @@ document.addEventListener("click", (evento) => {
     const input = idDestino ? document.getElementById(idDestino) : null;
     if (!input) return;
 
-    const esPassword = input.type === "password";
-    input.type = esPassword ? "text" : "password";
-    boton.textContent = esPassword ? "🙈" : "👁";
+    const mostrar = input.type === "password";
+    input.type = mostrar ? "text" : "password";
+    boton.innerHTML = mostrar ? App.iconos.eyeOff : App.iconos.eye;
     boton.setAttribute(
         "aria-label",
-        esPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+        mostrar ? "Ocultar contraseña" : "Mostrar contraseña"
+    );
+    boton.setAttribute(
+        "title",
+        mostrar ? "Ocultar contraseña" : "Mostrar contraseña"
     );
 });
 

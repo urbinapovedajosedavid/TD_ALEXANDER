@@ -35,6 +35,8 @@
             );
         }
 
+        const iconoCarpeta = (App.iconos && App.iconos.folder) || "";
+
         App.ui.pintarTabla(
             "tablaStock",
             "mensajeSinStock",
@@ -44,13 +46,13 @@
                 if (p.stock === 0) {
                     estado = '<span class="badge agotado">Agotado (0)</span>';
                 } else if (p.stock <= UMBRAL_STOCK_BAJO) {
-                    estado = `<span class="badge" style="color: #fd7e14; font-weight: bold;">Bajo (${p.stock})</span>`;
+                    estado = `<span class="badge bajo">Bajo (${p.stock})</span>`;
                 }
 
                 return `
                     <td>
                         <strong>${App.fmt.texto(p.nombre)}</strong><br>
-                        <small class="sub-categoria">📁 ${App.fmt.texto(p.categoria_nombre)}</small>
+                        <small class="sub-categoria"><span class="meta-item">${iconoCarpeta} ${App.fmt.texto(p.categoria_nombre)}</span></small>
                     </td>
                     <td>${App.fmt.texto(p.codigo) || "N/A"}</td>
                     <td>${App.fmt.dinero(p.precio)}</td>

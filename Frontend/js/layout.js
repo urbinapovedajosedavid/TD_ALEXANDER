@@ -19,16 +19,6 @@ App.layout = (function () {
         { clave: "proveedores", ruta: "provedores.html", texto: "Proveedores" },
     ];
 
-    const ICONOS = {
-        inicio: "🏠",
-        ventas: "💰",
-        almacen: "📦",
-        stock: "📊",
-        reportes: "📈",
-        proveedores: "🚚",
-        copia_de_seguridad: "💾",
-    };
-
     const SUBTITULOS = {
         inicio: "Panel de administración e inventario",
         almacen: "Módulo de gestión de productos",
@@ -38,6 +28,10 @@ App.layout = (function () {
         proveedores: "Módulo de administración de proveedores",
         copia_de_seguridad: "Copia de seguridad",
     };
+
+    function iconoMenu(clave) {
+        return (App.iconos && App.iconos[clave]) || "";
+    }
 
     function paginaActual() {
         const archivo = window.location.pathname.split("/").pop() || "";
@@ -75,9 +69,9 @@ App.layout = (function () {
                 <div class="nav-dropdown ${tieneActivo ? "nav-dropdown-abierto active" : ""}">
                     <button class="nav-item nav-item-dropdown ${tieneActivo ? "nav-item-activa" : ""}"
                             type="button" data-dropdown="${p.clave}" aria-expanded="${tieneActivo}">
-                        <span class="nav-icono" aria-hidden="true">${ICONOS[p.clave] || "•"}</span>
+                        <span class="nav-icono" aria-hidden="true">${iconoMenu(p.clave)}</span>
                         <span class="nav-texto">${p.texto}</span>
-                        <span class="nav-flecha" aria-hidden="true">▾</span>
+                        <span class="nav-flecha" aria-hidden="true">${iconoMenu("chevronDown")}</span>
                     </button>
                     <div class="nav-submenu">
                         ${itemsHtml}
@@ -88,7 +82,7 @@ App.layout = (function () {
             return `
             <button class="nav-item ${p.clave === activa ? "nav-item-activa" : ""}"
                     type="button" data-ruta="${p.ruta}">
-                <span class="nav-icono" aria-hidden="true">${ICONOS[p.clave] || "•"}</span>
+                <span class="nav-icono" aria-hidden="true">${iconoMenu(p.clave)}</span>
                 <span class="nav-texto">${p.texto}</span>
             </button>`;
         }).join("");
@@ -96,9 +90,9 @@ App.layout = (function () {
         const bloqueCopia = esAdmin
             ? `
             <div class="sidebar-footer">
-                <button class="nav-item nav-item-secundario" type="button"
+                <button class="nav-item nav-item-secundario ${activa === "copia_de_seguridad" ? "nav-item-activa" : ""}" type="button"
                         id="btnCopiaSeguridad">
-                    <span class="nav-icono" aria-hidden="true">${ICONOS.copia_de_seguridad}</span>
+                    <span class="nav-icono" aria-hidden="true">${iconoMenu("copia_de_seguridad")}</span>
                     <span class="nav-texto">Copia de seguridad</span>
                 </button>
             </div>`
@@ -138,26 +132,41 @@ App.layout = (function () {
                 <div class="ajustes-wrapper">
                     <button id="botonAjustes" class="boton boton-secundario"
                             type="button" aria-expanded="false" aria-controls="menuAjustes">
-                        ⚙ Ajustes
+                        ${iconoMenu("settings")}
+                        <span>Ajustes</span>
                     </button>
                     <div id="menuAjustes" class="menu-ajustes oculto" role="menu">
                         <button id="cambiarContrasenaAjustes" class="menu-ajuste-item"
-                                type="button" role="menuitem">Cambiar contraseña</button>
+                                type="button" role="menuitem">
+                            ${iconoMenu("key")}
+                            <span>Cambiar contraseña</span>
+                        </button>
                         <button id="verPerfilesAjustes" class="menu-ajuste-item"
-                                type="button" role="menuitem">Gestión de usuarios</button>
+                                type="button" role="menuitem">
+                            ${iconoMenu("users")}
+                            <span>Gestión de usuarios</span>
+                        </button>
                         <button id="eliminarCuentaAjustes" class="menu-ajuste-item"
-                                type="button" role="menuitem">Eliminar mi cuenta</button>
+                                type="button" role="menuitem">
+                            ${iconoMenu("trash")}
+                            <span>Eliminar mi cuenta</span>
+                        </button>
                         <button id="cerrarSesionAjustes" class="menu-ajuste-item"
-                                type="button" role="menuitem">Cerrar sesión</button>
+                                type="button" role="menuitem">
+                            ${iconoMenu("logout")}
+                            <span>Cerrar sesión</span>
+                        </button>
                     </div>
                 </div>
                 <span id="usuarioAdminValor" class="etiqueta-perfil">
-                    Usuario: ${App.fmt.texto(usuario)}
+                    ${iconoMenu("user")}
+                    <span>Usuario: ${App.fmt.texto(usuario)}</span>
                 </span>
             </div>`;
     }
 
     function plantillasModales() {
+        const ojo = iconoMenu("eye");
         return `
         <div id="modalCambiarClave" class="modal modal-oculto" aria-hidden="true">
             <div class="modal-contenido">
@@ -173,15 +182,27 @@ App.layout = (function () {
                 <form id="formCambiarClave" class="form-producto">
                     <div class="form-row">
                         <label for="claveActual">Contraseña actual</label>
-                        <input type="password" id="claveActual" autocomplete="current-password" required>
+                        <div class="campo-password">
+                            <input type="password" id="claveActual" autocomplete="current-password" required>
+                            <button type="button" class="btn-ver-password" data-target="claveActual"
+                                    aria-label="Mostrar contraseña" title="Mostrar contraseña">${ojo}</button>
+                        </div>
                     </div>
                     <div class="form-row">
                         <label for="claveNueva">Nueva contraseña</label>
-                        <input type="password" id="claveNueva" autocomplete="new-password" required>
+                        <div class="campo-password">
+                            <input type="password" id="claveNueva" autocomplete="new-password" required>
+                            <button type="button" class="btn-ver-password" data-target="claveNueva"
+                                    aria-label="Mostrar contraseña" title="Mostrar contraseña">${ojo}</button>
+                        </div>
                     </div>
                     <div class="form-row">
                         <label for="claveRepetida">Repetir nueva contraseña</label>
-                        <input type="password" id="claveRepetida" autocomplete="new-password" required>
+                        <div class="campo-password">
+                            <input type="password" id="claveRepetida" autocomplete="new-password" required>
+                            <button type="button" class="btn-ver-password" data-target="claveRepetida"
+                                    aria-label="Mostrar contraseña" title="Mostrar contraseña">${ojo}</button>
+                        </div>
                     </div>
 
                     <p id="mensajeCambiarClave" class="mensaje"></p>
@@ -254,8 +275,12 @@ App.layout = (function () {
                     <p>Confirma tu contraseña actual de administrador. Se generará una clave temporal que solo se mostrará una vez y que el usuario deberá cambiar al iniciar sesión.</p>
                     <div class="form-row">
                         <label for="claveAdminActual">Tu contraseña actual</label>
-                        <input id="claveAdminActual" type="password"
-                               autocomplete="current-password" required>
+                        <div class="campo-password">
+                            <input id="claveAdminActual" type="password"
+                                   autocomplete="current-password" required>
+                            <button type="button" class="btn-ver-password" data-target="claveAdminActual"
+                                    aria-label="Mostrar contraseña" title="Mostrar contraseña">${ojo}</button>
+                        </div>
                     </div>
                     <p id="mensajeRestablecerClave" class="mensaje"></p>
                     <div id="resultadoClaveTemporal" class="resultado-clave oculto">
@@ -305,7 +330,10 @@ App.layout = (function () {
             App.ui.mensaje(mensaje, r.mensaje || "Contraseña actualizada.", "exito");
             evento.target.reset();
             const usuario = App.auth.actual();
-            if (usuario) usuario.debe_cambiar_clave = false;
+            if (usuario) {
+                usuario.debe_cambiar_clave = false;
+                App.auth.guardar(null, usuario);
+            }
             const modal = document.getElementById("modalCambiarClave");
             modal.dataset.obligatorio = "false";
             document.getElementById("cerrarModalCambiarClave").hidden = false;

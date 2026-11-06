@@ -32,9 +32,11 @@
 
                     <div class="barra-filtros">
                         <div class="search-bar-pill">
-                            <span class="icono-buscar">🔍</span>
+                            <span class="icono-buscar" aria-hidden="true">
+                                <svg class="icono-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            </span>
                             <input type="text" id="inputBuscarProducto"
-                                placeholder="Buscar productos por nombre, código o categoría...">
+                                placeholder="Buscar productos por nombre, código, categoría o proveedor...">
                         </div>
 
                         <div class="filtros-wrapper">
@@ -140,6 +142,13 @@
                 <div class="form-row" id="contenedorOtraCategoria" style="display: none;">
                     <label for="inputOtraCategoria">Nombre de la nueva categoría *</label>
                     <input type="text" id="inputOtraCategoria" placeholder="Ej. Electrónicos, Muebles...">
+                </div>
+
+                <div class="form-row">
+                    <label for="selectProveedor">Proveedor</label>
+                    <select id="selectProveedor">
+                        <option value="">-- Sin proveedor asignado --</option>
+                    </select>
                 </div>
 
                 <div class="form-row">
