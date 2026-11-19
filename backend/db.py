@@ -118,9 +118,35 @@ def _sembrar(conn: sqlite3.Connection) -> None:
         )
 
     if cur.execute("SELECT COUNT(*) FROM productos").fetchone()[0] == 0:
+        for c in CATEGORIAS_INICIALES:
+            cur.execute("INSERT OR IGNORE INTO categorias (nombre) VALUES (?)", (c,))
+        cats = {
+            idx: cur.execute(
+                "SELECT id FROM categorias WHERE nombre = ? COLLATE NOCASE", (nombre,)
+            ).fetchone()[0]
+            for idx, nombre in enumerate(CATEGORIAS_INICIALES, 1)
+        }
+        provs = {}
+        for idx, p in enumerate(PROVEEDORES_INICIALES, 1):
+            fila = cur.execute(
+                "SELECT id FROM proveedores WHERE nombre = ? COLLATE NOCASE", (p[0],)
+            ).fetchone()
+            if fila:
+                provs[idx] = fila[0]
+            else:
+                cur.execute(
+                    "INSERT INTO proveedores (nombre, telefono, cedula, direccion, departamento) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    p,
+                )
+                provs[idx] = cur.lastrowid
+
         cur.executemany(
             "INSERT INTO productos "
             "(codigo_barra, nombre, categoria_id, proveedor_id, precio, costo_entrada, stock) "
             "VALUES (?, ?, ?, ?, ?, ?, ?)",
-            PRODUCTOS_INICIALES,
+            [
+                (cod, nom, cats.get(cid), provs.get(pid), pre, cos, stk)
+                for cod, nom, cid, pid, pre, cos, stk in PRODUCTOS_INICIALES
+            ],
         )
