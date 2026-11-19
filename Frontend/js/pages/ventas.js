@@ -1,8 +1,7 @@
-/* Terminal de punto de venta (POS) - Tienda Alexander. */
+/* Ventas */
 
 (function () {
     const $ = (id) => document.getElementById(id);
-    const IVA = 0.15;
 
     let productos = [];
     let carrito = [];
@@ -150,12 +149,10 @@
             (suma, item) => suma + item.precio * item.cantidad,
             0
         );
-        const impuesto = Math.round(subtotal * IVA * 100) / 100;
-        totalActual = Math.round((subtotal + impuesto) * 100) / 100;
+        totalActual = Math.round(subtotal * 100) / 100;
 
-        $("subtotalVentaValor").textContent = App.fmt.dinero(subtotal);
-        $("impuestoVentaValor").textContent = App.fmt.dinero(impuesto);
-        $("totalVentaValor").textContent = App.fmt.dinero(subtotal + impuesto);
+        $("subtotalVentaValor").textContent = App.fmt.dinero(totalActual);
+        $("totalVentaValor").textContent = App.fmt.dinero(totalActual);
 
         actualizarVuelto();
     }
@@ -234,7 +231,6 @@
             const venta = await App.api.registrarVenta(cuerpo);
 
             $("subtotalVentaValor").textContent = App.fmt.dinero(venta.subtotal);
-            $("impuestoVentaValor").textContent = App.fmt.dinero(venta.impuesto);
             $("totalVentaValor").textContent = App.fmt.dinero(venta.total);
 
             App.ui.aviso(`Venta #${venta.venta_id} registrada por ${App.fmt.dinero(venta.total)}.`);
@@ -244,7 +240,6 @@
                 metodo_pago: venta.metodo_pago,
                 vendedor: usuario ? usuario.nombre : "",
                 subtotal: venta.subtotal,
-                impuesto: venta.impuesto,
                 total: venta.total,
                 efectivo_recibido: venta.efectivo_recibido,
                 vuelto: venta.vuelto,

@@ -1,6 +1,4 @@
-/* ==========================================
-   Tienda Alexander - Estilos base unificados
-   ========================================== */
+/* Estilos base */
 
 :root {
     --verde-menta: #5ee7b7;
@@ -19,11 +17,9 @@
 
     --sombra: 0 14px 32px rgba(16, 42, 67, 0.08);
 
-    /* Sidebar retráctil */
     --sidebar-colapsado: 74px;
     --sidebar-expandido: 256px;
 
-    /* Factor de escala compacto y uniforme en todo el sistema */
     --font-size-base: 100%;
     --border-radius: 12px;
     --fondo-app: #e7f2ee;
@@ -53,9 +49,7 @@ body {
     flex-shrink: 0;
 }
 
-/* ==========================================
-   LAYOUT Y SIDEBAR
-   ========================================== */
+/* Layout y sidebar */
 
 .dashboard-layout {
     display: flex;
@@ -178,9 +172,7 @@ body {
     width: 100%;
 }
 
-/* ==========================================
-   SIDEBAR RETRÁCTIL
-   ========================================== */
+/* Sidebar retráctil */
 
 @media (min-width: 961px) {
     .dashboard-layout {
@@ -248,9 +240,7 @@ body {
     }
 }
 
-/* ==========================================
-   DROPDOWN Y SUBMENÚS DE NAVEGACIÓN
-   ========================================== */
+/* Submenús */
 
 .nav-dropdown {
     display: flex;
@@ -349,9 +339,7 @@ body {
     padding: 0 0.5rem 1.25rem;
 }
 
-/* ==========================================
-   CABECERA
-   ========================================== */
+/* Cabecera */
 
 .barra-superior {
     background: var(--blanco);
@@ -450,9 +438,7 @@ body {
     color: var(--azul-marino);
 }
 
-/* ==========================================
-   TARJETAS Y TÍTULOS
-   ========================================== */
+/* Tarjetas */
 
 .tarjeta {
     background: var(--blanco);
@@ -475,9 +461,7 @@ body {
     margin-bottom: 0.65rem;
 }
 
-/* ==========================================
-   UBICACIÓN ACTUAL (BREADCRUMB)
-   ========================================== */
+/* Breadcrumb */
 
 .breadcrumb {
     margin-bottom: 1rem;
@@ -521,9 +505,7 @@ body {
     font-weight: 700;
 }
 
-/* ==========================================
-   INDICADORES (KPI)
-   ========================================== */
+/* Indicadores KPI */
 
 .kpi-grid {
     display: grid;
@@ -553,9 +535,7 @@ body {
     margin: 0;
 }
 
-/* ==========================================
-   FILTRO POR RANGO DE FECHAS
-   ========================================== */
+/* Filtro de fechas */
 
 .filtro-fechas {
     display: flex;
@@ -607,9 +587,7 @@ body {
     flex-wrap: wrap;
 }
 
-/* ==========================================
-   BUSCADOR
-   ========================================== */
+/* Buscador */
 
 .search-bar-pill {
     position: relative;
@@ -645,9 +623,7 @@ body {
     pointer-events: none;
 }
 
-/* ==========================================
-   BARRA Y PANEL DE FILTROS DE PRODUCTOS
-   ========================================== */
+/* Filtros de productos */
 
 .barra-filtros {
     display: flex;
@@ -786,9 +762,7 @@ body {
     margin-bottom: 1rem;
 }
 
-/* ==========================================
-   TABLAS
-   ========================================== */
+/* Tablas */
 
 .tabla-panel {
     background: var(--blanco);
@@ -947,9 +921,7 @@ body {
     opacity: 0.6;
 }
 
-/* ==========================================
-   ESTADOS Y BADGES
-   ========================================== */
+/* Estados y badges */
 
 .estado-vacio {
     padding: 1.35rem;
@@ -981,9 +953,7 @@ body {
     background: #fde8ec;
 }
 
-/* ==========================================
-   BOTONES
-   ========================================== */
+/* Botones */
 
 .boton {
     border: none;
@@ -1125,9 +1095,7 @@ body {
     gap: 0.45rem;
 }
 
-/* ==========================================
-   FORMULARIOS Y CAMPOS DE CONTRASEÑA
-   ========================================== */
+/* Formularios */
 
 .formulario {
     display: grid;
@@ -1182,7 +1150,7 @@ body {
     display: none !important;
 }
 
-/* Contenedor de contraseña con botón de ojo integrado adentro del input */
+/* Campo de contraseña */
 .campo-password {
     position: relative;
     display: flex;
@@ -1224,9 +1192,7 @@ body {
     outline: 2px solid var(--verde-menta);
 }
 
-/* ==========================================
-   MODALES
-   ========================================== */
+/* Modales */
 
 .modal {
     position: fixed;
@@ -1295,9 +1261,7 @@ body {
     margin-top: 0.85rem;
 }
 
-/* ==========================================
-   MENSAJES Y AVISOS
-   ========================================== */
+/* Mensajes y avisos */
 
 .mensaje {
     min-height: 1.2rem;
@@ -1339,9 +1303,7 @@ body {
     transform: translate(-50%, 0);
 }
 
-/* ==========================================
-   RESPONSIVE
-   ========================================== */
+/* Responsive */
 
 @media (max-width: 960px) {
     .dashboard-layout {

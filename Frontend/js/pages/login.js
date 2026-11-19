@@ -1,8 +1,4 @@
-/* Pantalla de inicio de sesión - Tienda Alexander.
- *
- * Autenticación segura mediante el backend Flask y persistencia en SQLite.
- * Cuenta regresiva automática para bloqueos temporales por intentos fallidos.
- */
+/* Inicio de sesión */
 
 (function () {
     const $ = (id) => document.getElementById(id);
@@ -15,7 +11,6 @@
 
         let temporizadorBloqueo = null;
 
-        // Si ya hay una sesión activa en el servidor, ir directamente al inicio
         if (App.auth.actual()) {
             window.location.replace("inicio.html");
             return;
@@ -78,10 +73,7 @@
                 }
             }
 
-            // Primer disparo instantáneo
             actualizarSegundo();
-
-            // Actualización continua segundo a segundo en tiempo real
             temporizadorBloqueo = setInterval(actualizarSegundo, 1000);
         }
 
@@ -110,7 +102,6 @@
                 if (typeof datos.segundos_restantes === "number" && datos.segundos_restantes > 0) {
                     segundos = datos.segundos_restantes;
                 } else {
-                    // Si el backend envió segundos en el texto del mensaje
                     const match = String(err.message || "").match(/(\d+)\s*segundos/i);
                     if (match) {
                         segundos = parseInt(match[1], 10);
@@ -118,7 +109,6 @@
                 }
 
                 if (segundos && segundos > 0) {
-                    // Reproducir los segundos automáticamente hacia atrás
                     iniciarCuentaRegresiva(segundos);
                 } else {
                     detenerCuentaRegresiva();

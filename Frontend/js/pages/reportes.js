@@ -1,4 +1,4 @@
-/* Módulo de analítica, reportes de ventas, estadísticas comerciales e inventario. */
+/* Reportes */
 
 (function () {
     const $ = (id) => document.getElementById(id);
@@ -365,8 +365,7 @@
             (c) => `
                 <td><strong>${App.fmt.texto(c.categoria)}</strong></td>
                 <td>${App.fmt.entero(c.unidades)}</td>
-                <td>${App.fmt.dinero(c.subtotal)}</td>
-                <td>${App.fmt.dinero(c.total_con_iva)}</td>
+                <td>${App.fmt.dinero(c.total !== undefined ? c.total : c.subtotal)}</td>
                 <td><span class="badge disponible">${Number(c.participacion_pct || 0).toFixed(1)}%</span></td>`
         );
 
@@ -406,7 +405,7 @@
                 const btnAnular = esAdmin
                     ? `<button class="btn-accion eliminar" data-anular="${v.id}">Anular</button>`
                     : "";
-                const subtotal = v.subtotal !== undefined ? v.subtotal : v.total / 1.15;
+                const subtotal = v.subtotal !== undefined ? v.subtotal : v.total;
                 return `
                     <td>${App.fmt.fechaHora(v.fecha)}</td>
                     <td>#${v.id}</td>
@@ -486,17 +485,15 @@
             return;
         }
 
-        const cabecera = "ID,Fecha,Metodo de pago,Vendedor,Subtotal,IVA,Total";
+        const cabecera = "ID,Fecha,Metodo de pago,Vendedor,Subtotal,Total";
         const filas = ventas.map((v) => {
-            const sub = v.subtotal !== undefined ? v.subtotal : "";
-            const iva = v.impuesto !== undefined ? v.impuesto : "";
+            const sub = v.subtotal !== undefined ? v.subtotal : v.total;
             return [
                 v.id,
                 escaparCSV(v.fecha),
                 escaparCSV(v.metodo_pago),
                 escaparCSV(v.vendedor),
                 sub,
-                iva,
                 v.total,
             ].join(",");
         });

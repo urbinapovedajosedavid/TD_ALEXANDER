@@ -18,7 +18,6 @@ from seguridad import (
 
 
 def _crear_cuenta_usuario(datos: dict, permitir_rol_admin: bool = False):
-    """Valida e inserta un nuevo usuario en la base de datos."""
     valido, problema = validar_usuario(datos)
     if not valido:
         return error(problema or "Los datos del usuario no son válidos.", 400)
@@ -90,14 +89,12 @@ def login():
 @api_bp.get("/auth/yo")
 @requiere_login
 def quien_soy():
-    """Devuelve los datos del usuario de la sesión actual."""
     return jsonify({"exito": True, "usuario": g.usuario})
 
 
 @api_bp.post("/auth/logout")
 @requiere_login
 def cerrar_sesion():
-    """Revoca la sesión activa en la base de datos y limpia la cookie del navegador."""
     token = obtener_token_actual()
     if token:
         with db.conectar_db() as conn:
@@ -191,7 +188,6 @@ def eliminar_cuenta_propia():
 @api_bp.post("/auth/registro")
 @requiere_rol("ADMIN")
 def registrar_usuario():
-    """Registro de usuarios (VENDEDOR o ADMIN) por parte de un Administrador."""
     datos = cuerpo_json()
     clave_admin = datos.get("clave_admin")
     if not isinstance(clave_admin, str) or not clave_admin:
@@ -213,5 +209,4 @@ def registrar_usuario():
 
 @api_bp.post("/auth/registro-publico")
 def registrar_usuario_publico():
-    """Alta de cuenta pública con rol VENDEDOR."""
     return _crear_cuenta_usuario(cuerpo_json(), permitir_rol_admin=False)

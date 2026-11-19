@@ -6,7 +6,6 @@ from backend.config import cargar_env
 
 
 def inicializar_usuarios(conn: sqlite3.Connection) -> None:
-    """Crea un administrador por defecto si la tabla de usuarios está vacía."""
     from seguridad.autenticacion import hash_password
 
     cargar_env()

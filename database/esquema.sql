@@ -1,7 +1,7 @@
 PRAGMA foreign_keys = ON;
 PRAGMA journal_mode = WAL;
 
--- 1. Usuarios del sistema
+-- Usuarios
 CREATE TABLE IF NOT EXISTS usuarios (
     id                INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre            TEXT NOT NULL,
@@ -19,13 +19,13 @@ CREATE TABLE IF NOT EXISTS usuarios (
     debe_cambiar_clave INTEGER NOT NULL DEFAULT 0 CHECK (debe_cambiar_clave IN (0, 1))
 );
 
--- 2. Categorías de productos
+-- Categorías
 CREATE TABLE IF NOT EXISTS categorias (
     id     INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT NOT NULL UNIQUE COLLATE NOCASE
 );
 
--- 3. Proveedores
+-- Proveedores
 CREATE TABLE IF NOT EXISTS proveedores (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre       TEXT NOT NULL,
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS proveedores (
     departamento TEXT NOT NULL DEFAULT ''
 );
 
--- 4. Productos (inventario sin tope artificial de 64 unidades)
+-- Productos
 CREATE TABLE IF NOT EXISTS productos (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     codigo_barra  TEXT UNIQUE,
@@ -47,13 +47,12 @@ CREATE TABLE IF NOT EXISTS productos (
     stock         INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0)
 );
 
--- 5. Encabezado de ventas (facturas)
+-- Ventas
 CREATE TABLE IF NOT EXISTS ventas (
     id                INTEGER PRIMARY KEY AUTOINCREMENT,
     usuario_id        INTEGER NOT NULL REFERENCES usuarios (id),
     fecha             DATETIME DEFAULT CURRENT_TIMESTAMP,
     subtotal          REAL NOT NULL DEFAULT 0.0 CHECK (subtotal >= 0),
-    impuesto          REAL NOT NULL DEFAULT 0.0 CHECK (impuesto >= 0),
     total             REAL NOT NULL DEFAULT 0.0 CHECK (total >= 0),
     metodo_pago       TEXT NOT NULL DEFAULT 'efectivo'
         CHECK (metodo_pago IN ('efectivo', 'tarjeta', 'transferencia')),
@@ -63,7 +62,7 @@ CREATE TABLE IF NOT EXISTS ventas (
         CHECK (estado IN ('COMPLETADA', 'ANULADA'))
 );
 
--- 6. Detalle de venta
+-- Detalle de ventas
 CREATE TABLE IF NOT EXISTS detalle_ventas (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     venta_id        INTEGER NOT NULL REFERENCES ventas (id) ON DELETE CASCADE,
@@ -74,7 +73,7 @@ CREATE TABLE IF NOT EXISTS detalle_ventas (
     subtotal        REAL GENERATED ALWAYS AS (cantidad * precio_unitario) STORED
 );
 
--- 7. Sesiones activas (tokens de autenticación respaldados en servidor)
+-- Sesiones
 CREATE TABLE IF NOT EXISTS sesiones (
     token      TEXT PRIMARY KEY,
     usuario_id INTEGER NOT NULL REFERENCES usuarios (id) ON DELETE CASCADE,
@@ -82,7 +81,7 @@ CREATE TABLE IF NOT EXISTS sesiones (
     expira_en  DATETIME NOT NULL
 );
 
--- Índices para consultas de reportes, inventario y sesiones
+-- Índices
 CREATE INDEX IF NOT EXISTS idx_ventas_fecha      ON ventas (fecha);
 CREATE INDEX IF NOT EXISTS idx_ventas_usuario    ON ventas (usuario_id);
 CREATE INDEX IF NOT EXISTS idx_ventas_estado     ON ventas (estado);

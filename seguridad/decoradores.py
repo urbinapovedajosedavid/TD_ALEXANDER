@@ -1,4 +1,4 @@
-"""Decoradores de autenticación y autorización para rutas de Flask."""
+# Decoradores de acceso
 
 from functools import wraps
 
@@ -8,7 +8,6 @@ from seguridad.autenticacion import usuario_de_token
 
 
 def obtener_token_actual() -> str:
-    """Extrae el token de sesión desde el encabezado Bearer o desde la cookie de sesión."""
     encabezado = request.headers.get("Authorization", "")
     if encabezado.startswith("Bearer "):
         return encabezado[7:].strip()
@@ -20,7 +19,6 @@ def _error(mensaje: str, estado: int = 400):
 
 
 def requiere_login(funcion):
-    """Exige una sesión activa y verificada en la tabla `sesiones`."""
     @wraps(funcion)
     def envoltura(*args, **kwargs):
         from backend.db import conectar_db
@@ -52,7 +50,6 @@ def requiere_login(funcion):
 
 
 def requiere_rol(rol_requerido: str):
-    """Exige autenticación y que el usuario tenga el rol indicado."""
     def decorador(funcion):
         @wraps(funcion)
         @requiere_login

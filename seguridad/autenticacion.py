@@ -11,12 +11,10 @@ VENTANA_ESCALADO_SEGUNDOS = 15 * 60
 
 
 def hash_password(clave: str) -> str:
-    """Genera hash PBKDF2-SHA-256 usando werkzeug.security."""
     return generate_password_hash(clave, method="pbkdf2:sha256", salt_length=16)
 
 
 def verify_password(clave: str, almacenado: str) -> bool:
-    """Verifica una contraseña contra el hash almacenado."""
     if not almacenado or not almacenado.startswith("pbkdf2:"):
         return False
     return check_password_hash(almacenado, clave)
@@ -27,7 +25,6 @@ def procesar_intento_login(
     usuario_input: str,
     clave_input: str,
 ):
-    """Valida credenciales y gestiona el bloqueo temporal por intentos fallidos."""
     usuario_input = (usuario_input or "").strip()
     clave_input = clave_input or ""
 
@@ -185,7 +182,6 @@ def procesar_intento_login(
 
 
 def crear_sesion(conn: sqlite3.Connection, usuario_id: int) -> str:
-    """Abre una sesión en la BD y devuelve un token aleatorio."""
     token = secrets.token_urlsafe(32)
     expira = datetime.now() + timedelta(hours=DURACION_SESION_HORAS)
     conn.execute(
@@ -197,7 +193,6 @@ def crear_sesion(conn: sqlite3.Connection, usuario_id: int) -> str:
 
 
 def usuario_de_token(conn: sqlite3.Connection, token: str):
-    """Busca al usuario si el token de sesión existe, no ha expirado y la cuenta está activa."""
     if not token:
         return None
     return conn.execute(

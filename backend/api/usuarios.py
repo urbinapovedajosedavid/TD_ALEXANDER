@@ -1,4 +1,4 @@
-# Rutas de administración de usuarios para el rol ADMIN.
+# Gestión de usuarios
 
 import secrets
 

@@ -21,7 +21,6 @@ def validar_producto(data) -> tuple[bool, str | None]:
 
 
 def validar_usuario(data) -> tuple[bool, str | None]:
-    """Valida los datos de entrada para el registro de usuarios."""
     if not isinstance(data, dict):
         return False, "Los datos enviados no tienen el formato JSON correcto."
 

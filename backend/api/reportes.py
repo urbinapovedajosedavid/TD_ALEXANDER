@@ -1,4 +1,4 @@
-# Rutas de reportes de ventas por período, rango de fechas y vendedor.
+# Reportes y estadísticas
 
 from datetime import datetime, timedelta
 
@@ -6,7 +6,7 @@ from flask import g, jsonify, request
 
 import backend.db as db
 from backend.api import api_bp
-from backend.api.utils import IVA, dinero, error
+from backend.api.utils import dinero, error
 from backend.config import FORMATO_FECHA
 from seguridad import requiere_login, requiere_rol
 
@@ -73,7 +73,7 @@ def obtener_reportes():
 
     with db.conectar_db() as conn:
         ventas = conn.execute(
-            "SELECT v.id, v.fecha, v.subtotal, v.impuesto, v.total, "
+            "SELECT v.id, v.fecha, v.subtotal, v.total, "
             "v.metodo_pago, v.estado, u.nombre AS vendedor "
             "FROM ventas v JOIN usuarios u ON u.id = v.usuario_id "
             f"WHERE {filtro} ORDER BY v.fecha DESC",
@@ -96,7 +96,7 @@ def obtener_reportes():
             tuple(parametros),
         ).fetchone()[0]
 
-        # Estadísticas de ventas anuladas en el mismo rango
+        # Ventas anuladas
         condiciones_anuladas = ["v.estado = 'ANULADA'"] + condiciones[1:]
         filtro_anuladas = " AND ".join(condiciones_anuladas)
         fila_anuladas = conn.execute(
@@ -105,7 +105,7 @@ def obtener_reportes():
             tuple(parametros),
         ).fetchone()
 
-        # Top productos más vendidos (ranking estadístico)
+        # Top productos
         filas_top_productos = conn.execute(
             "SELECT COALESCE(d.producto_id, 0) AS producto_id, "
             "d.nombre_producto AS nombre, "
@@ -123,7 +123,7 @@ def obtener_reportes():
             tuple(parametros),
         ).fetchall()
 
-        # Ventas agrupadas por categoría
+        # Ventas por categoría
         filas_por_categoria = conn.execute(
             "SELECT COALESCE(c.nombre, 'Sin Categoría') AS categoria, "
             "SUM(d.cantidad) AS unidades, "
@@ -138,7 +138,7 @@ def obtener_reportes():
             tuple(parametros),
         ).fetchall()
 
-        # Distribución por método de pago
+        # Métodos de pago
         filas_metodos = conn.execute(
             "SELECT v.metodo_pago, COUNT(v.id) AS transacciones, "
             "COALESCE(SUM(v.total), 0) AS total "
@@ -147,7 +147,7 @@ def obtener_reportes():
             tuple(parametros),
         ).fetchall()
 
-        # Rendimiento por vendedor
+        # Ventas por vendedor
         filas_vendedores = conn.execute(
             "SELECT u.id, u.nombre AS vendedor, COUNT(v.id) AS transacciones, "
             "COALESCE(SUM(v.subtotal), 0) AS subtotal, "
@@ -160,7 +160,6 @@ def obtener_reportes():
 
     suma_total = dinero(sum((f["total"] or 0) for f in ventas))
     suma_subtotal = dinero(sum((f["subtotal"] or 0) for f in ventas))
-    suma_impuesto = dinero(sum((f["impuesto"] or 0) for f in ventas))
     costo_vendido = dinero(costo_vendido_raw or 0.0)
     ganancia_bruta = dinero(max(0.0, suma_subtotal - costo_vendido))
     margen_porcentaje = (
@@ -175,7 +174,7 @@ def obtener_reportes():
             "categoria": f["categoria"],
             "unidades": int(f["unidades"] or 0),
             "subtotal": dinero(f["subtotal"]),
-            "total_con_iva": dinero((f["subtotal"] or 0) * (1 + IVA)),
+            "total": dinero(f["subtotal"]),
             "ganancia": dinero(max(0.0, f["ganancia"] or 0)),
             "participacion_pct": (
                 round(((f["subtotal"] or 0) / suma_subtotal) * 100, 1)
@@ -191,7 +190,7 @@ def obtener_reportes():
             "categoria": f["categoria"],
             "unidades": int(f["unidades"] or 0),
             "subtotal": dinero(f["subtotal"]),
-            "total_con_iva": dinero((f["subtotal"] or 0) * (1 + IVA)),
+            "total": dinero(f["subtotal"]),
             "participacion_pct": (
                 round(((f["subtotal"] or 0) / suma_subtotal) * 100, 1)
                 if suma_subtotal > 0
@@ -242,7 +241,6 @@ def obtener_reportes():
         "hasta": hasta_txt,
         "kpis": {
             "subtotal_vendido": suma_subtotal,
-            "impuesto_total": suma_impuesto,
             "total_vendido": suma_total,
             "costo_vendido": costo_vendido,
             "ganancia_bruta": ganancia_bruta,
@@ -265,7 +263,6 @@ def obtener_reportes():
                 "fecha": f["fecha"],
                 "metodo_pago": f["metodo_pago"],
                 "subtotal": dinero(f["subtotal"]),
-                "impuesto": dinero(f["impuesto"]),
                 "total": dinero(f["total"]),
                 "estado": f["estado"],
                 "vendedor": f["vendedor"],
@@ -311,7 +308,7 @@ def reporte_ventas_de_usuario(usuario_id):
         where = " AND ".join(condiciones)
 
         filas_ventas = conn.execute(
-            "SELECT v.id, v.fecha, v.subtotal, v.impuesto, v.total, "
+            "SELECT v.id, v.fecha, v.subtotal, v.total, "
             "v.metodo_pago, u.nombre AS vendedor "
             "FROM ventas v JOIN usuarios u ON u.id = v.usuario_id "
             f"WHERE {where} ORDER BY v.fecha DESC",
@@ -356,12 +353,10 @@ def reporte_ventas_de_usuario(usuario_id):
             if not lineas_filtradas:
                 continue
             subtotal_fila = dinero(sum(l["subtotal"] for l in lineas_filtradas))
-            impuesto_fila = dinero(subtotal_fila * IVA)
-            total_fila = dinero(subtotal_fila + impuesto_fila)
+            total_fila = subtotal_fila
             lineas_a_mostrar = lineas_filtradas
         else:
             subtotal_fila = dinero(fila["subtotal"])
-            impuesto_fila = dinero(fila["impuesto"])
             total_fila = dinero(fila["total"])
             lineas_a_mostrar = lineas
 
@@ -379,7 +374,6 @@ def reporte_ventas_de_usuario(usuario_id):
             "dia": dia,
             "metodo_pago": fila["metodo_pago"],
             "subtotal": subtotal_fila,
-            "impuesto": impuesto_fila,
             "total": total_fila,
             "vendedor": fila["vendedor"],
             "items": lineas_a_mostrar,

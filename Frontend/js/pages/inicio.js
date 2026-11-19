@@ -1,4 +1,4 @@
-/* Panel principal de inicio - Tienda Alexander. */
+/* Inicio */
 
 (function () {
     const UMBRAL_STOCK_BAJO = 5;

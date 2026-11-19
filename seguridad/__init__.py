@@ -1,4 +1,4 @@
-"""seguridad — Módulo de seguridad y autenticación."""
+# Seguridad y autenticación
 
 from seguridad.autenticacion import (
     crear_sesion,

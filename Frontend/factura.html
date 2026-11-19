@@ -54,10 +54,6 @@
                     <span>Subtotal</span>
                     <span id="facturaSubtotal">C$0.00</span>
                 </div>
-                <div class="sub iva">
-                    <span>IVA (15%)</span>
-                    <span id="facturaImpuesto">C$0.00</span>
-                </div>
                 <div class="gran">
                     <span>Total</span>
                     <span id="facturaTotal">C$0.00</span>
@@ -121,8 +117,7 @@
                         </tr>`;
                 }
 
-                document.getElementById("facturaSubtotal").textContent = App.fmt.dinero(venta.subtotal);
-                document.getElementById("facturaImpuesto").textContent = App.fmt.dinero(venta.impuesto);
+                document.getElementById("facturaSubtotal").textContent = App.fmt.dinero(venta.subtotal !== undefined ? venta.subtotal : total);
                 document.getElementById("facturaTotal").textContent = App.fmt.dinero(total);
 
                 if (venta.efectivo_recibido !== null && venta.efectivo_recibido !== undefined) {

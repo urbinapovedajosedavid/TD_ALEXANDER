@@ -1,7 +1,4 @@
-"""api.proveedores
-===============
-Gestión y directorio de proveedores.
-"""
+# Proveedores
 
 from flask import jsonify
 

@@ -1,4 +1,4 @@
-# Rutas de respaldo y restauración de la base de datos SQLite.
+# Respaldos de base de datos
 
 import io
 import sqlite3

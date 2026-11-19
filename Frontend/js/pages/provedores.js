@@ -1,4 +1,4 @@
-/* Módulo de gestión de proveedores - Tienda Alexander. */
+/* Proveedores */
 
 (function () {
     const $ = (id) => document.getElementById(id);

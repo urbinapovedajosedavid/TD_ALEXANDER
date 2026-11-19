@@ -1,4 +1,4 @@
-# Rutas de productos, categorías y control de stock.
+# Productos, categorías y stock
 
 import sqlite3
 

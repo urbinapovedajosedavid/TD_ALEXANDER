@@ -1,10 +1,10 @@
-# Rutas de ventas: registro de facturas, consulta y anulación con devolución de stock.
+# Ventas y facturación
 
 from flask import g, jsonify
 
 import backend.db as db
 from backend.api import api_bp
-from backend.api.utils import IVA, cuerpo_json, dinero, error
+from backend.api.utils import cuerpo_json, dinero, error
 from backend.config import ahora
 from seguridad import requiere_login, requiere_rol
 
@@ -69,8 +69,7 @@ def registrar_venta():
             })
 
         subtotal_valor = dinero(subtotal_acum)
-        impuesto_valor = dinero(subtotal_valor * IVA)
-        total_valor = dinero(subtotal_valor + impuesto_valor)
+        total_valor = subtotal_valor
 
         efectivo_recibido = None
         vuelto_valor = None
@@ -89,13 +88,12 @@ def registrar_venta():
         fecha_venta = ahora()
         cur = conn.execute(
             "INSERT INTO ventas "
-            "(usuario_id, fecha, subtotal, impuesto, total, metodo_pago, efectivo_recibido, vuelto, estado) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'COMPLETADA')",
+            "(usuario_id, fecha, subtotal, total, metodo_pago, efectivo_recibido, vuelto, estado) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, 'COMPLETADA')",
             (
                 usuario_id,
                 fecha_venta,
                 subtotal_valor,
-                impuesto_valor,
                 total_valor,
                 metodo_pago,
                 efectivo_recibido,
@@ -129,7 +127,6 @@ def registrar_venta():
         "fecha": fecha_venta,
         "metodo_pago": metodo_pago,
         "subtotal": subtotal_valor,
-        "impuesto": impuesto_valor,
         "total": total_valor,
         "efectivo_recibido": efectivo_recibido,
         "vuelto": vuelto_valor,
@@ -143,7 +140,7 @@ def registrar_venta():
 def obtener_venta(venta_id):
     with db.conectar_db() as conn:
         venta = conn.execute(
-            "SELECT v.id, v.fecha, v.subtotal, v.impuesto, v.total, v.metodo_pago, "
+            "SELECT v.id, v.fecha, v.subtotal, v.total, v.metodo_pago, "
             "v.efectivo_recibido, v.vuelto, v.estado, u.nombre AS vendedor "
             "FROM ventas v JOIN usuarios u ON u.id = v.usuario_id "
             "WHERE v.id = ?",
@@ -175,7 +172,6 @@ def obtener_venta(venta_id):
         "metodo_pago": venta["metodo_pago"],
         "vendedor": venta["vendedor"],
         "subtotal": dinero(venta["subtotal"]),
-        "impuesto": dinero(venta["impuesto"]),
         "total": dinero(venta["total"]),
         "efectivo_recibido": venta["efectivo_recibido"],
         "vuelto": venta["vuelto"],

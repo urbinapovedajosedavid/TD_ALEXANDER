@@ -16,12 +16,10 @@ CLAVES_INSEGURAS_CONOCIDAS = {
 
 
 def ahora() -> str:
-    """Marca de tiempo local en el formato estándar de SQLite."""
     return datetime.now().strftime(FORMATO_FECHA)
 
 
 def cargar_env() -> None:
-    """Lee el archivo .env de la raíz del proyecto y lo carga en os.environ."""
     ruta = RAIZ_ACTUAL / ".env"
     if not ruta.exists():
         return
@@ -40,7 +38,6 @@ def cargar_env() -> None:
 
 
 def _obtener_o_crear_secret_key() -> str:
-    """Obtiene SECRET_KEY del entorno o genera y persiste una aleatoria."""
     cargar_env()
     clave = os.environ.get("SECRET_KEY", "").strip()
     if clave not in CLAVES_INSEGURAS_CONOCIDAS:

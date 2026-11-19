@@ -1,8 +1,4 @@
-/* Pantalla de alta de usuarios - Tienda Alexander.
- *
- * Crea cuentas directamente en la base de datos SQLite del servidor
- * validando nombre, apellido, teléfono, usuario y contraseña.
- */
+/* Registro de usuarios */
 
 (function () {
     const $ = (id) => document.getElementById(id);

@@ -1,14 +1,8 @@
-/* Núcleo compartido del frontend - Tienda Alexander.
- *
- * Persistencia en SQLite y sesiones de servidor mediante cookies HttpOnly
- * respaldadas en la tabla `sesiones` de la base de datos.
- */
+/* Núcleo del frontend */
 
 window.App = window.App || {};
 
-/* ==========================================
-   ICONOS — Iconografía vectorial coherente (Lucide SVG)
-   ========================================== */
+/* Iconos */
 
 App.iconos = {
     eye: '<svg class="icono-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>',
@@ -32,9 +26,7 @@ App.iconos = {
     logout: '<svg class="icono-svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>',
 };
 
-/* ==========================================
-   API — cliente HTTP RESTful
-   ========================================== */
+/* Cliente API */
 
 App.api = (function () {
     const BASE =
@@ -106,7 +98,7 @@ App.api = (function () {
     return {
         BASE,
 
-        // ---------- Autenticación y usuarios ----------
+        // Autenticación y usuarios
         login: (usuario, clave) =>
             pedir("/auth/login", { method: "POST", body: { usuario, clave } }),
         yo: () => pedir("/auth/yo"),
@@ -135,12 +127,12 @@ App.api = (function () {
                 body: { clave_admin },
             }),
 
-        // ---------- Categorías ----------
+        // Categorías
         categorias: () => pedir("/categorias"),
         crearCategoria: (nombre) =>
             pedir("/categorias", { method: "POST", body: { nombre } }),
 
-        // ---------- Productos e Inventario ----------
+        // Productos e inventario
         productos: () => pedir("/productos"),
         crearProducto: (datos) =>
             pedir("/productos", { method: "POST", body: datos }),
@@ -155,14 +147,14 @@ App.api = (function () {
             }),
         resumenInventario: () => pedir("/inventario/resumen"),
 
-        // ---------- Ventas ----------
+        // Ventas
         registrarVenta: (datos) =>
             pedir("/ventas", { method: "POST", body: datos }),
         venta: (id) => pedir(`/ventas/${id}`),
         anularVenta: (id) =>
             pedir(`/ventas/${id}/anular`, { method: "POST" }),
 
-        // ---------- Proveedores ----------
+        // Proveedores
         proveedores: () => pedir("/proveedores"),
         crearProveedor: (datos) =>
             pedir("/proveedores", { method: "POST", body: datos }),
@@ -171,7 +163,7 @@ App.api = (function () {
         eliminarProveedor: (id) =>
             pedir(`/proveedores/${id}`, { method: "DELETE" }),
 
-        // ---------- Reportes ----------
+        // Reportes
         reportes: (periodo) => pedir(`/reportes?periodo=${encodeURIComponent(periodo)}`),
         reportesPorFechas: (inicio, fin) =>
             pedir(
@@ -187,7 +179,7 @@ App.api = (function () {
             return pedir(`/reportes/usuario/${usuarioId}${qs ? "?" + qs : ""}`);
         },
 
-        // ---------- Copias de seguridad ----------
+        // Copias de seguridad
         infoRespaldo: () => pedir("/respaldos/info"),
         restaurarRespaldo: (archivo) => {
             const datos = new FormData();
@@ -221,9 +213,7 @@ App.api = (function () {
     };
 })();
 
-/* ==========================================
-   AUTH — Sesión del usuario en el Servidor
-   ========================================== */
+/* Sesión de usuario */
 
 App.auth = (function () {
     const CLAVE_CACHE = "alexander_usuario_cache";
@@ -254,7 +244,6 @@ App.auth = (function () {
         if (enCache) {
             _usuarioActual = enCache;
             _sesionComprobada = true;
-            // Revalida en segundo plano de forma asíncrona sin bloquear la interfaz
             verificar();
             return _usuarioActual;
         }
@@ -345,9 +334,7 @@ App.auth = (function () {
     };
 })();
 
-/* ==========================================
-   FMT — formateo para mostrar
-   ========================================== */
+/* Formateo */
 
 App.fmt = (function () {
     function dinero(valor) {
@@ -393,9 +380,7 @@ App.fmt = (function () {
     return { dinero, entero, fechaHora, texto };
 })();
 
-/* ==========================================
-   UI — modales, avisos, contraseñas y tablas
-   ========================================== */
+/* Utilidades de interfaz */
 
 App.ui = (function () {
     function abrir(idModal) {
@@ -519,7 +504,7 @@ App.ui = (function () {
     };
 })();
 
-/* Inicializar y delegar botones de mostrar/ocultar contraseña (.btn-ver-password) */
+/* Mostrar/ocultar contraseña */
 function inicializarBotonesPassword(raiz = document) {
     raiz.querySelectorAll(".btn-ver-password").forEach((boton) => {
         if (!boton.querySelector("svg")) {
@@ -552,9 +537,7 @@ document.addEventListener("click", (evento) => {
     );
 });
 
-/* ==========================================
-   FACTURA — apertura de factura.html
-   ========================================== */
+/* Factura */
 
 App.factura = (function () {
     function imprimir(venta) {
