@@ -153,6 +153,9 @@
             if (diaDetalle && !diasPorUsuario.includes(diaDetalle)) {
                 diaDetalle = null;
             }
+            if (!diaDetalle && diasPorUsuario.length) {
+                diaDetalle = diasPorUsuario[0];
+            }
 
             renderizarHistorialUsuario(diasPorUsuario, usuarioReporteActivo);
             renderizarDetalleUsuario();
@@ -333,12 +336,22 @@
         mostrarVistaReporte(tipo);
 
         if (tipo === "ventas_usuario") {
+            $("tituloVistaReporte").textContent = "Reporte de Ventas por Usuario";
             await Promise.all([
                 cargarCategoriasReporte(),
                 cargarUsuariosReporte(),
             ]);
         } else if (tipo === "inventario") {
+            $("tituloVistaReporte").textContent = "Inventario Total y Valorización";
             await cargarInventarioTotal();
+        } else {
+            if (periodoActual.includes("_a_")) {
+                const [ini, fin] = periodoActual.split("_a_");
+                $("tituloVistaReporte").textContent =
+                    `Reporte de Ventas del ${fechaLegible(ini)} al ${fechaLegible(fin)}`;
+            } else {
+                $("tituloVistaReporte").textContent = PERIODOS[periodoActual] || PERIODOS.hoy;
+            }
         }
     }
 

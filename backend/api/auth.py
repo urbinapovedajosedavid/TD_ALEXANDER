@@ -87,9 +87,19 @@ def login():
 
 
 @api_bp.get("/auth/yo")
-@requiere_login
 def quien_soy():
-    return jsonify({"exito": True, "usuario": g.usuario})
+    from seguridad.autenticacion import usuario_de_token
+
+    token = obtener_token_actual()
+    if token:
+        with db.conectar_db() as conn:
+            fila = usuario_de_token(conn, token)
+            if fila:
+                usuario = dict(fila)
+                usuario["debe_cambiar_clave"] = bool(usuario["debe_cambiar_clave"])
+                return jsonify({"exito": True, "usuario": usuario})
+    session.clear()
+    return jsonify({"exito": True, "usuario": None})
 
 
 @api_bp.post("/auth/logout")

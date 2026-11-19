@@ -212,6 +212,7 @@
         $("productoId").value = producto.id;
         $("prodNombre").value = producto.nombre;
         $("prodCodigo").value = producto.codigo || "";
+        if ($("prodCosto")) $("prodCosto").value = producto.costo_entrada || 0;
         $("prodPrecio").value = producto.precio;
         $("prodStock").value = producto.stock;
         $("selectCategoria").value = producto.categoria_id || "";
@@ -252,10 +253,18 @@
         }
 
         const proveedorId = $("selectProveedor") ? $("selectProveedor").value : "";
+        const costoRaw = $("prodCosto") ? $("prodCosto").value.trim() : "";
+        const costoEntrada = costoRaw !== "" ? parseFloat(costoRaw) : 0;
+
+        if (!Number.isFinite(costoEntrada) || costoEntrada < 0) {
+            App.ui.aviso("El costo de entrada debe ser un número igual o mayor a 0.");
+            return;
+        }
 
         const cuerpo = {
             nombre: $("prodNombre").value.trim(),
             codigo: $("prodCodigo").value.trim(),
+            costo_entrada: costoEntrada,
             precio: parseFloat($("prodPrecio").value),
             stock: stock,
             categoria_id: categoriaId === "OTRO" ? null : categoriaId || null,

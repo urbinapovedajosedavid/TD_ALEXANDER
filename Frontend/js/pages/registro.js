@@ -6,7 +6,6 @@
     document.addEventListener("DOMContentLoaded", () => {
         const form = $("formUsuarioModal");
         const mensaje = $("mensajeModal");
-        const btnEntrarNuevo = $("btnEntrarNuevo");
         const btnVolverLogin = $("btnVolverLogin");
         const titulo = $("tituloRegistro");
         const contenedorRol = $("contenedorRolAdmin");
@@ -16,6 +15,11 @@
         const esAdmin = App.auth.esAdmin();
         const confirmacionAdmin = $("confirmacionAdmin");
         const claveAdminInput = $("claveAdminModal");
+
+        if (sesionActiva && !esAdmin) {
+            window.location.replace("inicio.html");
+            return;
+        }
 
         if (esAdmin && titulo) {
             titulo.textContent = "Registrar nuevo usuario";
@@ -93,19 +97,10 @@
                     res.mensaje || `Usuario "${usuario}" creado con éxito.`,
                     "exito"
                 );
-                if (btnEntrarNuevo && !sesionActiva) {
-                    btnEntrarNuevo.hidden = false;
-                }
             } catch (err) {
                 App.ui.mensaje(mensaje, err.message, "error");
             }
         });
-
-        if (btnEntrarNuevo) {
-            btnEntrarNuevo.addEventListener("click", () => {
-                window.location.href = "Login.html";
-            });
-        }
 
         if (btnVolverLogin) {
             btnVolverLogin.addEventListener("click", () => {
