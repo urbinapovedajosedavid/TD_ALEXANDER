@@ -115,30 +115,51 @@ INSERT INTO proveedores (id, nombre, telefono, cedula, direccion, departamento) 
 (3, 'Importaciones Tecnológicas Masaya', '25223410', '401-150990-0008M', 'Parque Central 1c. al oeste', 'Masaya'),
 (4, 'Comercial del Norte León', '23114580', '281-040282-0014L', 'Costado norte de la Terminal de Buses', 'León');
 
--- Productos iniciales
+-- Productos iniciales (30 productos)
 INSERT INTO productos (id, codigo_barra, nombre, categoria_id, proveedor_id, precio, costo_entrada, stock) VALUES
-(1, '750100100101', 'Samsung Galaxy A15 128GB', 1, 1, 6450.00, 5600.00, 12),
-(2, '750100100102', 'Xiaomi Redmi Note 13 256GB', 1, 1, 7800.00, 6850.00, 8),
-(3, '750100100103', 'Cargador Rápido Tipo-C 25W Original', 2, 3, 450.00, 280.00, 35),
-(4, '750100100104', 'Audífonos Inalámbricos Bluetooth TWS', 2, 3, 620.00, 390.00, 4),
-(5, '750100100105', 'Licuadora Oster 2 Velocidades Vaso Vidrio', 3, 2, 2450.00, 1950.00, 15),
-(6, '750100100106', 'Arrocera Black+Decker 1.8 Litros', 3, 2, 1380.00, 1050.00, 10),
-(7, '750100100107', 'Plancha a Vapor Antiadherente Oster', 4, 2, 920.00, 680.00, 3),
-(8, '750100100108', 'Abanico de Pedestal Samuelson 18 Pulgadas', 4, 4, 1650.00, 1280.00, 18),
-(9, '750100100109', 'Cafetera Eléctrica 12 Tazas Programable', 3, 4, 1250.00, 940.00, 0);
+(1, '750100100101', 'Samsung Galaxy A15 128GB', 1, 1, 5850.00, 5100.00, 8),
+(2, '750100100102', 'Xiaomi Redmi Note 13 256GB', 1, 1, 6900.00, 6050.00, 6),
+(3, '750100100103', 'Samsung Galaxy A05 64GB', 1, 1, 3950.00, 3400.00, 10),
+(4, '750100100104', 'Xiaomi Redmi 13C 128GB', 1, 1, 4450.00, 3850.00, 9),
+(5, '750100100105', 'Honor X6a Plus 128GB', 1, 1, 4600.00, 3980.00, 5),
+(6, '750100100106', 'Motorola Moto G24 128GB', 1, 1, 4800.00, 4150.00, 7),
+(7, '750100100201', 'Vidrio Templado 9D (Glass Universal)', 2, 3, 120.00, 45.00, 45),
+(8, '750100100202', 'Vidrio Templado Privacidad (Glass Anti-Espía)', 2, 3, 180.00, 75.00, 30),
+(9, '750100100203', 'Cargador Rápido Tipo-C 25W', 2, 3, 380.00, 230.00, 25),
+(10, '750100100204', 'Cable USB a Tipo-C Reforzado 1m', 2, 3, 150.00, 65.00, 40),
+(11, '750100100205', 'Cable USB a Lightning para iPhone', 2, 3, 160.00, 70.00, 28),
+(12, '750100100206', 'Audífonos Inalámbricos Bluetooth TWS', 2, 3, 480.00, 310.00, 4),
+(13, '750100100207', 'Audífonos de Cable con Micrófono 3.5mm', 2, 3, 140.00, 60.00, 32),
+(14, '750100100208', 'Cover de Silicona Antigolpes para Celular', 2, 3, 180.00, 80.00, 35),
+(15, '750100100209', 'Memoria MicroSD Kingston 64GB Clase 10', 2, 3, 320.00, 210.00, 18),
+(16, '750100100210', 'Power Bank Batería Portátil 10000mAh', 2, 3, 650.00, 460.00, 11),
+(17, '750100100301', 'Licuadora Oster 2 Velocidades Vaso de Vidrio', 3, 2, 2250.00, 1780.00, 10),
+(18, '750100100302', 'Licuadora Black+Decker 10 Velocidades Vaso Plástico', 3, 2, 1450.00, 1120.00, 12),
+(19, '750100100303', 'Arrocera Black+Decker 1.8 Litros con Vaporera', 3, 2, 1350.00, 1020.00, 9),
+(20, '750100100304', 'Cafetera Eléctrica Programable 12 Tazas', 3, 4, 1180.00, 890.00, 0),
+(21, '750100100305', 'Sandwichera Eléctrica Antiadherente 2 Panes', 3, 2, 780.00, 560.00, 14),
+(22, '750100100306', 'Tostadora de Pan 2 Ranuras 7 Niveles', 3, 2, 850.00, 620.00, 8),
+(23, '750100100307', 'Cocina de Mesa a Gas 2 Quemadores', 3, 4, 1250.00, 940.00, 7),
+(24, '750100100308', 'Horno Microondas 0.7 Pies Cúbicos 700W', 3, 2, 3450.00, 2850.00, 5),
+(25, '750100100401', 'Abanico de Pedestal Samuelson 18 Pulgadas', 4, 4, 1550.00, 1200.00, 15),
+(26, '750100100402', 'Abanico de Mesa 12 Pulgadas 3 Velocidades', 4, 4, 890.00, 650.00, 12),
+(27, '750100100403', 'Abanico de Pared Oscilante 16 Pulgadas', 4, 4, 1280.00, 960.00, 10),
+(28, '750100100404', 'Plancha a Vapor Antiadherente Black+Decker', 4, 2, 880.00, 640.00, 3),
+(29, '750100100405', 'Regleta Protector de Voltaje 6 Tomas', 4, 4, 340.00, 210.00, 22),
+(30, '750100100406', 'Bocina Portátil Bluetooth Recargable FM/USB', 4, 3, 750.00, 520.00, 14);
 
 -- Ventas iniciales
 INSERT INTO ventas (id, usuario_id, fecha, subtotal, total, metodo_pago, efectivo_recibido, vuelto, estado) VALUES
-(1, 1, '2026-11-05 09:15:00', 6900.00, 6900.00, 'efectivo', 7000.00, 100.00, 'COMPLETADA'),
-(2, 2, '2026-11-05 11:40:00', 4100.00, 4100.00, 'transferencia', NULL, NULL, 'COMPLETADA'),
-(3, 3, '2026-11-05 14:22:00', 2760.00, 2760.00, 'tarjeta', NULL, NULL, 'COMPLETADA'),
-(4, 2, '2026-11-05 15:10:00', 920.00, 920.00, 'efectivo', 1000.00, 80.00, 'ANULADA');
+(1, 1, '2026-11-05 09:15:00', 6230.00, 6230.00, 'efectivo', 6500.00, 270.00, 'COMPLETADA'),
+(2, 2, '2026-11-05 11:40:00', 3800.00, 3800.00, 'transferencia', NULL, NULL, 'COMPLETADA'),
+(3, 3, '2026-11-05 14:22:00', 2700.00, 2700.00, 'tarjeta', NULL, NULL, 'COMPLETADA'),
+(4, 2, '2026-11-05 15:10:00', 880.00, 880.00, 'efectivo', 1000.00, 120.00, 'ANULADA');
 
 -- Detalle de ventas iniciales
 INSERT INTO detalle_ventas (venta_id, producto_id, nombre_producto, cantidad, precio_unitario) VALUES
-(1, 1, 'Samsung Galaxy A15 128GB', 1, 6450.00),
-(1, 3, 'Cargador Rápido Tipo-C 25W Original', 1, 450.00),
-(2, 5, 'Licuadora Oster 2 Velocidades Vaso Vidrio', 1, 2450.00),
-(2, 8, 'Abanico de Pedestal Samuelson 18 Pulgadas', 1, 1650.00),
-(3, 6, 'Arrocera Black+Decker 1.8 Litros', 2, 1380.00),
-(4, 7, 'Plancha a Vapor Antiadherente Oster', 1, 920.00);
+(1, 1, 'Samsung Galaxy A15 128GB', 1, 5850.00),
+(1, 9, 'Cargador Rápido Tipo-C 25W', 1, 380.00),
+(2, 17, 'Licuadora Oster 2 Velocidades Vaso de Vidrio', 1, 2250.00),
+(2, 25, 'Abanico de Pedestal Samuelson 18 Pulgadas', 1, 1550.00),
+(3, 19, 'Arrocera Black+Decker 1.8 Litros con Vaporera', 2, 1350.00),
+(4, 28, 'Plancha a Vapor Antiadherente Black+Decker', 1, 880.00);
