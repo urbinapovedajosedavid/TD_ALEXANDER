@@ -8,8 +8,8 @@ build/
 dist/
 
 # Base de datos, archivos WAL y respaldos temporales:
-# se generan automáticamente al arrancar app.py a partir de database/esquema.sql
 *.db
+!database/tienda_alexander.db
 *.db-wal
 *.db-shm
 *.bak
