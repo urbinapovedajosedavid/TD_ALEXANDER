@@ -76,7 +76,7 @@ def obtener_categorias():
 
 
 @api_bp.post("/categorias")
-@requiere_login
+@requiere_rol("ADMIN")
 def crear_categoria():
     nombre = (cuerpo_json().get("nombre") or "").strip()
     if not nombre:
@@ -110,7 +110,7 @@ def obtener_productos():
 
 
 @api_bp.post("/productos")
-@requiere_login
+@requiere_rol("ADMIN")
 def crear_producto():
     datos, problema = _validar_producto_negocio(cuerpo_json())
     if problema:
@@ -132,7 +132,7 @@ def crear_producto():
 
 
 @api_bp.put("/productos/<int:id_producto>")
-@requiere_login
+@requiere_rol("ADMIN")
 def actualizar_producto(id_producto):
     cuerpo = cuerpo_json()
     datos, problema = _validar_producto_negocio(cuerpo)
@@ -182,7 +182,7 @@ def eliminar_producto(id_producto):
 
 
 @api_bp.post("/productos/<int:id_producto>/recargar")
-@requiere_login
+@requiere_rol("ADMIN")
 def recargar_stock_producto(id_producto):
     datos = cuerpo_json()
     try:

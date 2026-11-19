@@ -36,6 +36,7 @@
         }
 
         const iconoCarpeta = (App.iconos && App.iconos.folder) || "";
+        const esAdmin = App.auth.esAdmin();
 
         App.ui.pintarTabla(
             "tablaStock",
@@ -49,6 +50,10 @@
                     estado = `<span class="badge bajo">Bajo (${p.stock})</span>`;
                 }
 
+                const accionHtml = esAdmin
+                    ? `<button class="btn-accion" data-accion="recargar" data-id="${p.id}">Recargar</button>`
+                    : `<span style="color: var(--texto-suave); font-size: 0.8rem;">Solo consulta</span>`;
+
                 return `
                     <td>
                         <strong>${App.fmt.texto(p.nombre)}</strong><br>
@@ -60,7 +65,7 @@
                     <td>${App.fmt.entero(p.stock)}</td>
                     <td>${estado}</td>
                     <td class="acciones-tabla">
-                        <button class="btn-accion" data-accion="recargar" data-id="${p.id}">Recargar</button>
+                        ${accionHtml}
                     </td>`;
             }
         );

@@ -42,7 +42,7 @@ def obtener_proveedores():
 
 
 @api_bp.post("/proveedores")
-@requiere_login
+@requiere_rol("ADMIN")
 def crear_proveedor():
     campos, problema = _extraer_campos_proveedor(cuerpo_json())
     if problema:
@@ -64,7 +64,7 @@ def crear_proveedor():
 
 
 @api_bp.put("/proveedores/<int:id_proveedor>")
-@requiere_login
+@requiere_rol("ADMIN")
 def actualizar_proveedor(id_proveedor: int):
     campos, problema = _extraer_campos_proveedor(cuerpo_json())
     if problema:

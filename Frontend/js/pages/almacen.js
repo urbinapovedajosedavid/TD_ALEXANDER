@@ -135,9 +135,10 @@
                         ? '<span class="badge disponible">Disponible</span>'
                         : '<span class="badge agotado">Agotado</span>';
 
-                const btnEliminar = esAdmin
-                    ? `<button class="btn-accion eliminar" data-accion="eliminar" data-id="${p.id}">Eliminar</button>`
-                    : "";
+                const accionesHtml = esAdmin
+                    ? `<button class="btn-accion" data-accion="editar" data-id="${p.id}">Modificar</button>
+                       <button class="btn-accion eliminar" data-accion="eliminar" data-id="${p.id}">Eliminar</button>`
+                    : `<span style="color: var(--texto-suave); font-size: 0.8rem;">Solo consulta</span>`;
 
                 const etiquetaProveedor = p.proveedor_nombre
                     ? ` <span class="separador-meta">·</span> <span class="meta-item">${iconoProveedor} ${App.fmt.texto(p.proveedor_nombre)}</span>`
@@ -155,8 +156,7 @@
                     <td>${App.fmt.entero(p.stock)}</td>
                     <td>${estado}</td>
                     <td class="acciones-tabla">
-                        <button class="btn-accion" data-accion="editar" data-id="${p.id}">Modificar</button>
-                        ${btnEliminar}
+                        ${accionesHtml}
                     </td>`;
             }
         );
@@ -301,6 +301,10 @@
 
     document.addEventListener("DOMContentLoaded", async () => {
         if (!App.layout.montar()) return;
+
+        if (!App.auth.esAdmin() && $("botonAgregarProducto")) {
+            $("botonAgregarProducto").style.display = "none";
+        }
 
         $("inputBuscarProducto").addEventListener("input", filtrarProductos);
         $("botonAgregarProducto").addEventListener("click", abrirModalAgregar);

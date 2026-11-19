@@ -44,9 +44,10 @@
             "mensajeSinProveedores",
             filtrados,
             (p) => {
-                const btnEliminar = esAdmin
-                    ? `<button class="btn-accion eliminar" data-eliminar="${p.id}">Eliminar</button>`
-                    : "";
+                const accionesHtml = esAdmin
+                    ? `<button class="btn-accion" data-editar="${p.id}">Modificar</button>
+                       <button class="btn-accion eliminar" data-eliminar="${p.id}">Eliminar</button>`
+                    : `<span style="color: var(--texto-suave); font-size: 0.8rem;">Solo consulta</span>`;
                 return `
                     <td><strong>${App.fmt.texto(p.nombre)}</strong></td>
                     <td>${App.fmt.texto(p.telefono) || "N/A"}</td>
@@ -54,8 +55,7 @@
                     <td>${App.fmt.texto(p.direccion) || "N/A"}</td>
                     <td>${App.fmt.texto(p.departamento) || "N/A"}</td>
                     <td class="acciones-tabla">
-                        <button class="btn-accion" data-editar="${p.id}">Modificar</button>
-                        ${btnEliminar}
+                        ${accionesHtml}
                     </td>`;
             }
         );
@@ -137,6 +137,10 @@
 
     document.addEventListener("DOMContentLoaded", async () => {
         if (!App.layout.montar()) return;
+
+        if (!App.auth.esAdmin() && $("btnAbrirModalProveedor")) {
+            $("btnAbrirModalProveedor").style.display = "none";
+        }
 
         $("inputBuscarProveedor").addEventListener("input", filtrar);
         $("formProveedor").addEventListener("submit", guardar);

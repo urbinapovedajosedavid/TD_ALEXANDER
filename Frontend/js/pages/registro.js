@@ -28,10 +28,10 @@
             contenedorRol.hidden = !esAdmin;
         }
         if (confirmacionAdmin) {
-            confirmacionAdmin.hidden = !esAdmin;
+            confirmacionAdmin.hidden = false;
         }
         if (claveAdminInput) {
-            claveAdminInput.required = esAdmin;
+            claveAdminInput.required = true;
         }
         if (sesionActiva && btnVolverLogin) {
             btnVolverLogin.textContent = "Volver al panel principal";
@@ -68,8 +68,8 @@
                 App.ui.mensaje(mensaje, "La contraseña debe tener al menos 4 caracteres.", "error");
                 return;
             }
-            if (esAdmin && !claveAdmin) {
-                App.ui.mensaje(mensaje, "Confirma la creación con tu contraseña de administrador.", "error");
+            if (!claveAdmin) {
+                App.ui.mensaje(mensaje, "Ingresa la contraseña del administrador para autorizar la creación.", "error");
                 return;
             }
 
@@ -84,10 +84,10 @@
                     telefono,
                     usuario,
                     clave,
+                    clave_admin: claveAdmin,
                 };
                 if (esAdmin) {
                     datos.rol = rol;
-                    datos.clave_admin = claveAdmin;
                 }
                 const res = await peticion(datos);
 

@@ -219,4 +219,20 @@ def registrar_usuario():
 
 @api_bp.post("/auth/registro-publico")
 def registrar_usuario_publico():
-    return _crear_cuenta_usuario(cuerpo_json(), permitir_rol_admin=False)
+    datos = cuerpo_json()
+    clave_admin = datos.get("clave_admin")
+    if not isinstance(clave_admin, str) or not clave_admin:
+        return error(
+            "Se requiere la contraseña del administrador para autorizar la creación de la cuenta.",
+            400,
+        )
+
+    with db.conectar_db() as conn:
+        admins = conn.execute(
+            "SELECT password_hash FROM usuarios WHERE rol = 'ADMIN' AND COALESCE(activo, 1) = 1"
+        ).fetchall()
+        autorizado = any(verify_password(clave_admin, a["password_hash"]) for a in admins)
+        if not autorizado:
+            return error("La contraseña del administrador no es correcta.", 401)
+
+    return _crear_cuenta_usuario(datos, permitir_rol_admin=False)
